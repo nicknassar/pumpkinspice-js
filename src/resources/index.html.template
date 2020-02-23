@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<!--
+  Pumpkin Spice - A simplistic language for interactive text applications
+  Copyright © 2018-2020 Nicholas Nassar
+  All Rights Reserved
+-->
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
+    <title>{{TITLE}}</title>
+  <script type="text/pumpkinspice"><!--
+{{CODE}}
+--></script>
+  <script><!--
+{{JS}}
+--></script>
+  <style>
+*{
+    margin:0;
+    padding:0;
+    border:0
+}
+body{
+    background:black;
+    overflow:hidden;
+    height:100vh
+}
+#container{
+    position:absolute;
+    top:0px;
+    bottom:64px;
+    width:100%;
+    text-align:center;
+    line-height:0px
+}
+#downer{
+    height: 100%;
+    height: calc(100% - 1em)
+}
+#display{
+    display:inline-block;
+    overflow-y:scroll;
+    overflow-x:hidden;
+    height:100%;
+    width:100%;
+    color:white;
+    line-height:normal;
+    text-align:left;
+    font-family:monospace;
+    font-size:12pt
+}
+#dblock{
+    width:100%;
+    height:100%
+}
+.menuitem:hover {
+  text-decoration:underline;
+  cursor:pointer;
+}
+#sblock{
+    display:inline-block;
+    height:64px;
+    background-color:#999;
+}
+#sblockpad{
+  margin:10px 76px 10px 10px;
+}
+@media all and (min-width:840px) {
+  #display{
+    width:840px;
+    max-width:840px
+  }
+  #sblock{
+    width:840px;
+    max-width:840px
+  }
+}
+@media not all and (min-width:840px) {
+  #display{width:100%}
+  #sblock{width:100%}
+}
+#inpadform{
+    display:inline-block;
+    height:64px;
+    width:100%
+}
+#inpad{
+    display:block;
+    box-sizing:border-box;
+    height:44px;
+    width:100%;
+    font-size:36px;
+    font-family:monospace
+}
+#return{
+    display:block;
+    float:right;
+    position:relative;
+    width:64px;
+    height:64px;
+    top:-54px;
+    left:76px;
+    font-size:36px
+}
+#cursor::before {
+  content:"";
+  display:inline-block;
+  width:0px
+}
+#cursor{
+  color:#aaa;
+  font-weight:bolder;
+  font-weight:1000
+}
+  </style>
+
+</head>
+  <body>
+    <div id="container">
+      <div id="dblock">
+        <div id="display" role="main">
+	  <div id="downer"></div>
+	    <span id="history" aria-live="off"></span><span id="latest" aria-live="assertive" aria-atomic="true" aria-relevant="additions"><span style="display:block;position:absolute;left:-10000px;top:-10000px">Loading...</span></span><span id="quiet" aria-live="off" aria-hidden="true"></span><span id="cursor" aria-live="off" aria-hidden="true">_</span>
+        </div>
+        <form id="inpadform" autocomplete="off">
+	  <div id="sblock" aria-live="off">
+	    <div id="sblockpad">
+                <input type="text" name="text" id="inpad" size="20"/>
+		<input type="submit" id="return" value="⏎" />
+	    </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
