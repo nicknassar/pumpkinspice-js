@@ -15,7 +15,11 @@ JAVAC := javac
 JAVA := java
 JAR := jar
 MKDIR := mkdir
-
+ifeq ($(OS),Windows_NT)
+  PATH_SEPARATOR := ;
+else
+  PATH_SEPARATOR := :
+endif
 vpath %.html.template $(RESOURCE_DIR)
 vpath %.java $(BUILD_SOURCE_DIR)
 vpath %.class $(BUILD_OUTPUT_DIR)
@@ -64,10 +68,10 @@ $(BUILD_RESOURCE_DIR)/index.html.template: $(SRC_DIR)/resources/index.html.templ
 	cp $< $@
 
 %.html: %.pumpkinspice $(JAVA_CLASSES) $(OPTIMIZED_RESOURCES)
-	$(JAVA) -classpath $(BUILD_RESOURCE_DIR):$(BUILD_OUTPUT_DIR) com.nicknassar.pumpkinspice.Builder $<
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(BUILD_OUTPUT_DIR)" com.nicknassar.pumpkinspice.Builder $<
 
 %.debug.html: %.pumpkinspice $(JAVA_CLASSES) $(DEBUG_RESOURCES)
-	$(JAVA) -classpath $(BUILD_RESOURCE_DIR):$(BUILD_OUTPUT_DIR) com.nicknassar.pumpkinspice.Builder --debug $<
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(BUILD_OUTPUT_DIR)" com.nicknassar.pumpkinspice.Builder --debug $<
 
 $(OUTPUT_JAR): $(JAVA_CLASSES) $(DEBUG_RESOURCES) $(OPTIMIZED_RESOURCES)
 	$(JAR) cfe $@ com.nicknassar.pumpkinspice.Builder -C $(BUILD_OUTPUT_DIR) . -C $(BUILD_RESOURCE_DIR) .
