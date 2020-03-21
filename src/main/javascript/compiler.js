@@ -456,8 +456,6 @@ music and MIDI files.
 
 
     play: function(abc) {
-      if (!audioCtx)
-	return;
       // XXX Add support for ABC configuration so the defaults
       //     can be changed
       var bpm = 120;
@@ -587,28 +585,37 @@ music and MIDI files.
       }
       
       function playFromPos(pos) {
-	var osc;
 	var note = nextABCNote(abc,pos);
 	if (note !== null) {
 	  pos = note[2];
-	  if (note[0] !== null) {
-	    osc = audioCtx.createOscillator();
-
-	    osc.type='square';
-	    osc.frequency.setValueAtTime(pianoKeyToFrequency(note[0]),audioCtx.currentTime);
-	    osc.connect(mainGain);
-	    osc.start();
-	    osc.stop(audioCtx.currentTime + note[1]*noteLen*60/bpm);
-	  }
-	  //Is the onended hook more accurate than setTimeout?
-	  window.setTimeout(function() {
-	    if (osc) {
-              osc.stop();
-	      osc.disconnect(mainGain);
+	  if (mainGain) { // same effect as "if (audioCtx)" but hints closureCompiler better
+	    var osc;
+	    // Actually play the note
+	    if (note[0] !== null) {
+	      osc = audioCtx.createOscillator();
+	      
+	      osc.type='square';
+	      osc.frequency.setValueAtTime(pianoKeyToFrequency(note[0]),audioCtx.currentTime);
+	      osc.connect(mainGain);
+	      osc.start();
+	      osc.stop(audioCtx.currentTime + note[1]*noteLen*60/bpm);
 	    }
-	    playFromPos(pos);
-	  }, Math.floor(note[1]*60000/bpm));
-	  return;
+	    //Is the onended hook more accurate than setTimeout?
+	    window.setTimeout(function() {
+	      if (osc) {
+		osc.stop();
+		osc.disconnect(mainGain);
+	      }
+	      playFromPos(pos);
+	    }, Math.floor(note[1]*60000/bpm));
+	    return;
+	  } else {
+	    // Wait as if we were playing the note
+	    window.setTimeout(function() {
+	      playFromPos(pos);
+	    }, Math.floor(note[1]*60000/bpm));
+	    return;	    
+	  }
 	}
 	
 	// There are no more notes or this note string was bad
