@@ -238,9 +238,7 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
 	display.scroll();
       },
       clear: function() {
-	// XXX The background is always black
-	//     It should change to the current bgcolor when
-	//     the screen is cleared
+	displayBlockElement.setAttribute("style","background-color:rgb("+bgColor[0]+","+bgColor[1]+","+bgColor[2]+")");
 	
 	// Delete current stuff
 	var oldNodes = latestBlockElement.childNodes;
@@ -3382,9 +3380,7 @@ music and MIDI files.
   BEGIN entry point
 ***********************************************************************/
 
-  // This is the only place we grab HTML elements
-  // All of these variables are global
-  
+  // Legacy support for IE
   addEventListener(inputSubmitElement,"focus",function(e) {
     // IE changes focus to the submit button on submit
     // User should stay "clicked into" the input pad
@@ -3397,6 +3393,7 @@ music and MIDI files.
     }
   });
 
+  // Make submitting the form handle the input
   addEventListener(inputFormElement,"submit",handleInput);
 
   display.init();
