@@ -2,7 +2,8 @@
 //   Copyright © 2020 Nicholas Nassar
 //   All Rights Reserved
 
-// Everything is wrapped inside a function to protect namespaces
+// The code is wrapped inside a function to protect namespaces
+// programText - string with the program to run
 // inputTextElement - The input text area
 // inputSubmitElement - The input form submit button
 // inputFormElement - the form associated with the inppad
@@ -12,7 +13,7 @@
 // latestBlockElement - text which should be read by a screen reader
 // displayBlockElement - scrollable area where text is displayed
 
-function initPumpkinSpice(inputTextElement, inputSubmitElement, inputFormElement, cursorElement, quietBlockElement, historyBlockElement, latestBlockElement, displayBlockElement){
+function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inputFormElement, cursorElement, quietBlockElement, historyBlockElement, latestBlockElement, displayBlockElement){
 /***********************************************************************
   BEGIN LEGACY COMPATIBILITY
 ***********************************************************************/
@@ -3358,24 +3359,10 @@ music and MIDI files.
       for (pass = 1;pass <= 2;pass++) {
         started = false;
         finished = false;
-        var scripts = document.getElementsByTagName('script');
-        for (var i=0;i<scripts.length;i++) {
-          for (var j=0;j<scripts[i].attributes.length;j++) {
-            if (scripts[i].attributes[j].name==='type' &&
-                scripts[i].attributes[j].value==='text/pumpkinspice') {
-              var t = scripts[i].text;
-              // XXX Do we need to check textContent? Browsers that
-              // support it, are probably newer and already support
-              // .text for script elements
-              if (!t)
-                t = scripts[i].textContent;
-              if (!compiler.compileText(t)) {
-                // XXX Reset things here?
-                return false;
-              }
-            }
-          }
-        }
+	if (!compiler.compileText(programText)) {
+          // XXX Reset things here?
+          return false;
+	}
       }
       if (codegen.validate()) {
         codegen.generate();
@@ -3431,8 +3418,22 @@ music and MIDI files.
 
 // Sample initialization code
 (function(){
+  // get the text of the first pumpkinspice script
+  function getProgramText() {
+    var scripts = document.getElementsByTagName('script');
+    for (var i=0;i<scripts.length;i++) {
+      for (var j=0;j<scripts[i].attributes.length;j++) {
+        if (scripts[i].attributes[j].name==='type' &&
+            scripts[i].attributes[j].value==='text/pumpkinspice') {
+          return scripts[i].text;
+        }
+      }
+    }
+  }
+  
   function main() {
     initPumpkinSpice(
+      getProgramText(),
       document.getElementById("inpad"),
       document.getElementById("return"),
       document.getElementById("inpadform"),
