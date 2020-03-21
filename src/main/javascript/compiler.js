@@ -3,7 +3,16 @@
 //   All Rights Reserved
 
 // Everything is wrapped inside a function to protect namespaces
-(function(){
+// inputTextElement - The input text area
+// inputSubmitElement - The input form submit button
+// inputFormElement - the form associated with the inppad
+// cursorElement - that which must be blinked
+// quietBlockElement - text which is displayed but not to be read by a screen reader
+// historyBlockElement - text which has already been displayed
+// latestBlockElement - text which should be read by a screen reader
+// displayBlockElement - scrollable area where text is displayed
+
+function initPumpkinSpice(inputTextElement, inputSubmitElement, inputFormElement, cursorElement, quietBlockElement, historyBlockElement, latestBlockElement, displayBlockElement){
 /***********************************************************************
   BEGIN LEGACY COMPATIBILITY
 ***********************************************************************/
@@ -68,24 +77,6 @@
   var SUBROUTINE={};
   var BOOLEXPRESSION={};
 
-// HTML document elements. 
-// inpad - The input text area
-// inpadform - the form associated with the inppad
-// cursor - that which must be blinked
-// quiet - text which is displayed but not to be read by a screen reader
-// history - text which has already been displayed
-// latest - text which should be read by a screen reader
-
-// These are all set by main();
-
-var inpad;
-var inpadform;
-var cursor;
-var quiet;
-var history;
-var latest;
-var disp;
-
 /***********************************************************************
   END Global Variables
 ***********************************************************************/
@@ -149,12 +140,12 @@ var disp;
   // This is outside of any class because it's exposed to HTML
   //
   // This runs on form submit or when an menu option is clicked,
-  // grabbing and processing the text in the inpad
+  // grabbing and processing the text in the inputTextElement
   function handleInput(e) {
     audio.go();
     if (machine.isWaitingForInput()) {
-      machine.acceptInput(inpad.value);
-      inpad.value="";
+      machine.acceptInput(inputTextElement.value);
+      inputTextElement.value="";
     }
     if (e)
       e.preventDefault();
@@ -168,7 +159,7 @@ var disp;
   // Calling this is the equivalent of typing t and submitting
   // the form
   function choose(t) {
-    inpad.value = t;
+    inputTextElement.value = t;
     handleInput(null);
   };
 
@@ -201,38 +192,38 @@ var disp;
       init: function() {
 	// make the cursor blinky
 	function blink() {
-          if (cursor.style.visibility === "visible") {
-            cursor.style.visibility="hidden";
+          if (cursorElement.style.visibility === "visible") {
+            cursorElement.style.visibility="hidden";
           } else {
-          cursor.style.visibility="visible";
+          cursorElement.style.visibility="visible";
           }
 	}
 	window.setInterval(blink,200);
       },
-      sendQuietUpdates: function() {
+      sendQuietBlockElementUpdates: function() {
 	var spanNode=document.createElement("span");
 	for (var i=0;i<pendingUpdates.length;i++) {
           spanNode.appendChild(pendingUpdates[i]);
 	}
 	pendingUpdates = [];
-	quiet.appendChild(spanNode);
+	quietBlockElement.appendChild(spanNode);
 	display.scroll();
       },
       sendUpdates: function() {
-	// Move old stuff over to the history
-	var oldNodes = latest.childNodes;
+	// Move old stuff over to the historyBlockElement
+	var oldNodes = latestBlockElement.childNodes;
 	while (oldNodes.length > 0) {
           var node = oldNodes.item(0);
-          latest.removeChild(node);
-          history.appendChild(node);
+          latestBlockElement.removeChild(node);
+          historyBlockElement.appendChild(node);
 	}
 	
-	// Read the quiet nodes
-	oldNodes = quiet.childNodes;
+	// Read the quietBlockElement nodes
+	oldNodes = quietBlockElement.childNodes;
 	while (oldNodes.length > 0) {
           var node = oldNodes.item(0);
-          quiet.removeChild(node);
-          latest.appendChild(node);
+          quietBlockElement.removeChild(node);
+          latestBlockElement.appendChild(node);
 	}
 	
 	var spanNode=document.createElement("span");
@@ -241,7 +232,7 @@ var disp;
 	}
 	pendingUpdates = [];
 	
-	latest.appendChild(spanNode);
+	latestBlockElement.appendChild(spanNode);
 	
 	display.scroll();
       },
@@ -251,24 +242,24 @@ var disp;
 	//     the screen is cleared
 	
 	// Delete current stuff
-	var oldNodes = latest.childNodes;
+	var oldNodes = latestBlockElement.childNodes;
 	while (oldNodes.length > 0) {
           var node = oldNodes.item(0);
-          latest.removeChild(node);
+          latestBlockElement.removeChild(node);
 	}
 	
-	// Delete history
-	oldNodes = history.childNodes;
+	// Delete historyBlockElement
+	oldNodes = historyBlockElement.childNodes;
 	while (oldNodes.length > 0) {
           var node = oldNodes.item(0);
-          history.removeChild(node);
+          historyBlockElement.removeChild(node);
 	}
 	
-	// Delete the quiet nodes
-	oldNodes = quiet.childNodes;
+	// Delete the quietBlockElement nodes
+	oldNodes = quietBlockElement.childNodes;
 	while (oldNodes.length > 0) {
           var node = oldNodes.item(0);
-          quiet.removeChild(node);
+          quietBlockElement.removeChild(node);
 	}
 	
 	pendingUpdates = [];
@@ -316,8 +307,8 @@ var disp;
       },
       // Scroll to the bottom of the page
       scroll: function() {
-	if (disp.scrollHeight - disp.scrollTop !== disp.clientHeight)
-          disp.scrollTop = disp.scrollHeight - disp.clientHeight;
+	if (displayBlockElement.scrollHeight - displayBlockElement.scrollTop !== displayBlockElement.clientHeight)
+          displayBlockElement.scrollTop = displayBlockElement.scrollHeight - displayBlockElement.clientHeight;
 	
       },
       // choiceText - array of functions returning menu choice text
@@ -716,12 +707,10 @@ music and MIDI files.
       // register for return values	
       // this._ret = undefined;
 	
-      addEventListener(inpadform,"submit",handleInput);
-
       // Disable this while single key input is disabled
       
-      // addEventListener(inpad,"input",function(e) {
-      //   this._vars[this._inputVariable] = inpad.value;
+      // addEventListener(inputTextElement,"input",function(e) {
+      //   this._vars[this._inputVariable] = inputTextElement.value;
       // });
 
       // Don't allow machine to be re-init If we want to allow
@@ -731,7 +720,7 @@ music and MIDI files.
 
       // On desktop, the user should be able to start typing immediately
       // On mobile, this doesn't bring up the keybard, which is the behavior we want.
-      inpad.focus();
+      inputTextElement.focus();
     },
     isWaitingForInput: function() {
       return !!this._inputVariable;
@@ -783,17 +772,17 @@ music and MIDI files.
           display.sendUpdates();
           // this.inputMode();
         } else if (this._waitFlags !== 0) {
-	  display.sendQuietUpdates();
+	  display.sendQuietBlockElementUpdates();
 	  // flag 1 is wait for music
 	  
 	} else if (this._interruptDelay === 0) {
           var me = this;
           window.setTimeout(function() {me.go();},0);
-          display.sendQuietUpdates();
+          display.sendQuietBlockElementUpdates();
         } else {
           var me = this;
           window.setTimeout(function() {me.go();},this._interruptDelay);
-                display.sendQuietUpdates();
+                display.sendQuietBlockElementUpdates();
         }
         this._interruptDelay = null;
       } else if (this._callstack.length>0) {
@@ -3403,56 +3392,63 @@ music and MIDI files.
 ***********************************************************************/
 
 /***********************************************************************
-  BEGIN main function
+  BEGIN entry point
 ***********************************************************************/
 
-  // This is the entry point
-  function main() {
-    // This is the only place we grab HTML elements
-    // All of these variables are global
-    inpad = document.getElementById("inpad");
-    inpadform = document.getElementById("inpadform");
-    cursor = document.getElementById("cursor");
-    quiet = document.getElementById("quiet");
-    history = document.getElementById("history");
-    latest = document.getElementById("latest");
-    disp = document.getElementById("display");
-
-    addEventListener(document.getElementById("return"),"focus",function(e) {
-      // IE changes focus to the submit button on submit
-      // User should stay "clicked into" the input pad
-      // and play entirely with the keyboard    
-      
-      // If the inputVariable is not set, this must
-      // be immediately following a submit
-      if (!this._inputVariable) {
-        inpad.focus();
-      }
-    });
+  // This is the only place we grab HTML elements
+  // All of these variables are global
+  
+  addEventListener(inputSubmitElement,"focus",function(e) {
+    // IE changes focus to the submit button on submit
+    // User should stay "clicked into" the input pad
+    // and play entirely with the keyboard    
     
-    display.init();
-    audio.init(machine.getOnAudioComplete());
-    compiler.compile();
-    // XXX add function to check if compile is valid
-    // XXX verify that error handling works with accessibility
+      // If the inputVariable is not set, this must
+    // be immediately following a submit
+    if (!this._inputVariable) {
+      inputTextElement.focus();
+    }
+  });
 
-    // There was something output. Display it now
-    // in case it was an error and go() is going to crash
-    if (display.hasPendingUpdates())
-      display.sendUpdates();
-    machine.go();
-  }
+  addEventListener(inputFormElement,"submit",handleInput);
 
-  // If we're ready, run the main function
-  if (document.readyState == "complete") {
-    main();
-
-  // If we're not ready, queue this up to run when we are
-  } else {
-    addEventListener(window,"load",main);
-  }
+  display.init();
+  audio.init(machine.getOnAudioComplete());
+  compiler.compile();
+  // XXX add function to check if compile is valid
+  // XXX verify that error handling works with accessibility
+  
+  // There was something output. Display it now
+  // in case it was an error and go() is going to crash
+  if (display.hasPendingUpdates())
+    display.sendUpdates();
+  machine.go();
+}
 
 /***********************************************************************
-  END main function
+  END entry point
 ***********************************************************************/
+
+// Sample initialization code
+(function(){
+  function main() {
+    initPumpkinSpice(
+      document.getElementById("inpad"),
+      document.getElementById("return"),
+      document.getElementById("inpadform"),
+      document.getElementById("cursor"),
+      document.getElementById("quiet"),
+      document.getElementById("history"),
+      document.getElementById("latest"),
+      document.getElementById("display")
+    );
+  }
+  
+  // If we're ready, run the main function
+  // If we're not ready, queue it up to run when we are
+  if (document.readyState == "complete") {
+    main();
+  } else {
+    window.addEventListener("load",main);
+  }
 })();
