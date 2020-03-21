@@ -4,149 +4,21 @@
 
 // Everything is wrapped inside a function to protect namespaces
 (function(){
-
 /***********************************************************************
   BEGIN LEGACY COMPATIBILITY
 ***********************************************************************/
 
-  // Legacy Arracy.slice
-  // Based on
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice
-/**
- * Shim for "fixing" IE's lack of support (IE < 9) for applying slice
- * on host objects like NamedNodeMap, NodeList, and HTMLCollection
- * (technically, since host objects have been implementation-dependent,
- * at least before ES2015, IE hasn't needed to work this way).
- * Also works on strings, fixes IE < 9 to allow an explicit undefined
- * for the 2nd argument (as in Firefox), and prevents errors when
- * called on other DOM objects.
- */
-(function () {
-  'use strict';
-  var _slice = Array.prototype.slice;
-  try {
-    // Can't be used with DOM elements in IE < 9
-    _slice.call(document.all);
-  } catch (e) { // Fails in IE < 9
-    // This will work for genuine arrays, array-like objects, 
-    // NamedNodeMap (attributes, entities, notations),
-    // NodeList (e.g., getElementsByTagName), HTMLCollection (e.g., childNodes),
-    // and will not fail on other DOM objects (as do DOM elements in IE < 9)
-    Array.prototype.slice = function(begin, end) {
-      // IE < 9 gets unhappy with an undefined end argument
-      end = (typeof end !== 'undefined') ? Number(end) : this.length;
+  // This code strives to be compatible with just about every browser
+  // except for older versions of Internet Explorer.
 
-      // For native Array objects, we use the native slice function
-      if (Object.prototype.toString.call(this) === '[object Array]'){
-        return _slice.call(this, begin, end); 
-      }
+  // It should run on ancient browsers with smaller footprints than
+  // modern browsers, especially old WebKit and Gecko based browsers,
+  // so it has a chance of running on very small machines.
+  
+  // If it all possible, compatibility should be acheived by using the APIs
+  // in a compatible way, rather than polyfills.
 
-      // For array like object we handle it ourselves.
-      var i, cloned = [],
-        size, len = this.length;
-
-      // Handle negative value for "begin"
-      begin = Number(begin);
-      if (begin < 0)
-        begin = 0;
-
-      // Handle negative value for "end"
-      var upTo = (typeof end == 'number') ? Math.min(end, len) : len;
-      if (end < 0) {
-        upTo = len + end;
-      }
-
-      // Actual expected size of the slice
-      size = upTo - begin;
-
-      if (size > 0) {
-        cloned = new Array(size);
-        if (this.charAt) {
-          for (i = 0; i < size; i++) {
-            cloned[i] = this.charAt(begin + i);
-          }
-        } else {
-          for (i = 0; i < size; i++) {
-            cloned[i] = this[begin + i];
-          }
-        }
-      }
-
-      return cloned;
-    };
-  }
-}());
-
-  // Legacy Array.indexOf()
-  // Based on
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf
-  // There's a lot of weirdness here that I'm not sure I completely understand -NN
-if (!Array.prototype.indexOf)  Array.prototype.indexOf = (function(o, max, min){
-  "use strict";
-  return function indexOf(member, fromIndex) {
-    if(this===null||this===undefined)throw TypeError("Array.prototype.indexOf called on null or undefined");    
-      var that = o(this), Len = that.length >>> 0, i = min(fromIndex | 0, Len);
-      if (i < 0) i = max(0, Len+i); else if (i >= Len) return -1;
-
-      if(member===void 0){
-        for(; i !== Len; ++i)
-          if(that[i]===void 0 && i in that) return i; // undefined
-      } else if(member !== member) {
-        for(; i !== Len; ++i)
-          if(that[i] !== that[i]) return i; // NaN
-      } else
-        for(; i !== Len; ++i)
-          if(that[i] === member) return i; // all else
-      
-      return -1; // if the value was not found, then return -1
-    };
-  })(Object, Math.max, Math.min);
-
-
-  // Legacy addEventListener
-  //
-  // Adding "polyfill" versions of these functions to all of the
-  // prototypes of all of the objects where it should be available for all the
-  // degenerate browsers out there is tricky.
-  // Just make a plain function
-  function addEventListener(obj,on,fn) {
-    if (obj.addEventListener !== undefined) {
-      obj.addEventListener(on,fn);
-    } else {
-      var f = function(e){
-        if (e) {
-          if (!e.preventDefault)
-            e.preventDefault = function(){e.returnValue = false};
-          if (!e.stopPropagation)
-            e.stopPropagation = function(){e.cancelBubble = true};
-        }
-        fn.call(obj, e);
-      };
-      if (!obj.listeners) {
-        obj.listeners = [];
-      }
-      obj.listeners[obj.listeners.length]={orig:fn,actual:f};
-      return obj.attachEvent('on' + on, f);
-    }
-  }
-  function removeEventListener(obj,on,fn) {
-    if (obj.removeEventListener !== undefined) {
-      obj.removeEventListener(on,fn);
-    } else {
-      if (obj.listeners) {
-        for (var i=0;i<obj.listeners.length;i++) {
-          if (obj.listeners[i].orig === fn) {
-            obj.detachEvent('on' + on, obj.listeners[i].actual);
-            obj.listeners.splice(i,1);
-            break;
-          }
-        }
-      }
-
-    }
-  }
-
-  // Legacy Math.trunc for IE
+  // Legacy Math.trunc for IE 11
   if (!Math.trunc) {
     Math.trunc = function(v) {
       v = +v;
@@ -218,23 +90,21 @@ var disp;
   END Global Variables
 ***********************************************************************/
 
-  // This is outside of any class because it's exposed to HTML
-  //
-  // This runs on form submit or when an menu option is clicked,
-  // grabbing and processing the text in the inpad
-  function handleInput(e) {
-    audio.go();
-    if (machine.isWaitingForInput()) {
-      machine.acceptInput(inpad.value);
-      inpad.value="";
-    }
-    if (e)                // If e is defined, it has preventDefault,
-      e.preventDefault(); // thanks to custom addEventListener
+/***********************************************************************
+  BEGIN Global Functions
+***********************************************************************/
 
-    // Scroll to the input
-    display.scroll();
+  // Optimize these calls by wrapping them in a function
+  //
+  // Maybe all API calls should be wrapped this way?
+  function addEventListener(obj,on,fn) {
+    obj.addEventListener(on,fn);
+  }
+  function removeEventListener(obj,on,fn) {
+    obj.removeEventListener(on,fn);
   }
 
+  // Utility function to convert a color number to an RGB triplet
   function intToColor(c) {
     if (c == 0) { // Black
       return [0,0,0];
@@ -276,6 +146,22 @@ var disp;
     }
   };  
 
+  // This is outside of any class because it's exposed to HTML
+  //
+  // This runs on form submit or when an menu option is clicked,
+  // grabbing and processing the text in the inpad
+  function handleInput(e) {
+    audio.go();
+    if (machine.isWaitingForInput()) {
+      machine.acceptInput(inpad.value);
+      inpad.value="";
+    }
+    if (e)
+      e.preventDefault();
+
+    // Scroll to the input
+    display.scroll();
+  }
 
   // The "choose" function for use in HTML
   //
@@ -285,7 +171,11 @@ var disp;
     inpad.value = t;
     handleInput(null);
   };
-  
+
+/***********************************************************************
+  END Global Functions
+***********************************************************************/
+
 /***********************************************************************
   BEGIN Display object
 ***********************************************************************/
@@ -463,6 +353,8 @@ var disp;
 	// create the choices
 	for (var n=0;n<choiceText.length;n++){
           var choiceSpan=document.createElement("span");
+	  // XXX Add a unique identifier to each menuitem, in case there are multiple
+	  //     instances in the same browser
           choiceSpan.setAttribute("id","menuitem"+n);
           choiceSpan.setAttribute("class","menuitem");
           var parts = choiceText[n]().split("("+choiceKeys[n]+")");
@@ -824,19 +716,6 @@ music and MIDI files.
       // addEventListener(inpad,"input",function(e) {
       //   this._vars[this._inputVariable] = inpad.value;
       // });
-
-      var ret = document.getElementById("return");
-      addEventListener(ret,"focus",function(e) {
-        // IE changes focus to the submit button on submit
-        // User should stay "clicked into" the input pad
-        // and play entirely with the keyboard    
-
-        // If the inputVariable is not set, this must
-        // be immediately following a submit
-        if (!this._inputVariable) {
-          inpad.focus();
-        }
-      });
 
       // Don't allow machine to be re-init If we want to allow
       // re-init, we need to add code to clear everything and avoid
@@ -3532,6 +3411,18 @@ music and MIDI files.
     latest = document.getElementById("latest");
     disp = document.getElementById("display");
 
+    addEventListener(document.getElementById("return"),"focus",function(e) {
+      // IE changes focus to the submit button on submit
+      // User should stay "clicked into" the input pad
+      // and play entirely with the keyboard    
+      
+      // If the inputVariable is not set, this must
+      // be immediately following a submit
+      if (!this._inputVariable) {
+        inpad.focus();
+      }
+    });
+    
     display.init();
     audio.init(machine.getOnAudioComplete());
     compiler.compile();
