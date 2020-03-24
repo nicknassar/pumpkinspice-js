@@ -138,23 +138,6 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
     }
   };  
 
-  // XXX Maybe this should be rolled up into the codegen class?
-  //
-  // This runs on form submit or when an menu option is clicked,
-  // grabbing and processing the text in the inputTextElement
-  function handleInput(e) {
-    globalAudio.go();
-    if (globalMachine.isWaitingForInput()) {
-      globalMachine.acceptInput(inputTextElementParam.value);
-      inputTextElementParam.value="";
-    }
-    if (e)
-      e.preventDefault();
-
-    // Scroll to the input
-    globalDisplay.scroll();
-  }
-
 /***********************************************************************
   END Global Functions
 ***********************************************************************/
@@ -173,6 +156,8 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
                                // span tag with color
     var bgColor = [0,0,0];
 
+    var handleInputEvent = function(e){};
+
     function queueUpdate(node) {
       pendingUpdates.push(node);
     };
@@ -183,7 +168,7 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
     // the form
     function choose(t) {
       inputTextElement.value = t;
-      handleInput(null);
+      handleInputEvent(null);
     };
 
     function blink() {
@@ -209,9 +194,17 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
     });
 
     // Make submitting the form handle the input
-    addEventListener(inputFormElement,"submit",handleInput);
+    addEventListener(inputFormElement,"submit",function(e){handleInputEvent(e);});
 
     return {
+      getInputValue: function() {
+	var val = inputTextElement.value;
+	inputTextElement.value = "";
+	return val;
+      },
+      setInputHandler: function(handler) {
+	handleInputEvent = handler;
+      },
       hasPendingUpdates: function () {
 	return pendingUpdates.length > 0;
       },
@@ -438,27 +431,28 @@ music and MIDI files.
   var playing = false;
   var audioCtx = null;
   var mainGain = null;
-  var onDone;
+  var onDone = function(){};
 
+  // Init audio
+  (function() {
+    var AudioContext= window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) {
+      display.print("PC SPEAKER ERROR! AUDIO DISABLED\n\n");
+      return;
+    }
+    audioCtx = new AudioContext();
+    
+    mainGain = audioCtx.createGain();
+    mainGain.gain.setValueAtTime(0.5,audioCtx.currentTime);
+    mainGain.connect(audioCtx.destination);
+  })();
+ 
   return {
     // Takes in a function to be called when done playing
     // all of the music in the queue
-    init: function(onDoneParam) {
+    setOnAudioComplete: function(onDoneParam) {
       onDone = onDoneParam;
-      var AudioContext= window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) {
-	display.print("PC SPEAKER ERROR! AUDIO DISABLED\n\n");
-	return;
-      }
-      audioCtx = new AudioContext();
-      
-      mainGain = audioCtx.createGain();
-      mainGain.gain.setValueAtTime(0.5,audioCtx.currentTime);
-      mainGain.connect(audioCtx.destination);
-
     },
-
-
     play: function(abc) {
       // XXX Add support for ABC configuration so the defaults
       //     can be changed
@@ -733,7 +727,7 @@ music and MIDI files.
       this._vars[this._inputVariable] = value;
       this._inputVariable = null;
       var me = this;
-      window.setTimeout(function(){me.go();},0);
+      window.setTimeout(function(){me._go();},0);
       display.print("\n");
       display.clearMenu();
     },
@@ -744,11 +738,19 @@ music and MIDI files.
 	if (me._waitFlags & 1) { /** @suppress {uselessCode} */
 	  // clear all the wait flags
 	  me._waitFlags = 0;
-	  me.go();
+	  me._go();
 	}
       };
     },
-    go: function() {
+     go: function() {
+       // There was something output. Display it now
+      // in case it was an error and go() is going to crash
+      if (display.hasPendingUpdates())
+	display.sendUpdates();
+
+       this._go();
+     },
+    _go: function() {
       // XXX Trap division by 0, Array Out of Bounds when we have arrays
 
       // Handle any function returns (signaled by falling off the end of the code)
@@ -780,11 +782,11 @@ music and MIDI files.
 	  
 	} else if (this._interruptDelay === 0) {
           var me = this;
-          window.setTimeout(function() {me.go();},0);
+          window.setTimeout(function() {me._go();},0);
           display.sendQuietBlockElementUpdates();
         } else {
           var me = this;
-          window.setTimeout(function() {me.go();},this._interruptDelay);
+          window.setTimeout(function() {me._go();},this._interruptDelay);
                 display.sendQuietBlockElementUpdates();
         }
         this._interruptDelay = null;
@@ -813,7 +815,25 @@ music and MIDI files.
 
   var globalCodegen = function(display, audio, machine) {
 
-    audio.init(machine.getOnAudioComplete());
+    // BEGIN Initialize integration between components
+    
+    audio.setOnAudioComplete(machine.getOnAudioComplete());
+
+    // This runs on form submit or when an menu option is clicked,
+    // grabbing and processing the text in the inputTextElement
+    display.setInputHandler(function(e) {
+      audio.go();
+      if (machine.isWaitingForInput()) {
+	machine.acceptInput(display.getInputValue());
+      }
+      if (e)
+	e.preventDefault();
+      
+      // Scroll to the input
+      display.scroll();
+    });
+
+    // END Initialize integration between components
     
     // Private variables
     var loopStack;  // Keeps track of nested loops
@@ -3390,10 +3410,6 @@ music and MIDI files.
   // XXX add function to check if compile is valid
   // XXX verify that error handling works with accessibility
   
-  // There was something output. Display it now
-  // in case it was an error and go() is going to crash
-  if (globalDisplay.hasPendingUpdates())
-    globalDisplay.sendUpdates();
   globalMachine.go();
 }
 
