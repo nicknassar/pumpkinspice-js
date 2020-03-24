@@ -152,7 +152,7 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
       e.preventDefault();
 
     // Scroll to the input
-    display.scroll();
+    globalDisplay.scroll();
   }
 
   // The "choose" function for use in HTML
@@ -171,7 +171,7 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
 /***********************************************************************
   BEGIN Display object
 ***********************************************************************/
-  var display = function() {
+  var globalDisplay = function() {
     // Keep track of functions listening for menu clicks
     var menuListeners = [];
     
@@ -186,20 +186,18 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
       pendingUpdates.push(node);
     };
 
+    function blink() {
+      if (cursorElement.style.visibility === "visible") {
+        cursorElement.style.visibility="hidden";
+      } else {
+        cursorElement.style.visibility="visible";
+      }
+    }
+    window.setInterval(blink,200);
+
     return {
       hasPendingUpdates: function () {
 	return pendingUpdates.length > 0;
-      },
-      init: function() {
-	// make the cursor blinky
-	function blink() {
-          if (cursorElement.style.visibility === "visible") {
-            cursorElement.style.visibility="hidden";
-          } else {
-          cursorElement.style.visibility="visible";
-          }
-	}
-	window.setInterval(blink,200);
       },
       sendQuietBlockElementUpdates: function() {
 	var spanNode=document.createElement("span");
@@ -208,7 +206,7 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
 	}
 	pendingUpdates = [];
 	quietBlockElement.appendChild(spanNode);
-	display.scroll();
+	this.scroll();
       },
       sendUpdates: function() {
 	// Move old stuff over to the historyBlockElement
@@ -235,7 +233,7 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
 	
 	latestBlockElement.appendChild(spanNode);
 	
-	display.scroll();
+	this.scroll();
       },
       clear: function() {
 	displayBlockElement.setAttribute("style","background-color:rgb("+bgColor[0]+","+bgColor[1]+","+bgColor[2]+")");
@@ -643,7 +641,7 @@ music and MIDI files.
       // this.go = function(){};
     }
   };  
-}(display);
+}(globalDisplay);
   
 /***********************************************************************
   END audio class
@@ -795,7 +793,7 @@ music and MIDI files.
 
     }
   };
-}(display);
+}(globalDisplay);
 
 /***********************************************************************
   END Machine class
@@ -2574,7 +2572,7 @@ music and MIDI files.
       };
   }()
 };
-}(display, machine);
+}(globalDisplay, machine);
 
 /***********************************************************************
   END Codegen class
@@ -3370,7 +3368,7 @@ music and MIDI files.
       }
     }
   };
-}(display,codegen);
+}(globalDisplay,codegen);
 
 /***********************************************************************
   END Compiler class
@@ -3396,7 +3394,6 @@ music and MIDI files.
   // Make submitting the form handle the input
   addEventListener(inputFormElement,"submit",handleInput);
 
-  display.init();
   audio.init(machine.getOnAudioComplete());
   compiler.compile();
   // XXX add function to check if compile is valid
@@ -3404,8 +3401,8 @@ music and MIDI files.
   
   // There was something output. Display it now
   // in case it was an error and go() is going to crash
-  if (display.hasPendingUpdates())
-    display.sendUpdates();
+  if (globalDisplay.hasPendingUpdates())
+    globalDisplay.sendUpdates();
   machine.go();
 }
 
