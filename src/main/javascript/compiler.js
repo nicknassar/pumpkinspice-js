@@ -144,8 +144,8 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
   // grabbing and processing the text in the inputTextElement
   function handleInput(e) {
     globalAudio.go();
-    if (machine.isWaitingForInput()) {
-      machine.acceptInput(inputTextElement.value);
+    if (globalMachine.isWaitingForInput()) {
+      globalMachine.acceptInput(inputTextElement.value);
       inputTextElement.value="";
     }
     if (e)
@@ -653,7 +653,7 @@ music and MIDI files.
 
   // XXX Error handling?
   
-  var machine = function(display) {
+  var globalMachine = function(display) {
    return {
     /*
       There's a lot of weird stuff here to avoid creating an
@@ -805,7 +805,7 @@ music and MIDI files.
 
   //     Maybe pass in an error handler?
 
-  var codegen = function(display, audio, machine) {
+  var globalCodegen = function(display, audio, machine) {
 
     audio.init(machine.getOnAudioComplete());
     
@@ -2574,7 +2574,7 @@ music and MIDI files.
       };
   }()
 };
-}(globalDisplay, globalAudio, machine);
+}(globalDisplay, globalAudio, globalMachine);
 
 /***********************************************************************
   END Codegen class
@@ -3370,7 +3370,7 @@ music and MIDI files.
       }
     }
   };
-}(globalDisplay,codegen);
+}(globalDisplay,globalCodegen);
 
 /***********************************************************************
   END Compiler class
@@ -3404,7 +3404,7 @@ music and MIDI files.
   // in case it was an error and go() is going to crash
   if (globalDisplay.hasPendingUpdates())
     globalDisplay.sendUpdates();
-  machine.go();
+  globalMachine.go();
 }
 
 /***********************************************************************
