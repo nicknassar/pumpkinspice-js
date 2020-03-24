@@ -13,7 +13,7 @@
 // latestBlockElement - text which should be read by a screen reader
 // displayBlockElement - scrollable area where text is displayed
 
-function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inputFormElement, cursorElement, quietBlockElement, historyBlockElement, latestBlockElement, displayBlockElement){
+function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitElementParam, inputFormElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam){
 /***********************************************************************
   BEGIN LEGACY COMPATIBILITY
 ***********************************************************************/
@@ -138,15 +138,15 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
     }
   };  
 
-  // This is outside of any class because it's exposed to HTML
+  // XXX Maybe this should be rolled up into the codegen class?
   //
   // This runs on form submit or when an menu option is clicked,
   // grabbing and processing the text in the inputTextElement
   function handleInput(e) {
     globalAudio.go();
     if (globalMachine.isWaitingForInput()) {
-      globalMachine.acceptInput(inputTextElement.value);
-      inputTextElement.value="";
+      globalMachine.acceptInput(inputTextElementParam.value);
+      inputTextElementParam.value="";
     }
     if (e)
       e.preventDefault();
@@ -155,15 +155,6 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
     globalDisplay.scroll();
   }
 
-  // The "choose" function for use in HTML
-  //
-  // Calling this is the equivalent of typing t and submitting
-  // the form
-  function choose(t) {
-    inputTextElement.value = t;
-    handleInput(null);
-  };
-
 /***********************************************************************
   END Global Functions
 ***********************************************************************/
@@ -171,7 +162,7 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
 /***********************************************************************
   BEGIN Display object
 ***********************************************************************/
-  var globalDisplay = function() {
+  var globalDisplay = function(inputFormElement, inputTextElement, inputSubmitElement, cursorElement, quietBlockElement, historyBlockElement, latestBlockElement, displayBlockElement) {
     // Keep track of functions listening for menu clicks
     var menuListeners = [];
     
@@ -186,6 +177,15 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
       pendingUpdates.push(node);
     };
 
+    // The "choose" function for use in HTML
+    //
+    // Calling this is the equivalent of typing t and submitting
+    // the form
+    function choose(t) {
+      inputTextElement.value = t;
+      handleInput(null);
+    };
+
     function blink() {
       if (cursorElement.style.visibility === "visible") {
         cursorElement.style.visibility="hidden";
@@ -194,6 +194,22 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
       }
     }
     window.setInterval(blink,200);
+
+    // On desktop, the user should be able to start typing immediately
+    // On mobile, this doesn't bring up the keybard, which is the behavior we want.
+    inputTextElement.focus();
+    
+    // Legacy support for IE
+    addEventListener(inputSubmitElement,"focus",function(e) {
+      // IE changes focus to the submit button on submit
+      // User should stay "clicked into" the input pad
+      // and play entirely with the keyboard    
+      
+      inputTextElement.focus();
+    });
+
+    // Make submitting the form handle the input
+    addEventListener(inputFormElement,"submit",handleInput);
 
     return {
       hasPendingUpdates: function () {
@@ -399,7 +415,7 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
 	}      
       }
     };
-  }(); 
+  }(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam); 
 
 /***********************************************************************
   END Display class
@@ -704,20 +720,10 @@ music and MIDI files.
       // register for return values	
       // this._ret = undefined;
 	
-      // Disable this while single key input is disabled
-      
-      // addEventListener(inputTextElement,"input",function(e) {
-      //   this._vars[this._inputVariable] = inputTextElement.value;
-      // });
-
       // Don't allow machine to be re-init If we want to allow
       // re-init, we need to add code to clear everything and avoid
       // re-adding listeners, etc.
       this.init = undefined;
-
-      // On desktop, the user should be able to start typing immediately
-      // On mobile, this doesn't bring up the keybard, which is the behavior we want.
-      inputTextElement.focus();
     },
     isWaitingForInput: function() {
       return !!this._inputVariable;
@@ -793,7 +799,7 @@ music and MIDI files.
 
     }
   };
-}(globalDisplay);
+  }(globalDisplay);
 
 /***********************************************************************
   END Machine class
@@ -3352,7 +3358,7 @@ music and MIDI files.
       }
       return true;
     },
-    compile: function() {
+    compile: function(programText) {
       codegen.init();
       for (pass = 1;pass <= 2;pass++) {
         started = false;
@@ -3380,23 +3386,7 @@ music and MIDI files.
   BEGIN entry point
 ***********************************************************************/
 
-  // Legacy support for IE
-  addEventListener(inputSubmitElement,"focus",function(e) {
-    // IE changes focus to the submit button on submit
-    // User should stay "clicked into" the input pad
-    // and play entirely with the keyboard    
-    
-      // If the inputVariable is not set, this must
-    // be immediately following a submit
-    if (!this._inputVariable) {
-      inputTextElement.focus();
-    }
-  });
-
-  // Make submitting the form handle the input
-  addEventListener(inputFormElement,"submit",handleInput);
-
-  compiler.compile();
+  compiler.compile(programTextParam);
   // XXX add function to check if compile is valid
   // XXX verify that error handling works with accessibility
   
