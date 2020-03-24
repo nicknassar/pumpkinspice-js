@@ -143,7 +143,7 @@ function initPumpkinSpice(programText, inputTextElement, inputSubmitElement, inp
   // This runs on form submit or when an menu option is clicked,
   // grabbing and processing the text in the inputTextElement
   function handleInput(e) {
-    audio.go();
+    globalAudio.go();
     if (machine.isWaitingForInput()) {
       machine.acceptInput(inputTextElement.value);
       inputTextElement.value="";
@@ -416,7 +416,7 @@ for representation of Western music. It has tools for generating sheet
 music and MIDI files.
 
 */
-  var audio = function(display) {
+  var globalAudio = function(display) {
   // private
   var queue = [];
   var playing = false;
@@ -805,8 +805,10 @@ music and MIDI files.
 
   //     Maybe pass in an error handler?
 
-  var codegen = function(display, machine) {
+  var codegen = function(display, audio, machine) {
 
+    audio.init(machine.getOnAudioComplete());
+    
     // Private variables
     var loopStack;  // Keeps track of nested loops
 
@@ -2572,7 +2574,7 @@ music and MIDI files.
       };
   }()
 };
-}(globalDisplay, machine);
+}(globalDisplay, globalAudio, machine);
 
 /***********************************************************************
   END Codegen class
@@ -3394,7 +3396,6 @@ music and MIDI files.
   // Make submitting the form handle the input
   addEventListener(inputFormElement,"submit",handleInput);
 
-  audio.init(machine.getOnAudioComplete());
   compiler.compile();
   // XXX add function to check if compile is valid
   // XXX verify that error handling works with accessibility
