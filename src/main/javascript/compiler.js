@@ -415,9 +415,27 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
 ***********************************************************************/
 
 /***********************************************************************
-  BEGIN audio class
+  BEGIN Logger class
 ***********************************************************************/
 
+  var globalLogger = (function(display) {
+  return {
+    error: function(message) {
+      if (window.console && window.console.error)
+	window.console.error(message);
+      display.print(message);
+    }
+  }
+  })globalDisplay);
+
+/***********************************************************************
+  END Logger class
+***********************************************************************/
+
+  
+/***********************************************************************
+  BEGIN audio class
+***********************************************************************/
 /*
 
 Pumpkin Spice implements music in ABC notation, which is a text format
@@ -425,7 +443,7 @@ for representation of Western music. It has tools for generating sheet
 music and MIDI files.
 
 */
-  var globalAudio = function(display) {
+  var globalAudio = function(logger) {
   // private
   var queue = [];
   var playing = false;
@@ -437,7 +455,7 @@ music and MIDI files.
   (function() {
     var AudioContext= window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) {
-      display.print("PC SPEAKER ERROR! AUDIO DISABLED\n\n");
+      logger.error("PC SPEAKER ERROR! AUDIO DISABLED\n\n");
       return;
     }
     audioCtx = new AudioContext();
@@ -651,7 +669,7 @@ music and MIDI files.
       // this.go = function(){};
     }
   };  
-}(globalDisplay);
+}(globalLogger);
   
 /***********************************************************************
   END audio class
@@ -663,7 +681,7 @@ music and MIDI files.
 
   // XXX Error handling?
   
-  var globalMachine = function(display) {
+  var globalMachine = function(display, logger) {
    return {
     /*
       There's a lot of weird stuff here to avoid creating an
@@ -791,8 +809,8 @@ music and MIDI files.
         }
         this._interruptDelay = null;
       } else if (this._callstack.length>0) {
-        display.print("STACK OVERFLOW\nARE YOU TRYING SOME COMPUTER SCIENCE OR SOMETHING?\n");
-              display.sendUpdates();
+        logger.error("STACK OVERFLOW\nARE YOU TRYING SOME COMPUTER SCIENCE OR SOMETHING?\n");
+        display.sendUpdates();
       }
 
       // The program ended
@@ -801,7 +819,7 @@ music and MIDI files.
 
     }
   };
-  }(globalDisplay);
+  }(globalDisplay, globalLogger);
 
 /***********************************************************************
   END Machine class
@@ -813,7 +831,7 @@ music and MIDI files.
 
   //     Maybe pass in an error handler?
 
-  var globalCodegen = function(display, audio, machine) {
+  var globalCodegen = function(display, audio, machine, logger) {
 
     // BEGIN Initialize integration between components
     
@@ -924,7 +942,7 @@ music and MIDI files.
       for (var i=0;i<calledSubs.length;i++) {
         var name=calledSubs[i];
         if (!code[name]) {
-          display.print("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
+          logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
           return false;
         }
       }
@@ -982,7 +1000,7 @@ music and MIDI files.
       function assignTypes(variables,type) {
         // type must be resolved before this is called
         if (type !== STRING && type !== NUMERIC) {
-          display.print("TYPE SYSTEM ERROR\n");
+          logger.error("TYPE SYSTEM ERROR\n");
           return false;
         }
         var sameTypeVars = [];
@@ -996,7 +1014,7 @@ music and MIDI files.
             varTypes[variables[i]] = type;
           } else if (varTypes[variables[i]] !== undefined &&
               varTypes[variables[i]] !== type) {
-            display.print("TYPE MISMATCH\n");
+            logger.error("TYPE MISMATCH\n");
             return false;
           } else {
             varTypes[variables[i]] = type;
@@ -1018,7 +1036,7 @@ music and MIDI files.
           if (varTypes[variables[i]] &&
               (varTypes[variables[i]]===STRING ||
                varTypes[variables[i]]===NUMERIC)) {
-            display.print("UNASSIGNED TYPE NOT RESOLVED CORRECTLY\n");
+            logger.error("UNASSIGNED TYPE NOT RESOLVED CORRECTLY\n");
             throw "typeassignerror"; // We should never get here
           }
           if (varTypes[variables[i]]) {
@@ -1121,7 +1139,7 @@ music and MIDI files.
             // if it's not an exact match, check it out
             subExp = genTypesForExpressionPair(type,subExp)
             if (!subExp) {
-              display.print("TYPE MISMATCH.");
+              logger.error("TYPE MISMATCH.");
               return null;
             }
           }
@@ -1186,19 +1204,19 @@ music and MIDI files.
             subArgCount[name] = argExps.length;
           }
           if (subArgCount[name] !== argExps.length) {
-            display.print("SUBROUTINE CALL "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]+"\n");
+            logger.error("SUBROUTINE CALL "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]+"\n");
             return null;
           }
           for (var i=0;i<argExps.length;i++) {
             if (argExps[i] === null) {
-              display.print("Invalid argument to SUBROUTINE CALL "+name+"\n");
+              logger.error("Invalid argument to SUBROUTINE CALL "+name+"\n");
               return null;
             }
             var varName = argNameByArity(name,i);
             if (varTypes[varName]) {
               var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
               if (!result) {
-                display.print("Invalid argument type mismatch in CALL "+name+"\n");
+                logger.error("Invalid argument type mismatch in CALL "+name+"\n");
                 return null;
               } else {
                 varTypes[varName] = result;
@@ -1235,13 +1253,13 @@ music and MIDI files.
       printExp: function(exp,newline,pause,num) {
         var result = genTypesForExpressionPair(exp,STRING);
         if (!result) {
-          display.print("Type mismatch for PRINT on line "+num+"\n");
+          logger.error("Type mismatch for PRINT on line "+num+"\n");
         }
         return result;
       },
       ifStatement: function(boolExp,num){
         if (boolExp === null) {
-          display.print("Invalid comparison for IF on line "+num+"\n");
+          logger.error("Invalid comparison for IF on line "+num+"\n");
           return false;
         }
         return true;
@@ -1258,7 +1276,7 @@ music and MIDI files.
       },
       whileStatement: function(exp,num){
         if (exp === null) {
-          display.print("Type mismath for WHILE on line "+num+"\n");
+          logger.error("Type mismath for WHILE on line "+num+"\n");
           return false;
         }
         return true;
@@ -1275,7 +1293,7 @@ music and MIDI files.
         // XXX WHEN VARS ARE DEFINED, CHECK THAT SUBROUTINE HASN'T BEEN DEFINED
         // If there's an existing subArgNames entry, this had already been defined!
         if (subArgNames[name] !== undefined) {
-          display.print("SUBROUTINE "+name+" REDEFINED on line "+num+"\n");
+          logger.error("SUBROUTINE "+name+" REDEFINED on line "+num+"\n");
           return false;
         } else {
           // This is the current sub now.
@@ -1289,7 +1307,7 @@ music and MIDI files.
             subArgCount[name] = args.length;
           } else { // We've seen this called. Check that the param count matches.
             if (subArgCount[name] !== args.length) {
-              display.print("SUBROUTINE "+name+" HAS "+args.length+" args but was called with "+subArgCount[name]+" on line "+num+"\n");
+              logger.error("SUBROUTINE "+name+" HAS "+args.length+" args but was called with "+subArgCount[name]+" on line "+num+"\n");
               return false;
 
             }
@@ -1303,19 +1321,19 @@ music and MIDI files.
           calledSubs[calledSubs.length] = name;
         }
         if (subArgCount[name] !== argExps.length) {
-          display.print("SUBROUTINE "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]+" on line "+num+"\n");
+          logger.error("SUBROUTINE "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]+" on line "+num+"\n");
           return false;
         }
         for (var i=0;i<argExps.length;i++) {
           if (argExps[i] === null) {
-            display.print("Invalid argument to "+name+" on line "+num+"\n");
+            logger.error("Invalid argument to "+name+" on line "+num+"\n");
             return false;
           }
           var varName = argNameByArity(name,i);
           if (varTypes[varName]) {
             var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
             if (!result) {
-              display.print("Invalid argument type mismatch in "+name+" on line "+num+"\n");
+              logger.error("Invalid argument type mismatch in "+name+" on line "+num+"\n");
               return false;
             } else {
               varTypes[varName] = result;
@@ -1332,19 +1350,19 @@ music and MIDI files.
       },
       returnStatement: function(exp, num) {
         if (exp === null) {
-          display.print("INVALID RETURN EXPRESSION ON LINE "+num+"\n");
+          logger.error("INVALID RETURN EXPRESSION ON LINE "+num+"\n");
           return false;
 
         }
         if (currentSub === "!") {
-          display.print("RETURN OUTSIDE OF SUBROUTINE ON LINE "+num+"\n");
+          logger.error("RETURN OUTSIDE OF SUBROUTINE ON LINE "+num+"\n");
           return false;
         }
         var retValName=returnValueName(currentSub);
         if (varTypes[retValName]) {
           var result = genTypesForExpressionPair(exp,varTypes[retValName]);
           if (!result) {
-            display.print("TYPE MISMATCH IN RETURN ON "+num+"\n");
+            logger.error("TYPE MISMATCH IN RETURN ON "+num+"\n");
             return false;
           } else {
             varTypes[retValName] = result;
@@ -1366,7 +1384,7 @@ music and MIDI files.
       beginAsk: function(promptExp,num) {
         var result = genTypesForExpressionPair(promptExp,STRING);
         if (result === null) {
-          display.print("Type mismatch for ASK on line "+num+"\n");
+          logger.error("Type mismatch for ASK on line "+num+"\n");
           return false;
         } else {
           return true;
@@ -1396,7 +1414,7 @@ music and MIDI files.
       beginMenu: function(promptExp,num) {
         var result = genTypesForExpressionPair(promptExp,STRING);
         if (result === null) {
-          display.print("Type mismatch for BEGIN MENU on line "+num+"\n");
+          logger.error("Type mismatch for BEGIN MENU on line "+num+"\n");
           return false;
         } else {
           return true;
@@ -1420,7 +1438,7 @@ music and MIDI files.
       menuChoice: function(charExp,textExp,num) {
         var result = genTypesForExpressionPair(textExp,STRING);
         if (result === null) {
-          display.print("Type mismatch for MENU CHOICE on line "+num+"\n");
+          logger.error("Type mismatch for MENU CHOICE on line "+num+"\n");
           return false;
         } else {
           return true;
@@ -1428,7 +1446,7 @@ music and MIDI files.
       },
       menuHideIf: function(boolExp,num) {
         if (boolExp === null) {
-          display.print("Type mismatch for HIDE IF on line "+num+"\n");
+          logger.error("Type mismatch for HIDE IF on line "+num+"\n");
           return false;
         } else {
           return true;
@@ -1437,7 +1455,7 @@ music and MIDI files.
       color: function(valueExp,num) {
         var result = genTypesForExpressionPair(valueExp,NUMERIC);
         if (result === null) {
-          display.print("Type mismatch for COLOR on line "+num+"\n");
+          logger.error("Type mismatch for COLOR on line "+num+"\n");
           return false;
         } else {
           return true;
@@ -1446,7 +1464,7 @@ music and MIDI files.
       bgColor: function(valueExp,num) {
         var result = genTypesForExpressionPair(valueExp,NUMERIC);
         if (result === null) {
-          display.print("Type mismatch for BGCOLOR on line "+num+"\n");
+          logger.error("Type mismatch for BGCOLOR on line "+num+"\n");
           return false;
         } else {
           return true;
@@ -1455,7 +1473,7 @@ music and MIDI files.
       sleep: function(valueExp,num) {
         var result = genTypesForExpressionPair(valueExp,NUMERIC);
         if (result === null) {
-          display.print("Type mismatch for SLEEP on line "+num+"\n");
+          logger.error("Type mismatch for SLEEP on line "+num+"\n");
           return false;
         } else {
           return true;
@@ -1468,7 +1486,7 @@ music and MIDI files.
       play: function(valueExp,num) {
 	var result = genTypesForExpressionPair(valueExp,STRING);
 	if (result === null) {
-	  display.print("Type mismatch for PLAY on line "+num+"\n");
+	  logger.error("Type mismatch for PLAY on line "+num+"\n");
 	  return false;
 	} else {
 	  return true;
@@ -1478,7 +1496,7 @@ music and MIDI files.
         if (!assignTypes([varExp],NUMERIC) ||
             genTypesForExpressionPair(startExp,NUMERIC)===null ||
             genTypesForExpressionPair(endExp,NUMERIC)===null) {
-          display.print("Type mismatch for FOR on line "+num+"\n");       
+          logger.error("Type mismatch for FOR on line "+num+"\n");       
         } else {
           return true;
         }
@@ -1486,7 +1504,7 @@ music and MIDI files.
       },
       letStatement: function(varExp,valueExp,num) {
         if (varExp === null || valueExp === null) {
-          display.print("Type mismatch for assignment to "+varExp+" on line "+num+"\n");
+          logger.error("Type mismatch for assignment to "+varExp+" on line "+num+"\n");
           return false;
         }
         varExp = localVarName(varExp);
@@ -1509,7 +1527,7 @@ music and MIDI files.
           }
         } else {
           if (!assignTypes([varExp],valueExp)) {
-            display.print("Type mismatch for assignment to "+varExp+" on line "+num+".\n");
+            logger.error("Type mismatch for assignment to "+varExp+" on line "+num+".\n");
             return false;
           } else {
             return true;
@@ -1807,7 +1825,7 @@ music and MIDI files.
         },
         printExp: function(exp,newline,pause,num) {
           if (!exp || (exp.resultType !== STRING)) {
-            display.print("Invalid PRINT on line "+num+"\n");
+            logger.error("Invalid PRINT on line "+num+"\n");
             return false;
           }
           if (newline) {
@@ -1834,7 +1852,7 @@ music and MIDI files.
         },
         ifStatement: function(boolExp,num){
           if (!boolExp) {
-            display.print("Invalid IF on line "+num+"\n");
+            logger.error("Invalid IF on line "+num+"\n");
             return false;
           }
           var test = this._expressionToFunction(boolExp);
@@ -1848,7 +1866,7 @@ music and MIDI files.
         endIf: function(num) {
           var obj = loopStack.pop();
           if ((!obj) || obj.type !== IF) {
-            display.print("ERROR: END IF WITHOUT MATCHING IF\n");
+            logger.error("ERROR: END IF WITHOUT MATCHING IF\n");
           } else {
             var pos;
             if (!obj.elseloc) {
@@ -1876,7 +1894,7 @@ music and MIDI files.
         elseStatement: function(num) {
           var obj = loopStack[loopStack.length-1];
           if ((!obj) || obj.type !== IF) {
-            display.print("ERROR: ELSE WITHOUT MATCHING IF\n");
+            logger.error("ERROR: ELSE WITHOUT MATCHING IF\n");
           } else {
             obj.elseloc=nextInstruction();
             pushInstruction(null);
@@ -1886,7 +1904,7 @@ music and MIDI files.
         endWhile: function(num) {
           var obj = loopStack.pop();
           if ((!obj) || obj.type !== WHILE) {
-            display.print("ERROR: WEND IF WITHOUT MATCHING WHILE\n");
+            logger.error("ERROR: WEND IF WITHOUT MATCHING WHILE\n");
           } else {
             var test = obj.test;
             pushInstruction(function(){
@@ -1904,7 +1922,7 @@ music and MIDI files.
         },
         whileStatement: function(exp,num){
           if (!exp) {
-            display.print("Invalid WHILE on line "+num+"\n");
+            logger.error("Invalid WHILE on line "+num+"\n");
             return false;
           }
           var top = nextInstruction();
@@ -1938,12 +1956,12 @@ music and MIDI files.
 	},
         beginSubroutine: function(sub, args, num) {
           if (code[sub] !== undefined) {
-            display.print("SUBROUTINE "+sub+" ALREADY DEFINED");
+            logger.error("SUBROUTINE "+sub+" ALREADY DEFINED");
           } else {
             var i
             for (i=0;i<loopStack.length;i++) {
               if (loopStack[i].type === SUBROUTINE) {
-                display.print("NESTED SUBROUTINES NOT ALLOWED");
+                logger.error("NESTED SUBROUTINES NOT ALLOWED");
                 break;
               }
             }
@@ -1980,7 +1998,7 @@ music and MIDI files.
         },
         endSubroutine: function(num) {
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== SUBROUTINE) {
-            display.print("UNEXPECTED END SUBROUTINE");
+            logger.error("UNEXPECTED END SUBROUTINE");
 	    return false;
           } else {
             loopStack.pop();
@@ -2000,7 +2018,7 @@ music and MIDI files.
             }
           }
           if (i===-1) {
-            display.print("UNEXPECTED RETURN OUTSIDE OF SUB");
+            logger.error("UNEXPECTED RETURN OUTSIDE OF SUB");
             return false;
           }
           exp = this._expressionToFunction(exp);
@@ -2013,11 +2031,11 @@ music and MIDI files.
         endRandom: function(num) {
           var obj = loopStack.pop();
           if ((!obj) || obj.type !== RANDOM) {
-            display.print("ERROR: END RANDOM WITHOUT MATCHING BEGIN RANDOM on "+num+"\n");
+            logger.error("ERROR: END RANDOM WITHOUT MATCHING BEGIN RANDOM on "+num+"\n");
           } else {
             var events = obj.events;
             if (events.length < 1) {
-              display.print("ERROR: RANDOM STATEMENTS REQUIRE AT LEAST 1 CHOICE\n");
+              logger.error("ERROR: RANDOM STATEMENTS REQUIRE AT LEAST 1 CHOICE\n");
             } else {
               var numNulls = 0;
               for (var n=0;n<events.length;n++) {
@@ -2030,7 +2048,7 @@ music and MIDI files.
                   events[n].chance = 100.0/events.length;
                 }
               } else if (numNulls > 0) {
-                display.print("ERROR: MIXED RANDOM MODES - EITHER SPECIFY CHANCE PERCENT OR DON'T\n");
+                logger.error("ERROR: MIXED RANDOM MODES - EITHER SPECIFY CHANCE PERCENT OR DON'T\n");
               }
               
               var total = 0;
@@ -2038,7 +2056,7 @@ music and MIDI files.
                 total += events[n].chance;
               }
               if (total < 99.999 || total > 100.001) {
-                display.print("ERROR: THE CHANCES OF RANDOM EVENTS SHOULD ADD UP TO 100%\n");
+                logger.error("ERROR: THE CHANCES OF RANDOM EVENTS SHOULD ADD UP TO 100%\n");
               } else {
                 var endloc = nextInstruction();
                 for (var n=1;n<events.length;n++) {
@@ -2064,10 +2082,10 @@ music and MIDI files.
         withChance: function(percent, num) {
           var obj = loopStack[loopStack.length-1];
           if ((!obj) || obj.type !== RANDOM) {
-            display.print("ERROR: WITH CHANCE WITHOUT MATCHING BEGIN RANDOM\n");
+            logger.error("ERROR: WITH CHANCE WITHOUT MATCHING BEGIN RANDOM\n");
           } else {
             if (obj.events.length === 0 && nextInstruction() !== obj.loc+1) {
-              display.print("ERROR: NO CODE ALLOWED BETWEEN BEGIN RANDOM AND FIRST WITH CHOICE\n");
+              logger.error("ERROR: NO CODE ALLOWED BETWEEN BEGIN RANDOM AND FIRST WITH CHOICE\n");
             } else {
               if (percent === undefined) {
                 if (obj.events.length > 0) // Leave room for the jump to the end
@@ -2078,7 +2096,7 @@ music and MIDI files.
               } else {
                 var chance = Number(percent);
                 if (chance < 0.001 || chance > 99.999) {
-                  display.print("ERROR: CHANCES MUST BE BETWEEN 0 and 100\n");
+                  logger.error("ERROR: CHANCES MUST BE BETWEEN 0 and 100\n");
                 } else {
                   if (obj.events.length > 0) // Leave room for the jump to the end
                     pushInstruction(null);
@@ -2096,7 +2114,7 @@ music and MIDI files.
         },
         beginAsk: function(prompt,num) {
           if (!prompt) {
-            display.print("Invalid ASK statement line "+num+"\n");
+            logger.error("Invalid ASK statement line "+num+"\n");
             return false;
           }
           var top = nextInstruction();
@@ -2117,15 +2135,15 @@ music and MIDI files.
         askColor: function(color,num) {
           var c = intToColor(color);
           if (c === null) {
-            display.print("INVALID ASK COLOR\n");
+            logger.error("INVALID ASK COLOR\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-            display.print("ASK COLOR OUTSIDE OF AN ASK\n");
+            logger.error("ASK COLOR OUTSIDE OF AN ASK\n");
             return false;
           }
           if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-            display.print("ASK COLOR AFTER CODE\n");
+            logger.error("ASK COLOR AFTER CODE\n");
             return false;
           }
           loopStack[loopStack.length-1].color = c;
@@ -2134,15 +2152,15 @@ music and MIDI files.
         askBGColor: function(color,num) {
           var c = intToColor(color);
           if (c === null) {
-            display.print("INVALID ASK BGCOLOR\n");
+            logger.error("INVALID ASK BGCOLOR\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-            display.print("ASK BGCOLOR OUTSIDE OF AN ASK\n");
+            logger.error("ASK BGCOLOR OUTSIDE OF AN ASK\n");
             return false;
           }
           if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-            display.print("ASK BGCOLOR AFTER CODE\n");
+            logger.error("ASK BGCOLOR AFTER CODE\n");
             return false;
           }
           loopStack[loopStack.length-1].bgColor = c;
@@ -2151,15 +2169,15 @@ music and MIDI files.
         askPromptColor: function(color,num) {
           var c = intToColor(color);
           if (c === null) {
-            display.print("INVALID ASK PROMPT COLOR\n");
+            logger.error("INVALID ASK PROMPT COLOR\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-            display.print("ASK PROMPT COLOR OUTSIDE OF AN ASK\n");
+            logger.error("ASK PROMPT COLOR OUTSIDE OF AN ASK\n");
             return false;
           }
           if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-            display.print("ASK PROMPT COLOR AFTER CODE\n");
+            logger.error("ASK PROMPT COLOR AFTER CODE\n");
             return false;
           }
           loopStack[loopStack.length-1].promptColor = c;
@@ -2171,7 +2189,7 @@ music and MIDI files.
             ask.noLoc = nextInstruction();
             pushInstruction(null);
           } else {
-            display.print("ON NO outside of an ASK\n");
+            logger.error("ON NO outside of an ASK\n");
             return false;
           }
           return true;
@@ -2180,26 +2198,26 @@ music and MIDI files.
           var ask = loopStack[loopStack.length-1];
           if (ask && ask.type === ASK) {
             if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-              display.print("ASK ON YES AFTER CODE\n");
+              logger.error("ASK ON YES AFTER CODE\n");
               return false;
             }
           } else {
-            display.print("ON YES outside of an ASK\n");
+            logger.error("ON YES outside of an ASK\n");
             return false;
           }
           return true;
         },
         askDefault: function(value,num) {
           if (value !== true && value !== false) {
-            display.print("INVALID ASK DEFAULT\n");
+            logger.error("INVALID ASK DEFAULT\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-            display.print("DEFAULT OUTSIDE OF AN ASK\n");
+            logger.error("DEFAULT OUTSIDE OF AN ASK\n");
             return false;
           }
           if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-            display.print("ASK DEFAULT AFTER CODE\n");
+            logger.error("ASK DEFAULT AFTER CODE\n");
             return false;
           }
           loopStack[loopStack.length-1].defaultValue = value;
@@ -2248,14 +2266,14 @@ music and MIDI files.
               machine.setLoc(top);
             });
           } else {
-            display.print("END ASK WITHOUT ASK\n");
+            logger.error("END ASK WITHOUT ASK\n");
 	    return false;
           }
           return true;
         },
         beginMenu: function(prompt,num) {
           if (!prompt) {
-            display.print("Invalid MENU statement line "+num+"\n");
+            logger.error("Invalid MENU statement line "+num+"\n");
             return false;
           }
           loopStack.push({type:MENU,
@@ -2274,15 +2292,15 @@ music and MIDI files.
         menuColor: function(color,num) {
           var c = intToColor(color);
           if (c === null) {
-            display.print("INVALID MENU COLOR\n");
+            logger.error("INVALID MENU COLOR\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            display.print("MENU COLOR OUTSIDE OF A MENU\n");
+            logger.error("MENU COLOR OUTSIDE OF A MENU\n");
             return false;
           }
           if (loopStack[loopStack.length-1].choices.length > 0) {
-            display.print("MENU COLOR AFTER CHOICE\n");
+            logger.error("MENU COLOR AFTER CHOICE\n");
             return false;
           }
           loopStack[loopStack.length-1].color = c;
@@ -2291,15 +2309,15 @@ music and MIDI files.
         menuBGColor: function(color,num) {
           var c = intToColor(color);
           if (c === null) {
-            display.print("INVALID MENU BGCOLOR\n");
+            logger.error("INVALID MENU BGCOLOR\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            display.print("MENU BGCOLOR OUTSIDE OF A MENU\n");
+            logger.error("MENU BGCOLOR OUTSIDE OF A MENU\n");
             return false;
           }
           if (loopStack[loopStack.length-1].choices.length > 0) {
-            display.print("MENU BGCOLOR AFTER CHOICE\n");
+            logger.error("MENU BGCOLOR AFTER CHOICE\n");
             return false;
           }
           loopStack[loopStack.length-1].bgColor = c;
@@ -2308,15 +2326,15 @@ music and MIDI files.
         menuChoiceColor: function(color,num) {
           var c = intToColor(color);
           if (c === null) {
-            display.print("INVALID MENU CHOICE COLOR\n");
+            logger.error("INVALID MENU CHOICE COLOR\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            display.print("MENU CHOICE COLOR OUTSIDE OF A MENU\n");
+            logger.error("MENU CHOICE COLOR OUTSIDE OF A MENU\n");
             return false;
           }
           if (loopStack[loopStack.length-1].choices.length > 0) {
-            display.print("MENU CHOICE COLOR AFTER CHOICE\n");
+            logger.error("MENU CHOICE COLOR AFTER CHOICE\n");
             return false;
           }
           loopStack[loopStack.length-1].choiceColor = c;
@@ -2325,15 +2343,15 @@ music and MIDI files.
         menuPromptColor: function(color,num) {
           var c = intToColor(color);
           if (c === null) {
-            display.print("INVALID MENu PROMPT COLOR\n");
+            logger.error("INVALID MENU PROMPT COLOR\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            display.print("MENU PROMPT COLOR OUTSIDE OF A MENU\n");
+            logger.error("MENU PROMPT COLOR OUTSIDE OF A MENU\n");
             return false;
           }
           if (loopStack[loopStack.length-1].choices.length > 0) {
-            display.print("MENU PROMPT COLOR AFTER CHOICE\n");
+            logger.error("MENU PROMPT COLOR AFTER CHOICE\n");
             return false;
           }
           loopStack[loopStack.length-1].promptColor = c;
@@ -2420,7 +2438,7 @@ music and MIDI files.
               machine.setLoc(newI);
             });
           } else {
-            display.print("END MENU WITHOUT BEGIN MENU\n");
+            logger.error("END MENU WITHOUT BEGIN MENU\n");
 	    return false;
           }
           return true;
@@ -2434,31 +2452,31 @@ music and MIDI files.
                                                                         loc:nextInstruction()});
           } else {
             // XXX handle errors
-            display.print("CHOICE OUTSIDE OF A MENU\n");
+            logger.error("CHOICE OUTSIDE OF A MENU\n");
 	    return false;
           }
           return true;
         },
         menuHideIf: function(boolExp,num) {
           if (!boolExp) {
-            display.print("Invalid HIDE IF on line "+num+"\n");
+            logger.error("Invalid HIDE IF on line "+num+"\n");
             return false;
           }
           if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            display.print("HIDE IF OUTSIDE OF A MENU\n");
+            logger.error("HIDE IF OUTSIDE OF A MENU\n");
             return false;
           }
           var choices = loopStack[loopStack.length-1].choices;
           if (choices.length === 0) {
-            display.print("HIDE IF found before CHOICE\n");
+            logger.error("HIDE IF found before CHOICE\n");
             return false;
           }
           if (choices[choices.length-1].loc !== nextInstruction()) {
-            display.print("HIDE IF does not immediately follow CHOICE\n");
+            logger.error("HIDE IF does not immediately follow CHOICE\n");
             return false;
           }
           if (choices[choices.length-1].hideIf) {
-            display.print("Multiple HIDE IFs for single CHOICE\n");
+            logger.error("Multiple HIDE IFs for single CHOICE\n");
             return false;
           }
           choices[choices.length-1].hideIf = boolExp;
@@ -2484,7 +2502,7 @@ music and MIDI files.
         },
         sleep: function(duration,num) {
           if (!duration) {
-            display.print ("Invalid SLEEP on line "+num+"\n");
+            logger.error("Invalid SLEEP on line "+num+"\n");
             return false;
           }
           duration = this._expressionToFunction(duration);
@@ -2496,7 +2514,7 @@ music and MIDI files.
         },
         input: function(varname,num) {
           if (varTypes[varname] === undefined) {
-            display.print(varname+" undefined in INPUT\n");
+            logger.error(varname+" undefined in INPUT\n");
             return;
           }
           pushInstruction(function() {
@@ -2508,7 +2526,7 @@ music and MIDI files.
         },
         play: function(abc,num) {
 	  if (!abc) {
-	    display.print("Invalid PLAY on line "+num+"\n");
+	    logger.error("Invalid PLAY on line "+num+"\n");
 	    return false;
 	  }
 	  var notes = this._expressionToFunction(abc);
@@ -2520,12 +2538,12 @@ music and MIDI files.
         },
         forStatement: function(varname,first,last,num) {
           if (!first || !last) {
-            display.print("what the FOR on line "+num+"\n");
+            logger.error("what the FOR on line "+num+"\n");
             return false;
           }
           //addFor: function(varname,first,last) {
           if (varTypes[varname] === undefined) {
-            display.print(varname+" undefined in FOR\n");
+            logger.error(varname+" undefined in FOR\n");
             return;
           }
           
@@ -2542,11 +2560,11 @@ music and MIDI files.
         },
         letStatement: function(varname,exp,num) {
           if (!varname) {
-            display.print ("Invalid expression assigned to "+varname+" on line "+num+"\n");
+            logger.error("Invalid expression assigned to "+varname+" on line "+num+"\n");
             return false;
           }
           if (varTypes[varname] === undefined) {
-            display.print(varname+" undefined in assignment\n");
+            logger.error(varname+" undefined in assignment\n");
             return;
           }
           var value = this._expressionToFunction(exp);
@@ -2572,7 +2590,7 @@ music and MIDI files.
           var varname = varExp[0].value;
           var obj = loopStack.pop();
           if ((!obj) || obj.type !== FOR || varname != obj.varname) {
-            display.print("ERROR: NEXT WITHOUT MATCHING FOR\n");
+            logger.error("ERROR: NEXT WITHOUT MATCHING FOR\n");
           } else {
             var first = obj.first;
             var last = obj.last;
@@ -2600,7 +2618,7 @@ music and MIDI files.
       };
   }()
 };
-}(globalDisplay, globalAudio, globalMachine);
+  }(globalDisplay, globalAudio, globalMachine, globalLogger);
 
 /***********************************************************************
   END Codegen class
@@ -2612,7 +2630,7 @@ music and MIDI files.
 
   // XXX Pass error handler into the compile() function?
 
-  var compiler = function(display,codegen){
+  var compiler = function(codegen,logger){
     var started = false;
     var finished = false;
     var pass = null;
@@ -2672,7 +2690,7 @@ music and MIDI files.
             if (line[pos] === '\"') {
               pos+=2;
               if (pos>=line.length) {
-                display.print("Parser Error: Unterminated string\n");
+                logger.error("Parser Error: Unterminated string\n");
                 return null;
               }
               s+="\"";
@@ -2682,7 +2700,7 @@ music and MIDI files.
             }
           }
           if (line[pos] !== '"') {
-            display.print("Parser Error: Unterminated string\n");
+            logger.error("Parser Error: Unterminated string\n");
             return null;
           }
           pos++;
@@ -2987,7 +3005,7 @@ music and MIDI files.
     parseLine: function(line,num) {
       var tokens = compiler.tokenizeLine(line);
       if (!tokens) {
-        display.print("Could not parse line "+num);
+        logger.error("Could not parse line "+num);
         return false;
       }
       if (pass === 1) {
@@ -3075,8 +3093,7 @@ music and MIDI files.
             pos++;
           }
           if (pos === tokens.length) {
-            
-            display.print("No comparison operator on line "+num+"\n");
+            logger.error("No comparison operator on line "+num+"\n");
             return null;
           }
           endpos = pos+1;
@@ -3160,7 +3177,7 @@ music and MIDI files.
 
             var boolExp = boolExpression(tokens.slice(1,exp2end));
             if (!boolExp) {
-              display.print("Invalid IF on line "+num+"\n");
+              logger.error("Invalid IF on line "+num+"\n");
               return false;
             }
             return handler.ifStatement(boolExp, num);
@@ -3265,7 +3282,7 @@ music and MIDI files.
           } else if (tokens[0].value==='HIDE' && tokens.length >= 5 && tokens[1].type === IDENTIFIER && tokens[1].value === 'IF' ) {
             var boolExp = boolExpression(tokens.slice(2,tokens.length));
             if (!boolExp) {
-              display.print("Invalid HIDE IF on line "+num+"\n");
+              logger.error("Invalid HIDE IF on line "+num+"\n");
               return false;
             }
             return handler.menuHideIf(boolExp, num);
@@ -3290,7 +3307,7 @@ music and MIDI files.
               exp2end = tokens.length;
             var boolExp = boolExpression(tokens.slice(1,exp2end));
             if (!boolExp) {
-              display.print("Invalid WHILE on line "+num+"\n");
+              logger.error("Invalid WHILE on line "+num+"\n");
               return false;
             }
             return handler.whileStatement(boolExp, num);
@@ -3317,7 +3334,7 @@ music and MIDI files.
             return handler.sleep(expression(tokens.slice(1,tokens.length)),num);
           } else if (tokens[0].value==='INPUT') {
             if (tokens.length !== 2 || tokens[1].type !== IDENTIFIER) {
-              display.print ("Invalid INPUT on line "+num+"\n");
+              logger.error("Invalid INPUT on line "+num+"\n");
               return false;
             } else {
               return handler.input(tokens[1].value,num);
@@ -3326,7 +3343,7 @@ music and MIDI files.
             return handler.play(expression(tokens.slice(1,tokens.length)),num);
           } else if (tokens[0].value==='FOR') {
             if(!(tokens.length>=6 && tokens[2].type === EQUALS && tokens[2].value === '=' && tokens[1].type === IDENTIFIER)) {
-              display.print("Invalid FOR on line "+num+"\n");
+              logger.error("Invalid FOR on line "+num+"\n");
               return false;
             }
             
@@ -3337,7 +3354,7 @@ music and MIDI files.
               pos++;
             }
             if (pos === tokens.length) {
-              display.print("Missing TO in FOR on line "+num+"\n");
+              logger.error("Missing TO in FOR on line "+num+"\n");
               return false;
             }
             return handler.forStatement(tokens[1].value, expression(tokens.slice(3,pos)),
@@ -3348,7 +3365,7 @@ music and MIDI files.
             return handler.letStatement(tokens[0].value,
                                         expression(tokens.slice(2,tokens.length)),num);
           } else {
-            display.print ("Unrecognized "+tokens[0].value+" on line "+num+"\n");
+            logger.error("Unrecognized "+tokens[0].value+" on line "+num+"\n");
             return false;
           }
         } else if (tokens[0].type===SINGLEQUOTE) {
@@ -3356,8 +3373,7 @@ music and MIDI files.
         } else if (tokens.length>=3 && tokens[0].type === MINUS && tokens[1].type === MINUS && tokens[2].type === GREATER) {
           finished = true;
         } else {
-          // console.log(tokens);
-          display.print ("Unexpected token on line "+num+": "+tokens[0].value+"\n");
+          logger.error("Unexpected token on line "+num+": "+tokens[0].value+"\n");
           return false;
         }
       }
@@ -3372,7 +3388,7 @@ music and MIDI files.
         lines = text.split("\r");
       for (var n=0;n<lines.length;n++) {
         if (!compiler.parseLine(lines[n],n)) {
-          display.print("ERROR ON LINE "+(n)+"\n");
+          logger.error("ERROR ON LINE "+(n)+"\n");
           return false;
         }
       }
@@ -3396,7 +3412,7 @@ music and MIDI files.
       }
     }
   };
-}(globalDisplay,globalCodegen);
+}(globalCodegen,globalLogger);
 
 /***********************************************************************
   END Compiler class
