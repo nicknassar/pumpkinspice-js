@@ -746,7 +746,7 @@ function CodeGen(display, audio, machine, logger) {
           function nextExpressionSubroutineName() {
             var next = expressionSubroutineCount;
             expressionSubroutineCount++;
-            // Use in .vars in machine._callstack objects
+            // Use in local vars in machine callstack objects
             // Must not conflict with other local variables
             return "!"+next;
           };
@@ -768,32 +768,25 @@ function CodeGen(display, audio, machine, logger) {
               end = o.indexOf('}');
             return o.substr(start,end-start);
           };
-          // The name of the object with all the local subroutine variables in it,
-          // the .vars object at the top of the stack
-          function expressionSubTempObjName() {
-            /** @suppress {uselessCode} */
-            var o = function(){machine._callstack[machine._callstack.length-1].vars}.toString();
-            return nameFromFunctionString(o);
-          };
 
           // find name of a variable in the machine
           function variableName(name) {
             /** @suppress {uselessCode} */
-            var vname = (function(){machine._vars}).toString();
+            var vname = (function(){machine.getGlobal}).toString();
             vname = nameFromFunctionString(vname);
             
             var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
-            return vname+'[\''+escaped+'\']';
+            return vname+'(\''+escaped+'\')';
           };
 
           // Find name of local variable in the machine
           function localVariableName(name) {
             /** @suppress {uselessCode} */
-            var vname = (function(){machine._callstack[machine._callstack.length-1].vars}).toString();
+            var vname = (function(){machine.getLocal}).toString();
             vname = nameFromFunctionString(vname);
             
             var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
-            return vname+'[\''+escaped+'\']';
+            return vname+'(\''+escaped+'\')';
           };
 
 	  return {          
@@ -904,8 +897,8 @@ function CodeGen(display, audio, machine, logger) {
             var retName = returnValueName(name);
 
             // The name of the variable where the temps are stored
-            var t = expressionSubTempObjName();
-            return {type:EXPRESSION,value:t+'["'+temp+'"]',resultType:varTypes[retName],subs:subs};
+            var t = localVariableName(temp);
+            return {type:EXPRESSION,value:t,resultType:varTypes[retName],subs:subs};
           },
           binaryExpression: function(operator,a,b) {
             if (a.resultType !== b.resultType ||
@@ -956,7 +949,7 @@ function CodeGen(display, audio, machine, logger) {
             (function(){
               var temp = exp.subs[i].temp;
               pushInstruction(function() {
-                machine._callstack[machine._callstack.length-1].vars[temp]=machine._ret;
+                machine.saveRetToLocal(temp);
                 machine.advance();
               });})();
           }
@@ -978,15 +971,15 @@ function CodeGen(display, audio, machine, logger) {
               display.printMenu([function(){return text;}],[""],
                                 undefined,undefined,undefined,undefined,undefined);
               
-              machine._interruptDelay = 0;
-              machine._inputVariable = "!"; // Internal name
+              machine.setInterruptDelay(0);
+              machine.setInputVariable("!"); // Internal name
               machine.advance();
             });
           } else {
             pushInstruction(function(){
               if (display.print(text))
                 // Give up the CPU to allow display
-                machine._interruptDelay = 0;
+                machine.setInterruptDelay(0);
               machine.advance();
             });
           }
@@ -1005,15 +998,15 @@ function CodeGen(display, audio, machine, logger) {
             pushInstruction(function() {
               display.printMenu([text],[""],
                                 undefined,undefined,undefined,undefined,undefined);
-              machine._interruptDelay = 0;
-              machine._inputVariable = "!"; // Internal name
+              machine.setInterruptDelay(0);
+              machine.setInputVariable("!"); // Internal name
               machine.advance();
             });
           } else {
             pushInstruction(function(){
               if (display.print(text()))
                 // Give up the CPU to allow display
-                machine._interruptDelay = 0;
+                machine.setInterruptDelay(0);
               machine.advance();
             });
           }
@@ -1115,8 +1108,8 @@ function CodeGen(display, audio, machine, logger) {
 	waitForMusic: function() {
 	  pushInstruction(function(){
 	    // Wait flag 1 is wait for music
-	    machine._waitFlags = (machine._waitFlags | 1);
-	    machine._interruptDelay = 0;
+	    machine.setAudioWaitFlag();
+	    machine.setInterruptDelay(0);
 	    machine.advance();
 	  }
 				 );
@@ -1192,8 +1185,7 @@ function CodeGen(display, audio, machine, logger) {
           }
           exp = this._expressionToFunction(exp);
           pushInstruction(function() {
-            machine._callstack[machine._callstack.length-1].ret = exp();
-            machine._callstack[machine._callstack.length-1].loc = machine._code[machine._callstack[machine._callstack.length-1].sub].length;
+            machine.returnFromSub(exp);
           });
           return true;
         },
@@ -1407,14 +1399,14 @@ function CodeGen(display, audio, machine, logger) {
             var top = ask.top;
             addInstructionAt(ask.loc, function(){
               display.printAsk(prompt,ask.defaultValue,ask.color,ask.bgColor,ask.promptColor);
-              machine._interruptDelay = 0;
-              machine._inputVariable = "!"; // Invalid as an identifier
+              machine.setInterruptDelay(0);
+              machine.setInputVariable("!"); // Invalid as an identifier
               machine.advance();
             });
             addInstructionAt(ask.loc+1, function(){
-              if (machine._vars["!"]!==null) {
-                if (machine._vars["!"].length>0) {
-                  var key=machine._vars["!"].toUpperCase()[0];
+              if (machine.getGlobal("!")!==null) {
+                if (machine.getGlobal("!").length>0) {
+                  var key=machine.getGlobal("!").toUpperCase()[0];
                   if (key === "Y") {
                     machine.advance();
                     return;
@@ -1578,14 +1570,14 @@ function CodeGen(display, audio, machine, logger) {
                 }
               }
               display.printMenu(filteredText,filteredKeys,prompt,menu.color,menu.bgColor,menu.promptColor,menu.choiceColor);
-              machine._interruptDelay = 0;
-              machine._inputVariable = "!"; // Invalid as an identifier
+              machine.setInterruptDelay(0);
+              machine.setInputVariable("!"); // Invalid as an identifier
               machine.advance();
             });
             addInstructionAt(menu.loc+2, function(){
               for (var n=0;n<menu.choices.length;n++){
                 if (!hideConditions[n]()) {
-                  if (machine._vars["!"] && machine._vars["!"].toUpperCase() == menu.choices[n].key) {
+                  if (machine.getGlobal("!") && machine.getGlobal("!").toUpperCase() == menu.choices[n].key) {
                     machine.setLoc(menu.choices[n].loc);
                     return;
                   }
@@ -1677,7 +1669,7 @@ function CodeGen(display, audio, machine, logger) {
           duration = this._expressionToFunction(duration);
           pushInstruction(function() {
             machine.advance();
-            machine._interruptDelay = duration();
+            machine.setInterruptDelay(duration());
           });
           return true;
         },
@@ -1687,8 +1679,8 @@ function CodeGen(display, audio, machine, logger) {
             return;
           }
           pushInstruction(function() {
-            machine._interruptDelay = 0;
-            machine._inputVariable = varname;
+            machine.setInterruptDelay(0);
+            machine.setInputVariable(varname);
             machine.advance();
           });
           return true;
@@ -1738,7 +1730,7 @@ function CodeGen(display, audio, machine, logger) {
           }
           var value = this._expressionToFunction(exp);
           pushInstruction(function() {
-            machine._vars[varname] = value();
+            machine.setGlobal(varname,value());
             machine.advance();
           });
           return true;
@@ -1751,7 +1743,7 @@ function CodeGen(display, audio, machine, logger) {
             display.clear();
             machine.advance();
             // Give up the CPU to allow display
-            machine._interruptDelay = 0;
+            machine.setInterruptDelay(0);
           });
           return true;
         },
@@ -1764,20 +1756,20 @@ function CodeGen(display, audio, machine, logger) {
             var first = obj.first;
             var last = obj.last;
             pushInstruction(function(){
-              if (machine._vars[varname]>=last()){
+              if (machine.getGlobal(varname)>=last()){
                 machine.advance();
               } else {
-                machine._vars[varname]++;
+                machine.incGlobal(varname);
                 machine.setLoc(obj.top);
               }
             });
             var after = nextInstruction();
             addInstructionAt(obj.top-1,function(){
-              machine._vars[obj.varname] = first();
-              if (machine._vars[obj.varname]<=last()){
+              machine.setGlobal(obj.varname, first());
+              if (machine.getGlobal(obj.varname)<=last()){
                 machine.advance()
               } else {
-                machine._vars[obj.varname]++;
+                machine.incGlobal(obj.varname);
                 machine.setLoc(after);
               }
             });
