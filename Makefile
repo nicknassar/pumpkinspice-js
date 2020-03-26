@@ -25,10 +25,10 @@ vpath %.java $(BUILD_SOURCE_DIR)
 vpath %.class $(BUILD_OUTPUT_DIR)
 JAVA_CLASSES := com/nicknassar/pumpkinspice/Builder.class com/nicknassar/pumpkinspice/TemplateFiller.class
 
-OPTIMIZED_RESOURCES := $(BUILD_RESOURCE_DIR)/compiler.optimized.js $(BUILD_RESOURCE_DIR)/index.html.template
-DEBUG_RESOURCES := $(BUILD_RESOURCE_DIR)/compiler.js $(BUILD_RESOURCE_DIR)/index.html.template
+OPTIMIZED_RESOURCES := $(BUILD_RESOURCE_DIR)/pumpkinspice.optimized.js $(BUILD_RESOURCE_DIR)/index.html.template
+DEBUG_RESOURCES := $(BUILD_RESOURCE_DIR)/pumpkinspice.js $(BUILD_RESOURCE_DIR)/index.html.template
 
-JAVASCRIPT_SOURCES := $(SRC_DIR)/main/javascript/compiler.js $(SRC_DIR)/main/javascript/initialize.js $(SRC_DIR)/main/javascript/audio.js $(SRC_DIR)/main/javascript/logger.js $(SRC_DIR)/main/javascript/display.js  $(SRC_DIR)/main/javascript/machine.js  $(SRC_DIR)/main/javascript/legacy.js $(SRC_DIR)/main/javascript/codegen.js $(SRC_DIR)/main/javascript/compile.js
+JAVASCRIPT_SOURCES := $(SRC_DIR)/main/javascript/pumpkinspice.js.template $(SRC_DIR)/main/javascript/initialize.js $(SRC_DIR)/main/javascript/audio.js $(SRC_DIR)/main/javascript/logger.js $(SRC_DIR)/main/javascript/display.js  $(SRC_DIR)/main/javascript/machine.js  $(SRC_DIR)/main/javascript/legacy.js $(SRC_DIR)/main/javascript/codegen.js $(SRC_DIR)/main/javascript/compiler.js
 
 .PHONY: all
 all: test.html test.debug.html $(OUTPUT_JAR)
@@ -60,10 +60,10 @@ endif
 %.class: %.java | $(BUILD_OUTPUT_DIR)
 	$(JAVAC) $(JFLAGS) $<
 
-$(BUILD_RESOURCE_DIR)/compiler.js: $(JAVASCRIPT_SOURCES) $(JAVA_CLASSES) | $(BUILD_RESOURCE_DIR)
+$(BUILD_RESOURCE_DIR)/pumpkinspice.js: $(JAVASCRIPT_SOURCES) $(JAVA_CLASSES) | $(BUILD_RESOURCE_DIR)
 	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(BUILD_OUTPUT_DIR)" com.nicknassar.pumpkinspice.TemplateFiller $< $@
 
-$(BUILD_RESOURCE_DIR)/compiler.optimized.js: $(BUILD_RESOURCE_DIR)/compiler.js | $(BUILD_RESOURCE_DIR) closure_compiler
+$(BUILD_RESOURCE_DIR)/pumpkinspice.optimized.js: $(BUILD_RESOURCE_DIR)/pumpkinspice.js | $(BUILD_RESOURCE_DIR) closure_compiler
 	$(JAVA) -jar $(CLOSURE_COMPILER_JAR) --compilation_level ADVANCED_OPTIMIZATIONS --js $< --js_output_file $@
 
 $(BUILD_RESOURCE_DIR)/index.html.template: $(SRC_DIR)/resources/index.html.template | $(BUILD_RESOURCE_DIR)

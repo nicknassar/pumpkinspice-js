@@ -1,0 +1,145 @@
+//   Pumpkin Spice - A simplistic language for interactive text applications
+//   Copyright © 2020 Nicholas Nassar
+//   All Rights Reserved
+
+// The code is wrapped inside a function to protect namespaces
+// programText - string with the program to run
+// inputTextElement - The input text area
+// inputSubmitElement - The input form submit button
+// inputFormElement - the form associated with the inppad
+// cursorElement - that which must be blinked
+// quietBlockElement - text which is displayed but not to be read by a screen reader
+// historyBlockElement - text which has already been displayed
+// latestBlockElement - text which should be read by a screen reader
+// displayBlockElement - scrollable area where text is displayed
+
+function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitElementParam, inputFormElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam){
+
+{{legacy.js}}
+
+/***********************************************************************
+  BEGIN Global Variables
+***********************************************************************/
+
+  // Unique identifiers for various things
+  // Some are token types, some are variable types, some are for loop types
+  // Some are used interchangably for more than one type (For example, string
+  // expressions and string tokens both use STRING)
+  var IDENTIFIER={}; //
+  var STRING={};
+  var NUMERIC={};
+  var EQUALS={};
+  var COLON={};
+  var SEMICOLON={};
+  var PLUS={};
+  var SINGLEQUOTE={};
+  var MINUS={};
+  var TIMES={};
+  var DIV={};
+  var OPENPAREN={};
+  var CLOSEPAREN={};
+  var COMMA={};
+  var GREATEROREQUAL={};
+  var GREATER={};
+  var LESSOREQUAL={};
+  var NOTEQUAL={};
+  var LESS={};
+  var NOT={};
+  var EXPRESSION={};
+  var FOR={};
+  var IF={};
+  var RANDOM={};
+  var MENU={};
+  var ASK={};
+  var WHILE={};
+  var SUBROUTINE={};
+  var BOOLEXPRESSION={};
+
+/***********************************************************************
+  END Global Variables
+***********************************************************************/
+
+/***********************************************************************
+  BEGIN Global Functions
+***********************************************************************/
+
+  // Optimize these calls by wrapping them in a function
+  //
+  // Maybe all API calls should be wrapped this way?
+  function addEventListener(obj,on,fn) {
+    obj.addEventListener(on,fn);
+  }
+  function removeEventListener(obj,on,fn) {
+    obj.removeEventListener(on,fn);
+  }
+
+  // Utility function to convert a color number to an RGB triplet
+  function intToColor(c) {
+    if (c == 0) { // Black
+      return [0,0,0];
+    } else if (c == 1) { // Blue
+      return [0,0,170];
+    } else if (c == 2) { // Green
+      return [0,170,0]; 
+    } else if (c == 3) { // Cyan
+      return [0,170,170]; 
+    } else if (c == 4) { // Red
+      return [170,0,0];
+    } else if (c == 5) { // Magenta
+      return [170,0,170];
+    } else if (c == 6) { // Brown
+      return [170,85,0];
+    } else if (c == 7) { // White
+      return [170,170,170];
+    } else if (c == 8) { // Gray
+      return [85,85,85];
+    } else if (c == 9) { // Light Blue
+      return [85, 85, 255];
+    } else if (c == 10) { // Light Green
+      return [85, 255, 85]; 
+    } else if (c == 11) { // Light Cyan
+      return [85, 255, 255];  
+    } else if (c == 12) { // Light Red
+      return [255, 85, 85];
+    } else if (c == 13) { // Light Magenta
+      return [255, 85, 255];
+    } else if (c == 14) { // Yellow
+      return [255, 255, 85];
+    } else if (c == 15) { // Optic White
+      return [255, 255, 255];
+    } else {
+      // Invalid color
+
+      // Any function calling intToColor should check for null return values
+      return null;
+    }
+  };  
+
+/***********************************************************************
+  END Global Functions
+***********************************************************************/
+
+{{display.js}}
+{{logger.js}}
+{{audio.js}}
+{{machine.js}}
+{{codegen.js}}
+{{compiler.js}}
+  
+  var globalDisplay = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam); 
+  var globalLogger = Logger(globalDisplay);
+  var globalAudio = Audio(globalLogger);
+  var globalMachine = Machine(globalDisplay, globalLogger);
+  var globalCodegen = CodeGen(globalDisplay, globalAudio, globalMachine, globalLogger);
+  var compiler = Compiler(globalCodegen,globalLogger);
+
+
+  compiler.compile(programTextParam);
+  // XXX add function to check if compile is valid
+  // XXX verify that error handling works with accessibility
+  
+  globalMachine.go();
+}
+
+
+{{initialize.js}}

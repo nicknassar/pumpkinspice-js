@@ -107,9 +107,9 @@ class Builder {
 	    code = new BufferedReader(new InputStreamReader(new FileInputStream(config.source), Charset.forName("UTF-8").newDecoder()));
 	    template = new BufferedReader(new InputStreamReader(getResourceAsStream("index.html.template"), Charset.forName("UTF-8").newDecoder()));
 	    if (config.debug)
-		js = new BufferedReader(new InputStreamReader(getResourceAsStream("compiler.js"), Charset.forName("UTF-8").newDecoder()));
+		js = new BufferedReader(new InputStreamReader(getResourceAsStream("pumpkinspice.js"), Charset.forName("UTF-8").newDecoder()));
 	    else
-		js = new BufferedReader(new InputStreamReader(getResourceAsStream("compiler.optimized.js"), Charset.forName("UTF-8").newDecoder()));
+		js = new BufferedReader(new InputStreamReader(getResourceAsStream("pumpkinspice.optimized.js"), Charset.forName("UTF-8").newDecoder()));
 	} catch (FileNotFoundException e) {
 	    throw new Error(e);
 	}
