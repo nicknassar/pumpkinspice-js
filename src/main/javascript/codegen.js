@@ -23,24 +23,28 @@ function CodeGen(display, audio, machine, logger) {
     // END Initialize integration between components
     
     // Private variables
-    var loopStack;  // Keeps track of nested loops
+    var loopStack = [];  // Keeps track of nested loops
 
     // Map of variable name to STRING, NUMERIC, or list of matches
     // There are special names for subtroutine args
-    var varTypes;
+    var varTypes = {};
 
-    var subArgNames;      // Map of subroutine to list of param names
+    var subArgNames = {};      // Map of subroutine to list of param names
       
-    var subArgCount; // Map of subroutine to integer param count                                                     // Used when subs are called before declaration
+    var subArgCount = {}; // Map of subroutine to integer param count                                                     // Used when subs are called before declaration
 
-    var code; // map of function names to list of instructions
-    var currentSub; // Name of the sub we're currently adding code to
+    var code = {"!":[]}; // map of function names to list of instructions
+    var currentSub = "!"; // Name of the sub we're currently adding code to
       
-    var calledSubs;  // Subroutines that were called before being defined
+    var calledSubs = [];  // Subroutines that were called before being defined
                      // So we can check that they eventually get defined
 
+  // XXX move code related functions to Machine
+  //     In general, this class shouldn't know the Machine how is
+  //     implemented. This class should know how to compose
+  //     machine operations to form code
 
-    // location of the next instruction
+  // location of the next instruction
     function nextInstruction() {
       return code[currentSub].length;
     };
@@ -95,47 +99,8 @@ function CodeGen(display, audio, machine, logger) {
       return sub+"!"+pos; // Implicit conversion from number to string
     };
 
-    return {
-    init: function() {
-      loopStack = [];
-      varTypes = {};
-      subArgNames = {};
-      subArgCount = {};
-      code = {"!":[]}; // ! is the main block
-      currentSub = "!";
-      calledSubs = [];
-    },
-    // Called after code generation is complete to check for stupidness
-    validate: function () {
-      // Calling fake subroutines is stupid
-      for (var i=0;i<calledSubs.length;i++) {
-        var name=calledSubs[i];
-        if (!code[name]) {
-          logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
-          return false;
-        }
-      }
-      return true;
-    },
-    // Called after code generation is complete and validated
-    // Make the code
-    generate: function () {
-      // Initialize numeric values to 0, strings to empty string
-      // Variables with unknown types remain undefined, always fail in comparisons
-      var vars = {};
-      for (var v in varTypes) {
-        if (varTypes[v] === NUMERIC)
-          vars[v] = 0;
-        else if (varTypes[v] === STRING)
-          vars[v] = "";
-      }
-      machine.init(code, vars);
-    },
-    argType: function(sub,pos) {
-      return varTypes[argNameByArity(sub,pos)];
-    },
 
-    typeGeneratorPass: function() {
+  function TypeGeneratorPass() {
       /* Pumpkin Spice has implied, static typing
          
          Certain types of expressions have a specific type
@@ -713,83 +678,131 @@ function CodeGen(display, audio, machine, logger) {
         return true;
       }
     };
-    }(),
-      codeGeneratorPass: function(){
-	return {
-        expressionHandler: function(){
-          // generate expressions
-          // XXX Handle errors
-          // Returns an EXPRESSION token or null
-          
-          // This is vastly simplified because we keep JavaScript semantics for
-          // operator precendence.
-          
-          // XXX Fail if types are incorrect in every case
+  }
 
-          /*
-            Ugghhhhh....
-            
-            I'm working really hard to avoid parsing expressions
-            and instead pass them off to JavaScript.
-            
-            It's maybe not worth it. I don't know.
-            
-            I'm implementing subroutine expressions by running each
-            subroutine referenced in the expression and saving the results
-            of each subroutine in a temp variable, then using the temp variable
-            in the expression.
-            
-            This counter guarantees that there's no overlap in the names of
-            those variables.
-          */
-	  var expressionSubroutineCount = 0;
-          function nextExpressionSubroutineName() {
-            var next = expressionSubroutineCount;
-            expressionSubroutineCount++;
-            // Use in local vars in machine callstack objects
-            // Must not conflict with other local variables
-            return "!"+next;
-          };
-          // Hack to get variable names from optimised code by stringifying a
-          // function definition This let's us fully optimize and still eval()
-          // code
-          //
-          // Typical Usage: nameFromFunctionString(function{NAME}.toString())
-          function nameFromFunctionString(o) {
-            var start = o.indexOf('{')+1;
-            
-            // Some old Firefoxen insert whitespace in the stringified function
-            while (o[start] < o.length && o[start]===' ' || o[start]==='\n' || o[start]==='\r' || o[start]==='\t')
-              start++;
-            
-            //  Some old Firefoxen insert semicolons
-            var end = o.indexOf(';');
-            if (end === -1)
-              end = o.indexOf('}');
-            return o.substr(start,end-start);
-          };
+  function CodeGeneratorPass(){
+    // XXX handle errors by throwing an exception
+    // XXX don't pass in the line number- let the caller handle the exception and print errors	
+    
+    /*
+      I'm implementing subroutine expressions by running each
+      subroutine referenced in the expression and saving the results
+      of each subroutine in a temp variable, then using the temp variable
+      in the expression.
+      
+      This counter guarantees that there's no overlap in the names of
+      those variables.
+    */
+    var expressionSubroutineCount = 0;
+    function nextExpressionSubroutineName() {
+      var next = expressionSubroutineCount;
+      expressionSubroutineCount++;
+      // Use in local vars in machine callstack objects
+      // Must not conflict with other local variables
+      return "!"+next;
+    };
+    // Adds instructions with calls to all of the function
+    // referenced in the expression, then returns function that
+    // evaluates the expression
+    function expressionToFunction(exp) {
+      function stringToFunction(expr) {
+        // Actually convert a JS expression string to a function
+        // Put it in a list to work around bug in some older browsers
+        // evaluating a function expression directly
+        var text = '[(function(){return '+expr+';})]';
+        var listFunc = eval(text);
+        return listFunc[0];
+      };
+      
+      for (var i=0;i<exp.subs.length;i++) {
+        callSubroutine(exp.subs[i].name,exp.subs[i].args,0);
+        // wrap in function tocreate new temp for each iteration
+        (function(){
+          var temp = exp.subs[i].temp;
+          pushInstruction(function() {
+	    machine.saveRetToLocal(temp);
+	    machine.advance();
+          });})();
+      }
+      
+      return stringToFunction(exp.value);
+    }
 
-          // find name of a variable in the machine
-          function variableName(name) {
-            /** @suppress {uselessCode} */
-            var vname = (function(){machine.getGlobal}).toString();
-            vname = nameFromFunctionString(vname);
-            
-            var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
-            return vname+'(\''+escaped+'\')';
-          };
+    // Actual function to handle subroutine
+    function callSubroutine(sub, argExps, num) {
+      var argNames = subArgNames[sub];
+      var fArgs = [];
+      for (var i=0;i<argExps.length;i++) {
+        fArgs.push(expressionToFunction(argExps[i]));
+      }
+      var retName = returnValueName(sub);
+      var ret;
+      if (varTypes[retName] === STRING) {
+        ret = "";
+      } else if (varTypes[retName] === NUMERIC) {
+        ret = 0;
+      }
+      pushInstruction(function () {
+        var argVals = {};
+        for (var i=0;i<fArgs.length;i++) {
+          argVals[argNames[i]] = fArgs[i]();
+        };
+        // If we had local variables, we'd set them to 0 here
+        machine.callSub(sub,argVals,ret);
+      });
+      return true;
+    }	  
+    // Hack to get variable names from optimised code by stringifying a
+    // function definition This let's us fully optimize and still eval()
+    // code
+    //
+    // Typical Usage: nameFromFunctionString(function{NAME}.toString())
+    function nameFromFunctionString(o) {
+      var start = o.indexOf('{')+1;
+      
+      // Some old Firefoxen insert whitespace in the stringified function
+      while (o[start] < o.length && o[start]===' ' || o[start]==='\n' || o[start]==='\r' || o[start]==='\t')
+        start++;
+      
+      //  Some old Firefoxen insert semicolons
+      var end = o.indexOf(';');
+      if (end === -1)
+        end = o.indexOf('}');
+      return o.substr(start,end-start);
+    };
 
-          // Find name of local variable in the machine
-          function localVariableName(name) {
-            /** @suppress {uselessCode} */
-            var vname = (function(){machine.getLocal}).toString();
-            vname = nameFromFunctionString(vname);
-            
-            var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
-            return vname+'(\''+escaped+'\')';
-          };
+    // find name of a variable in the machine
+    function variableName(name) {
+      /** @suppress {uselessCode} */
+      var vname = (function(){machine.getGlobal}).toString();
+      vname = nameFromFunctionString(vname);
+      
+      var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
+      return vname+'(\''+escaped+'\')';
+    };
 
-	  return {          
+    // Find name of local variable in the machine
+    function localVariableName(name) {
+      /** @suppress {uselessCode} */
+      var vname = (function(){machine.getLocal}).toString();
+      vname = nameFromFunctionString(vname);
+      
+      var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
+      return vname+'(\''+escaped+'\')';
+    };
+
+    return {
+      expressionHandler: function(){
+        // generate expressions
+	// Returns an EXPRESSION token or null
+        // XXX Handle errors
+	// XXX Fail if types are incorrect in every case
+	
+        
+        // This is vastly simplified because we keep JavaScript semantics for
+        // operator precendence.
+	
+	return {          
           numericLiteral: function(value) {
             return {type:EXPRESSION,value:value,resultType:NUMERIC,subs:[]};
           },
@@ -889,17 +902,17 @@ function CodeGen(display, audio, machine, logger) {
             return {type:BOOLEXPRESSION,value:exp1.value+op+exp2.value,subs:exp1.subs.concat(exp2.subs)};
           },
           callSubroutine: function(name,argExps) {
-            // subroutine results are saved in a temp variable
-            var temp = nextExpressionSubroutineName();
-            // Expressions have a list of subroutines the need to be called
-            // before they are run
-            var subs = [{temp:temp,name:name,args:argExps}];
-            var retName = returnValueName(name);
-
-            // The name of the variable where the temps are stored
-            var t = localVariableName(temp);
-            return {type:EXPRESSION,value:t,resultType:varTypes[retName],subs:subs};
-          },
+	    // subroutine results are saved in a temp variable
+	    var temp = nextExpressionSubroutineName();
+	    // Expressions have a list of subroutines the need to be called
+	    // before they are run
+	    var subs = [{temp:temp,name:name,args:argExps}];
+	    var retName = returnValueName(name);
+	    
+	    // The name of the variable where the temps are stored
+	    var t = localVariableName(temp);
+	    return {type:EXPRESSION,value:t,resultType:varTypes[retName],subs:subs};
+	  },
           binaryExpression: function(operator,a,b) {
             if (a.resultType !== b.resultType ||
                 (a.resultType === STRING && operator !== PLUS)) {
@@ -925,858 +938,843 @@ function CodeGen(display, audio, machine, logger) {
             
           }
         };
-	}(),
-
-        // XXX handle errors by throwing an exception
-        // XXX don't pass in the line number- let the caller handle the exception and print errors
-        
-        // Adds instructions with calls to all of the function
-        // referenced in the expression, then returns function that
-        // evaluates the expression
-        _expressionToFunction: function(exp) {
-          function stringToFunction(expr) {
-            // Actually convert a JS expression string to a function
-            // Put it in a list to work around bug in some older browsers
-            // evaluating a function expression directly
-            var text = '[(function(){return '+expr+';})]';
-            var listFunc = eval(text);
-            return listFunc[0];
-          };
-
-          for (var i=0;i<exp.subs.length;i++) {
-            this.callSubroutine(exp.subs[i].name,exp.subs[i].args,0);
-            // wrap in function tocreate new temp for each iteration
-            (function(){
-              var temp = exp.subs[i].temp;
-              pushInstruction(function() {
-                machine.saveRetToLocal(temp);
-                machine.advance();
-              });})();
-          }
-      
-          return stringToFunction(exp.value);
-        },
-
-        printString: function(text,newline,pause,num) {
-          if (text === null || text.length === 0) {
-            // bare naked print
-            if (newline)
-              text = "\n";
-          } else {
-            if (newline)
-              text = text+"\n";
-          }
-          if (pause) {
-            pushInstruction(function() {
-              display.printMenu([function(){return text;}],[""],
-                                undefined,undefined,undefined,undefined,undefined);
-              
-              machine.setInterruptDelay(0);
-              machine.setInputVariable("!"); // Internal name
-              machine.advance();
-            });
-          } else {
-            pushInstruction(function(){
-              if (display.print(text))
-                // Give up the CPU to allow display
-                machine.setInterruptDelay(0);
-              machine.advance();
-            });
-          }
-          return true;
-        },
-        printExp: function(exp,newline,pause,num) {
-          if (!exp || (exp.resultType !== STRING)) {
-            logger.error("Invalid PRINT on line "+num+"\n");
-            return false;
-          }
-          if (newline) {
-            exp.value = exp.value+"+\"\\n\"";
-          }
-          var text = this._expressionToFunction(exp);
-          if (pause) {
-            pushInstruction(function() {
-              display.printMenu([text],[""],
-                                undefined,undefined,undefined,undefined,undefined);
-              machine.setInterruptDelay(0);
-              machine.setInputVariable("!"); // Internal name
-              machine.advance();
-            });
-          } else {
-            pushInstruction(function(){
-              if (display.print(text()))
-                // Give up the CPU to allow display
-                machine.setInterruptDelay(0);
-              machine.advance();
-            });
-          }
-          return true;
-        },
-        ifStatement: function(boolExp,num){
-          if (!boolExp) {
-            logger.error("Invalid IF on line "+num+"\n");
-            return false;
-          }
-          var test = this._expressionToFunction(boolExp);
-          loopStack.push({type:IF,
-                                  test:test,
-                                  elseloc:null,
-                                  loc:nextInstruction()});
-          pushInstruction(null);
-          return true;
-        },
-        endIf: function(num) {
-          var obj = loopStack.pop();
-          if ((!obj) || obj.type !== IF) {
-            logger.error("ERROR: END IF WITHOUT MATCHING IF\n");
-          } else {
-            var pos;
-            if (!obj.elseloc) {
-              pos=nextInstruction();
-            } else {
-              pos = obj.elseloc+1;
-            }
-            var test = obj.test;
-            addInstructionAt(obj.loc,function(){
-              if (test())
-                machine.advance();
-              else
-                machine.setLoc(pos);
-            });
+      }(),
+      printString: function(text,newline,pause,num) {
+        if (text === null || text.length === 0) {
+          // bare naked print
+          if (newline)
+            text = "\n";
+        } else {
+          if (newline)
+            text = text+"\n";
+        }
+        if (pause) {
+          pushInstruction(function() {
+            display.printMenu([function(){return text;}],[""],
+                              undefined,undefined,undefined,undefined,undefined);
             
-            if (!!obj.elseloc) {
-              var end=nextInstruction();
-              addInstructionAt(obj.elseloc,function(){
-                machine.setLoc(end);
-              });
-            }
-          }
-          return true;
-        },
-        elseStatement: function(num) {
-          var obj = loopStack[loopStack.length-1];
-          if ((!obj) || obj.type !== IF) {
-            logger.error("ERROR: ELSE WITHOUT MATCHING IF\n");
-          } else {
-            obj.elseloc=nextInstruction();
-            pushInstruction(null);
-          }
-          return true;
-        },
-        endWhile: function(num) {
-          var obj = loopStack.pop();
-          if ((!obj) || obj.type !== WHILE) {
-            logger.error("ERROR: WEND IF WITHOUT MATCHING WHILE\n");
-          } else {
-            var test = obj.test;
-            pushInstruction(function(){
-              machine.setLoc(obj.top);
-            });
-            var pos=nextInstruction();
-            addInstructionAt(obj.loc,function(){
-              if (test())
-                machine.advance();
-              else
-                machine.setLoc(pos);
-            });
-          }
-          return true;
-        },
-        whileStatement: function(exp,num){
-          if (!exp) {
-            logger.error("Invalid WHILE on line "+num+"\n");
-            return false;
-          }
-          var top = nextInstruction();
-          var test = this._expressionToFunction(exp);
-
-          loopStack.push({type:WHILE,
-                                  test:test,
-                                  elseloc:null,
-                                  top:top,
-                                  loc:nextInstruction()});
-          pushInstruction(null);
-          return true;
-        },
-        beginRandom: function(num) {
-          loopStack.push({type:RANDOM,
-                                  events:[],
-                                  loc:nextInstruction()});
-          pushInstruction(null);
-          return true;
-        },
-	waitForMusic: function() {
-	  pushInstruction(function(){
-	    // Wait flag 1 is wait for music
-	    machine.setAudioWaitFlag();
-	    machine.setInterruptDelay(0);
-	    machine.advance();
-	  }
-				 );
-	  return true;
-	 
-	},
-        beginSubroutine: function(sub, args, num) {
-          if (code[sub] !== undefined) {
-            logger.error("SUBROUTINE "+sub+" ALREADY DEFINED");
-          } else {
-            var i
-            for (i=0;i<loopStack.length;i++) {
-              if (loopStack[i].type === SUBROUTINE) {
-                logger.error("NESTED SUBROUTINES NOT ALLOWED");
-                break;
-              }
-            }
-            if (i === loopStack.length) {
-              loopStack.push({type:SUBROUTINE});
-              currentSub = sub;
-              code[sub] = [];
-            }
-          }
-          return true;
-        },
-        callSubroutine: function(sub, argExps, num) {
-          var argNames = subArgNames[sub];
-          var fArgs = [];
-          for (var i=0;i<argExps.length;i++) {
-            fArgs.push(this._expressionToFunction(argExps[i]));
-          }
-          var retName = returnValueName(sub);
-          var ret;
-          if (varTypes[retName] === STRING) {
-            ret = "";
-          } else if (varTypes[retName] === NUMERIC) {
-            ret = 0;
-          }
-          pushInstruction(function () {
-            var argVals = {};
-            for (var i=0;i<fArgs.length;i++) {
-              argVals[argNames[i]] = fArgs[i]();
-            };
-            // If we had local variables, we'd set them to 0 here
-            machine.callSub(sub,argVals,ret);
+            machine.setInterruptDelay(0);
+            machine.setInputVariable("!"); // Internal name
+            machine.advance();
           });
-          return true;
-        },
-        endSubroutine: function(num) {
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== SUBROUTINE) {
-            logger.error("UNEXPECTED END SUBROUTINE");
-	    return false;
+        } else {
+          pushInstruction(function(){
+            if (display.print(text))
+              // Give up the CPU to allow display
+              machine.setInterruptDelay(0);
+            machine.advance();
+          });
+        }
+        return true;
+      },
+      printExp: function(exp,newline,pause,num) {
+        if (!exp || (exp.resultType !== STRING)) {
+          logger.error("Invalid PRINT on line "+num+"\n");
+          return false;
+        }
+        if (newline) {
+          exp.value = exp.value+"+\"\\n\"";
+        }
+        var text = expressionToFunction(exp);
+        if (pause) {
+          pushInstruction(function() {
+            display.printMenu([text],[""],
+                              undefined,undefined,undefined,undefined,undefined);
+            machine.setInterruptDelay(0);
+            machine.setInputVariable("!"); // Internal name
+            machine.advance();
+          });
+        } else {
+          pushInstruction(function(){
+            if (display.print(text()))
+              // Give up the CPU to allow display
+              machine.setInterruptDelay(0);
+            machine.advance();
+          });
+        }
+        return true;
+      },
+      ifStatement: function(boolExp,num){
+        if (!boolExp) {
+          logger.error("Invalid IF on line "+num+"\n");
+          return false;
+        }
+        var test = expressionToFunction(boolExp);
+        loopStack.push({type:IF,
+                        test:test,
+                        elseloc:null,
+                        loc:nextInstruction()});
+        pushInstruction(null);
+        return true;
+      },
+      endIf: function(num) {
+        var obj = loopStack.pop();
+        if ((!obj) || obj.type !== IF) {
+          logger.error("ERROR: END IF WITHOUT MATCHING IF\n");
+        } else {
+          var pos;
+          if (!obj.elseloc) {
+            pos=nextInstruction();
           } else {
-            loopStack.pop();
-            currentSub = "!";
+            pos = obj.elseloc+1;
           }
-          return true;
-        },
-        returnStatement: function(exp,num) {
-          // XXX Keep track of returns - if there's at least one
-          // return or the sub is used in an expression, all code
-          // paths in the sub should have returns
+          var test = obj.test;
+          addInstructionAt(obj.loc,function(){
+            if (test())
+              machine.advance();
+            else
+              machine.setLoc(pos);
+          });
+          
+          if (!!obj.elseloc) {
+            var end=nextInstruction();
+            addInstructionAt(obj.elseloc,function(){
+              machine.setLoc(end);
+            });
+          }
+        }
+        return true;
+      },
+      elseStatement: function(num) {
+        var obj = loopStack[loopStack.length-1];
+        if ((!obj) || obj.type !== IF) {
+          logger.error("ERROR: ELSE WITHOUT MATCHING IF\n");
+        } else {
+          obj.elseloc=nextInstruction();
+          pushInstruction(null);
+        }
+        return true;
+      },
+      endWhile: function(num) {
+        var obj = loopStack.pop();
+        if ((!obj) || obj.type !== WHILE) {
+          logger.error("ERROR: WEND IF WITHOUT MATCHING WHILE\n");
+        } else {
+          var test = obj.test;
+          pushInstruction(function(){
+            machine.setLoc(obj.top);
+          });
+          var pos=nextInstruction();
+          addInstructionAt(obj.loc,function(){
+            if (test())
+              machine.advance();
+            else
+              machine.setLoc(pos);
+          });
+        }
+        return true;
+      },
+      whileStatement: function(exp,num){
+        if (!exp) {
+          logger.error("Invalid WHILE on line "+num+"\n");
+          return false;
+        }
+        var top = nextInstruction();
+        var test = expressionToFunction(exp);
 
-          // Make sure there's a subroutine somewhere
-          for (var i=loopStack.length-1;i>=0;i--) {
+        loopStack.push({type:WHILE,
+                        test:test,
+                        elseloc:null,
+                        top:top,
+                        loc:nextInstruction()});
+        pushInstruction(null);
+        return true;
+      },
+      beginRandom: function(num) {
+        loopStack.push({type:RANDOM,
+                        events:[],
+                        loc:nextInstruction()});
+        pushInstruction(null);
+        return true;
+      },
+      waitForMusic: function() {
+	pushInstruction(function(){
+	  // Wait flag 1 is wait for music
+	  machine.setAudioWaitFlag();
+	  machine.setInterruptDelay(0);
+	  machine.advance();
+	}
+		       );
+	return true;
+	
+      },
+      beginSubroutine: function(sub, args, num) {
+        if (code[sub] !== undefined) {
+          logger.error("SUBROUTINE "+sub+" ALREADY DEFINED");
+        } else {
+          var i
+          for (i=0;i<loopStack.length;i++) {
             if (loopStack[i].type === SUBROUTINE) {
+              logger.error("NESTED SUBROUTINES NOT ALLOWED");
               break;
             }
           }
-          if (i===-1) {
-            logger.error("UNEXPECTED RETURN OUTSIDE OF SUB");
-            return false;
+          if (i === loopStack.length) {
+            loopStack.push({type:SUBROUTINE});
+            currentSub = sub;
+            code[sub] = [];
           }
-          exp = this._expressionToFunction(exp);
-          pushInstruction(function() {
-            machine.returnFromSub(exp);
-          });
-          return true;
-        },
-        endRandom: function(num) {
-          var obj = loopStack.pop();
-          if ((!obj) || obj.type !== RANDOM) {
-            logger.error("ERROR: END RANDOM WITHOUT MATCHING BEGIN RANDOM on "+num+"\n");
+        }
+        return true;
+      },
+      callSubroutine: callSubroutine,
+      endSubroutine: function(num) {
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== SUBROUTINE) {
+          logger.error("UNEXPECTED END SUBROUTINE");
+	  return false;
+        } else {
+          loopStack.pop();
+          currentSub = "!";
+        }
+        return true;
+      },
+      returnStatement: function(exp,num) {
+        // XXX Keep track of returns - if there's at least one
+        // return or the sub is used in an expression, all code
+        // paths in the sub should have returns
+
+        // Make sure there's a subroutine somewhere
+        for (var i=loopStack.length-1;i>=0;i--) {
+          if (loopStack[i].type === SUBROUTINE) {
+            break;
+          }
+        }
+        if (i===-1) {
+          logger.error("UNEXPECTED RETURN OUTSIDE OF SUB");
+          return false;
+        }
+        exp = expressionToFunction(exp);
+        pushInstruction(function() {
+          machine.returnFromSub(exp);
+        });
+        return true;
+      },
+      endRandom: function(num) {
+        var obj = loopStack.pop();
+        if ((!obj) || obj.type !== RANDOM) {
+          logger.error("ERROR: END RANDOM WITHOUT MATCHING BEGIN RANDOM on "+num+"\n");
+        } else {
+          var events = obj.events;
+          if (events.length < 1) {
+            logger.error("ERROR: RANDOM STATEMENTS REQUIRE AT LEAST 1 CHOICE\n");
           } else {
-            var events = obj.events;
-            if (events.length < 1) {
-              logger.error("ERROR: RANDOM STATEMENTS REQUIRE AT LEAST 1 CHOICE\n");
-            } else {
-              var numNulls = 0;
-              for (var n=0;n<events.length;n++) {
-                if (events[n].chance === null) {
-                  numNulls++;
-                }
-              }
-              if (numNulls === events.length) {
-                for (var n=0;n<events.length;n++) {
-                  events[n].chance = 100.0/events.length;
-                }
-              } else if (numNulls > 0) {
-                logger.error("ERROR: MIXED RANDOM MODES - EITHER SPECIFY CHANCE PERCENT OR DON'T\n");
-              }
-              
-              var total = 0;
-              for (var n=0;n<events.length;n++) {
-                total += events[n].chance;
-              }
-              if (total < 99.999 || total > 100.001) {
-                logger.error("ERROR: THE CHANCES OF RANDOM EVENTS SHOULD ADD UP TO 100%\n");
-              } else {
-                var endloc = nextInstruction();
-                for (var n=1;n<events.length;n++) {
-                  addInstructionAt(events[n].loc-1, function() {
-                    machine.setLoc(endloc);
-                  });
-                }
-                addInstructionAt(obj.loc, function () {
-                  var r = Math.random()*100;
-                  for (var n=0;n<events.length;n++) {
-                    r -= events[n].chance;
-                    if (r<0 || n == events.length-1) {
-                      machine.setLoc(events[n].loc);
-                      break;
-                    }
-                  }
-                });
+            var numNulls = 0;
+            for (var n=0;n<events.length;n++) {
+              if (events[n].chance === null) {
+                numNulls++;
               }
             }
-          }
-          return true;
-        },
-        withChance: function(percent, num) {
-          var obj = loopStack[loopStack.length-1];
-          if ((!obj) || obj.type !== RANDOM) {
-            logger.error("ERROR: WITH CHANCE WITHOUT MATCHING BEGIN RANDOM\n");
-          } else {
-            if (obj.events.length === 0 && nextInstruction() !== obj.loc+1) {
-              logger.error("ERROR: NO CODE ALLOWED BETWEEN BEGIN RANDOM AND FIRST WITH CHOICE\n");
+            if (numNulls === events.length) {
+              for (var n=0;n<events.length;n++) {
+                events[n].chance = 100.0/events.length;
+              }
+            } else if (numNulls > 0) {
+              logger.error("ERROR: MIXED RANDOM MODES - EITHER SPECIFY CHANCE PERCENT OR DON'T\n");
+            }
+            
+            var total = 0;
+            for (var n=0;n<events.length;n++) {
+              total += events[n].chance;
+            }
+            if (total < 99.999 || total > 100.001) {
+              logger.error("ERROR: THE CHANCES OF RANDOM EVENTS SHOULD ADD UP TO 100%\n");
             } else {
-              if (percent === undefined) {
+              var endloc = nextInstruction();
+              for (var n=1;n<events.length;n++) {
+                addInstructionAt(events[n].loc-1, function() {
+                  machine.setLoc(endloc);
+                });
+              }
+              addInstructionAt(obj.loc, function () {
+                var r = Math.random()*100;
+                for (var n=0;n<events.length;n++) {
+                  r -= events[n].chance;
+                  if (r<0 || n == events.length-1) {
+                    machine.setLoc(events[n].loc);
+                    break;
+                  }
+                }
+              });
+            }
+          }
+        }
+        return true;
+      },
+      withChance: function(percent, num) {
+        var obj = loopStack[loopStack.length-1];
+        if ((!obj) || obj.type !== RANDOM) {
+          logger.error("ERROR: WITH CHANCE WITHOUT MATCHING BEGIN RANDOM\n");
+        } else {
+          if (obj.events.length === 0 && nextInstruction() !== obj.loc+1) {
+            logger.error("ERROR: NO CODE ALLOWED BETWEEN BEGIN RANDOM AND FIRST WITH CHOICE\n");
+          } else {
+            if (percent === undefined) {
+              if (obj.events.length > 0) // Leave room for the jump to the end
+                pushInstruction(null);
+              obj.events.push({loc:nextInstruction(),
+                               chance:null});
+              
+            } else {
+              var chance = Number(percent);
+              if (chance < 0.001 || chance > 99.999) {
+                logger.error("ERROR: CHANCES MUST BE BETWEEN 0 and 100\n");
+              } else {
                 if (obj.events.length > 0) // Leave room for the jump to the end
                   pushInstruction(null);
                 obj.events.push({loc:nextInstruction(),
-                                 chance:null});
-                
-              } else {
-                var chance = Number(percent);
-                if (chance < 0.001 || chance > 99.999) {
-                  logger.error("ERROR: CHANCES MUST BE BETWEEN 0 and 100\n");
-                } else {
-                  if (obj.events.length > 0) // Leave room for the jump to the end
-                    pushInstruction(null);
-                  obj.events.push({loc:nextInstruction(),
-                                   chance:chance});
-                }
+                                 chance:chance});
               }
             }
           }
-          return true;
-        },
-        withEvenChance: function(num) {
-          this.withChance(undefined,num);
-          return true;
-        },
-        beginAsk: function(prompt,num) {
-          if (!prompt) {
-            logger.error("Invalid ASK statement line "+num+"\n");
-            return false;
-          }
-          var top = nextInstruction();
-          prompt = this._expressionToFunction(prompt);
-          loopStack.push({type:ASK,
-                                  prompt:prompt,
-                                  color:[255,255,85],
-                                  promptColor:[85,255,255],
-                                  bgColor:[0,0,0],
-                                  noloc:null,
-                                  defaultValue:null,
-                                  top:top,
-                                  loc:nextInstruction()});
-          pushInstruction(null); // Save space for prompt
+        }
+        return true;
+      },
+      withEvenChance: function(num) {
+        this.withChance(undefined,num);
+        return true;
+      },
+      beginAsk: function(prompt,num) {
+        if (!prompt) {
+          logger.error("Invalid ASK statement line "+num+"\n");
+          return false;
+        }
+        var top = nextInstruction();
+        prompt = expressionToFunction(prompt);
+        loopStack.push({type:ASK,
+                        prompt:prompt,
+                        color:[255,255,85],
+                        promptColor:[85,255,255],
+                        bgColor:[0,0,0],
+                        noloc:null,
+                        defaultValue:null,
+                        top:top,
+                        loc:nextInstruction()});
+        pushInstruction(null); // Save space for prompt
+        pushInstruction(null);
+        return true;
+      },
+      askColor: function(color,num) {
+        var c = intToColor(color);
+        if (c === null) {
+          logger.error("INVALID ASK COLOR\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
+          logger.error("ASK COLOR OUTSIDE OF AN ASK\n");
+          return false;
+        }
+        if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
+          logger.error("ASK COLOR AFTER CODE\n");
+          return false;
+        }
+        loopStack[loopStack.length-1].color = c;
+        return true;
+      },
+      askBGColor: function(color,num) {
+        var c = intToColor(color);
+        if (c === null) {
+          logger.error("INVALID ASK BGCOLOR\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
+          logger.error("ASK BGCOLOR OUTSIDE OF AN ASK\n");
+          return false;
+        }
+        if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
+          logger.error("ASK BGCOLOR AFTER CODE\n");
+          return false;
+        }
+        loopStack[loopStack.length-1].bgColor = c;
+        return true;
+      },
+      askPromptColor: function(color,num) {
+        var c = intToColor(color);
+        if (c === null) {
+          logger.error("INVALID ASK PROMPT COLOR\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
+          logger.error("ASK PROMPT COLOR OUTSIDE OF AN ASK\n");
+          return false;
+        }
+        if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
+          logger.error("ASK PROMPT COLOR AFTER CODE\n");
+          return false;
+        }
+        loopStack[loopStack.length-1].promptColor = c;
+        return true;
+      },
+      onNo: function(num) {
+        var ask = loopStack[loopStack.length-1];
+        if (ask && ask.type === ASK) {
+          ask.noLoc = nextInstruction();
           pushInstruction(null);
-          return true;
-        },
-        askColor: function(color,num) {
-          var c = intToColor(color);
-          if (c === null) {
-            logger.error("INVALID ASK COLOR\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-            logger.error("ASK COLOR OUTSIDE OF AN ASK\n");
-            return false;
-          }
+        } else {
+          logger.error("ON NO outside of an ASK\n");
+          return false;
+        }
+        return true;
+      },
+      onYes: function(num) {
+        var ask = loopStack[loopStack.length-1];
+        if (ask && ask.type === ASK) {
           if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-            logger.error("ASK COLOR AFTER CODE\n");
+            logger.error("ASK ON YES AFTER CODE\n");
             return false;
           }
-          loopStack[loopStack.length-1].color = c;
-          return true;
-        },
-        askBGColor: function(color,num) {
-          var c = intToColor(color);
-          if (c === null) {
-            logger.error("INVALID ASK BGCOLOR\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-            logger.error("ASK BGCOLOR OUTSIDE OF AN ASK\n");
-            return false;
-          }
-          if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-            logger.error("ASK BGCOLOR AFTER CODE\n");
-            return false;
-          }
-          loopStack[loopStack.length-1].bgColor = c;
-          return true;
-        },
-        askPromptColor: function(color,num) {
-          var c = intToColor(color);
-          if (c === null) {
-            logger.error("INVALID ASK PROMPT COLOR\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-            logger.error("ASK PROMPT COLOR OUTSIDE OF AN ASK\n");
-            return false;
-          }
-          if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-            logger.error("ASK PROMPT COLOR AFTER CODE\n");
-            return false;
-          }
-          loopStack[loopStack.length-1].promptColor = c;
-          return true;
-        },
-        onNo: function(num) {
-          var ask = loopStack[loopStack.length-1];
-          if (ask && ask.type === ASK) {
-            ask.noLoc = nextInstruction();
-            pushInstruction(null);
-          } else {
-            logger.error("ON NO outside of an ASK\n");
-            return false;
-          }
-          return true;
-        },
-        onYes: function(num) {
-          var ask = loopStack[loopStack.length-1];
-          if (ask && ask.type === ASK) {
-            if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-              logger.error("ASK ON YES AFTER CODE\n");
-              return false;
-            }
-          } else {
-            logger.error("ON YES outside of an ASK\n");
-            return false;
-          }
-          return true;
-        },
-        askDefault: function(value,num) {
-          if (value !== true && value !== false) {
-            logger.error("INVALID ASK DEFAULT\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-            logger.error("DEFAULT OUTSIDE OF AN ASK\n");
-            return false;
-          }
-          if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-            logger.error("ASK DEFAULT AFTER CODE\n");
-            return false;
-          }
-          loopStack[loopStack.length-1].defaultValue = value;
-          return true;
-        },
-        endAsk: function(num) {
-          var ask = loopStack.pop();
-          if (ask && ask.type === ASK) {
-            var noLoc = nextInstruction();
-            if (ask.noLoc) {
-              var nextI = nextInstruction();
-              addInstructionAt(ask.noLoc,function(){
-                machine.setLoc(nextI);
-              });
-              noLoc = ask.noLoc+1;
-            }
-            var prompt = ask.prompt;
-            var top = ask.top;
-            addInstructionAt(ask.loc, function(){
-              display.printAsk(prompt,ask.defaultValue,ask.color,ask.bgColor,ask.promptColor);
-              machine.setInterruptDelay(0);
-              machine.setInputVariable("!"); // Invalid as an identifier
-              machine.advance();
+        } else {
+          logger.error("ON YES outside of an ASK\n");
+          return false;
+        }
+        return true;
+      },
+      askDefault: function(value,num) {
+        if (value !== true && value !== false) {
+          logger.error("INVALID ASK DEFAULT\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
+          logger.error("DEFAULT OUTSIDE OF AN ASK\n");
+          return false;
+        }
+        if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
+          logger.error("ASK DEFAULT AFTER CODE\n");
+          return false;
+        }
+        loopStack[loopStack.length-1].defaultValue = value;
+        return true;
+      },
+      endAsk: function(num) {
+        var ask = loopStack.pop();
+        if (ask && ask.type === ASK) {
+          var noLoc = nextInstruction();
+          if (ask.noLoc) {
+            var nextI = nextInstruction();
+            addInstructionAt(ask.noLoc,function(){
+              machine.setLoc(nextI);
             });
-            addInstructionAt(ask.loc+1, function(){
-              if (machine.getGlobal("!")!==null) {
-                if (machine.getGlobal("!").length>0) {
-                  var key=machine.getGlobal("!").toUpperCase()[0];
-                  if (key === "Y") {
-                    machine.advance();
-                    return;
-                  } else if (key === "N") {
-                    machine.setLoc(noLoc);
-                    return;
-                  }
-                } else {
-                  if (ask.defaultValue === true) {
-                    machine.advance();
-                    return;
-                  } else if (ask.defaultValue === false) {
-                    machine.setLoc(noLoc);
-                    return;
-                  }
+            noLoc = ask.noLoc+1;
+          }
+          var prompt = ask.prompt;
+          var top = ask.top;
+          addInstructionAt(ask.loc, function(){
+            display.printAsk(prompt,ask.defaultValue,ask.color,ask.bgColor,ask.promptColor);
+            machine.setInterruptDelay(0);
+            machine.setInputVariable("!"); // Invalid as an identifier
+            machine.advance();
+          });
+          addInstructionAt(ask.loc+1, function(){
+            if (machine.getGlobal("!")!==null) {
+              if (machine.getGlobal("!").length>0) {
+                var key=machine.getGlobal("!").toUpperCase()[0];
+                if (key === "Y") {
+                  machine.advance();
+                  return;
+                } else if (key === "N") {
+                  machine.setLoc(noLoc);
+                  return;
                 }
-              }
-              machine.setLoc(top);
-            });
-          } else {
-            logger.error("END ASK WITHOUT ASK\n");
-	    return false;
-          }
-          return true;
-        },
-        beginMenu: function(prompt,num) {
-          if (!prompt) {
-            logger.error("Invalid MENU statement line "+num+"\n");
-            return false;
-          }
-          loopStack.push({type:MENU,
-                                  color:[255,255,85],
-                                  choiceColor:[255,255,255],
-                                  promptColor:[85,255,255],
-                                  bgColor:[0,0,0],
-                                  choices:[],
-                                  prompt:prompt,
-                                  loc:nextInstruction()});
-          pushInstruction(null); // Goto subroutines and setup
-          pushInstruction(null); // Display menu and throw interrupt
-          pushInstruction(null); // process response
-          return true;
-        },
-        menuColor: function(color,num) {
-          var c = intToColor(color);
-          if (c === null) {
-            logger.error("INVALID MENU COLOR\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            logger.error("MENU COLOR OUTSIDE OF A MENU\n");
-            return false;
-          }
-          if (loopStack[loopStack.length-1].choices.length > 0) {
-            logger.error("MENU COLOR AFTER CHOICE\n");
-            return false;
-          }
-          loopStack[loopStack.length-1].color = c;
-          return true;
-        },
-        menuBGColor: function(color,num) {
-          var c = intToColor(color);
-          if (c === null) {
-            logger.error("INVALID MENU BGCOLOR\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            logger.error("MENU BGCOLOR OUTSIDE OF A MENU\n");
-            return false;
-          }
-          if (loopStack[loopStack.length-1].choices.length > 0) {
-            logger.error("MENU BGCOLOR AFTER CHOICE\n");
-            return false;
-          }
-          loopStack[loopStack.length-1].bgColor = c;
-          return true;
-        },
-        menuChoiceColor: function(color,num) {
-          var c = intToColor(color);
-          if (c === null) {
-            logger.error("INVALID MENU CHOICE COLOR\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            logger.error("MENU CHOICE COLOR OUTSIDE OF A MENU\n");
-            return false;
-          }
-          if (loopStack[loopStack.length-1].choices.length > 0) {
-            logger.error("MENU CHOICE COLOR AFTER CHOICE\n");
-            return false;
-          }
-          loopStack[loopStack.length-1].choiceColor = c;
-          return true;
-        },
-        menuPromptColor: function(color,num) {
-          var c = intToColor(color);
-          if (c === null) {
-            logger.error("INVALID MENU PROMPT COLOR\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            logger.error("MENU PROMPT COLOR OUTSIDE OF A MENU\n");
-            return false;
-          }
-          if (loopStack[loopStack.length-1].choices.length > 0) {
-            logger.error("MENU PROMPT COLOR AFTER CHOICE\n");
-            return false;
-          }
-          loopStack[loopStack.length-1].promptColor = c;
-          return true;
-        },
-        endMenu: function(num) {
-          /* Subroutine expressions are tricky for menus.
-
-             Subroutine expressions require adding instructions to
-             call the subroutine before the instruction using the
-             expression function.
-
-             We don't know what those subroutines are until we get to
-             the end of the menu.
-
-             The strategy is to put the subroutine calls at the end,
-             start the menu with a jump to those calls, and
-             follow the calls with a jump back to the second
-             instruction in the menu.
-
-             Another strategy might be to stuff all the calls into the
-             first instruction and avoid the jumps.
-             
-          */
-          var menu = loopStack.pop();
-          if (menu && menu.type === MENU) {
-            var lastMenuI = nextInstruction();
-            pushInstruction(null); // replace with
-                                           // setLoc(newI); so last
-                                           // choice continues past
-                                           // the menu
-            var choiceText = [];
-            var choiceKeys = [];
-            var hideConditions = [];
-            for (var n=0;n<menu.choices.length;n++) {
-              choiceText.push(this._expressionToFunction(menu.choices[n].exp));
-              choiceKeys.push(menu.choices[n].key);
-              if (menu.choices[n].hideIf) {
-                hideConditions.push(this._expressionToFunction(menu.choices[n].hideIf));
               } else {
-                hideConditions.push(function(){return false;});
-              }
-            }
-            var prompt = this._expressionToFunction(menu.prompt);
-            pushInstruction(function(){
-              machine.setLoc(menu.loc+1);
-            });
-            addInstructionAt(menu.loc+1, function(){
-              var filteredText = [];
-              var filteredKeys = [];
-              for (var n=0;n<hideConditions.length;n++) {
-                if (!hideConditions[n]()) {
-                  filteredText.push(choiceText[n]);
-                  filteredKeys.push(choiceKeys[n]);
+                if (ask.defaultValue === true) {
+                  machine.advance();
+                  return;
+                } else if (ask.defaultValue === false) {
+                  machine.setLoc(noLoc);
+                  return;
                 }
               }
-              display.printMenu(filteredText,filteredKeys,prompt,menu.color,menu.bgColor,menu.promptColor,menu.choiceColor);
-              machine.setInterruptDelay(0);
-              machine.setInputVariable("!"); // Invalid as an identifier
-              machine.advance();
-            });
-            addInstructionAt(menu.loc+2, function(){
-              for (var n=0;n<menu.choices.length;n++){
-                if (!hideConditions[n]()) {
-                  if (machine.getGlobal("!") && machine.getGlobal("!").toUpperCase() == menu.choices[n].key) {
-                    machine.setLoc(menu.choices[n].loc);
-                    return;
-                  }
+            }
+            machine.setLoc(top);
+          });
+        } else {
+          logger.error("END ASK WITHOUT ASK\n");
+	  return false;
+        }
+        return true;
+      },
+      beginMenu: function(prompt,num) {
+        if (!prompt) {
+          logger.error("Invalid MENU statement line "+num+"\n");
+          return false;
+        }
+        loopStack.push({type:MENU,
+                        color:[255,255,85],
+                        choiceColor:[255,255,255],
+                        promptColor:[85,255,255],
+                        bgColor:[0,0,0],
+                        choices:[],
+                        prompt:prompt,
+                        loc:nextInstruction()});
+        pushInstruction(null); // Goto subroutines and setup
+        pushInstruction(null); // Display menu and throw interrupt
+        pushInstruction(null); // process response
+        return true;
+      },
+      menuColor: function(color,num) {
+        var c = intToColor(color);
+        if (c === null) {
+          logger.error("INVALID MENU COLOR\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
+          logger.error("MENU COLOR OUTSIDE OF A MENU\n");
+          return false;
+        }
+        if (loopStack[loopStack.length-1].choices.length > 0) {
+          logger.error("MENU COLOR AFTER CHOICE\n");
+          return false;
+        }
+        loopStack[loopStack.length-1].color = c;
+        return true;
+      },
+      menuBGColor: function(color,num) {
+        var c = intToColor(color);
+        if (c === null) {
+          logger.error("INVALID MENU BGCOLOR\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
+          logger.error("MENU BGCOLOR OUTSIDE OF A MENU\n");
+          return false;
+        }
+        if (loopStack[loopStack.length-1].choices.length > 0) {
+          logger.error("MENU BGCOLOR AFTER CHOICE\n");
+          return false;
+        }
+        loopStack[loopStack.length-1].bgColor = c;
+        return true;
+      },
+      menuChoiceColor: function(color,num) {
+        var c = intToColor(color);
+        if (c === null) {
+          logger.error("INVALID MENU CHOICE COLOR\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
+          logger.error("MENU CHOICE COLOR OUTSIDE OF A MENU\n");
+          return false;
+        }
+        if (loopStack[loopStack.length-1].choices.length > 0) {
+          logger.error("MENU CHOICE COLOR AFTER CHOICE\n");
+          return false;
+        }
+        loopStack[loopStack.length-1].choiceColor = c;
+        return true;
+      },
+      menuPromptColor: function(color,num) {
+        var c = intToColor(color);
+        if (c === null) {
+          logger.error("INVALID MENU PROMPT COLOR\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
+          logger.error("MENU PROMPT COLOR OUTSIDE OF A MENU\n");
+          return false;
+        }
+        if (loopStack[loopStack.length-1].choices.length > 0) {
+          logger.error("MENU PROMPT COLOR AFTER CHOICE\n");
+          return false;
+        }
+        loopStack[loopStack.length-1].promptColor = c;
+        return true;
+      },
+      endMenu: function(num) {
+        /* Subroutine expressions are tricky for menus.
+
+           Subroutine expressions require adding instructions to
+           call the subroutine before the instruction using the
+           expression function.
+
+           We don't know what those subroutines are until we get to
+           the end of the menu.
+
+           The strategy is to put the subroutine calls at the end,
+           start the menu with a jump to those calls, and
+           follow the calls with a jump back to the second
+           instruction in the menu.
+
+           Another strategy might be to stuff all the calls into the
+           first instruction and avoid the jumps.
+           
+        */
+        var menu = loopStack.pop();
+        if (menu && menu.type === MENU) {
+          var lastMenuI = nextInstruction();
+          pushInstruction(null); // replace with
+          // setLoc(newI); so last
+          // choice continues past
+          // the menu
+          var choiceText = [];
+          var choiceKeys = [];
+          var hideConditions = [];
+          for (var n=0;n<menu.choices.length;n++) {
+            choiceText.push(expressionToFunction(menu.choices[n].exp));
+            choiceKeys.push(menu.choices[n].key);
+            if (menu.choices[n].hideIf) {
+              hideConditions.push(expressionToFunction(menu.choices[n].hideIf));
+            } else {
+              hideConditions.push(function(){return false;});
+            }
+          }
+          var prompt = expressionToFunction(menu.prompt);
+          pushInstruction(function(){
+            machine.setLoc(menu.loc+1);
+          });
+          addInstructionAt(menu.loc+1, function(){
+            var filteredText = [];
+            var filteredKeys = [];
+            for (var n=0;n<hideConditions.length;n++) {
+              if (!hideConditions[n]()) {
+                filteredText.push(choiceText[n]);
+                filteredKeys.push(choiceKeys[n]);
+              }
+            }
+            display.printMenu(filteredText,filteredKeys,prompt,menu.color,menu.bgColor,menu.promptColor,menu.choiceColor);
+            machine.setInterruptDelay(0);
+            machine.setInputVariable("!"); // Invalid as an identifier
+            machine.advance();
+          });
+          addInstructionAt(menu.loc+2, function(){
+            for (var n=0;n<menu.choices.length;n++){
+              if (!hideConditions[n]()) {
+                if (machine.getGlobal("!") && machine.getGlobal("!").toUpperCase() == menu.choices[n].key) {
+                  machine.setLoc(menu.choices[n].loc);
+                  return;
                 }
               }
-              machine.retreat();
-            });
-            
-            addInstructionAt(menu.loc,function(){
-              machine.setLoc(lastMenuI+1);
-            });
-            var newI = nextInstruction();
-            for (var n=1;n<menu.choices.length;n++) {
-              addInstructionAt(menu.choices[n].loc-1, function(){
-                machine.setLoc(newI);
-              });
             }
-            addInstructionAt(lastMenuI, function(){
+            machine.retreat();
+          });
+          
+          addInstructionAt(menu.loc,function(){
+            machine.setLoc(lastMenuI+1);
+          });
+          var newI = nextInstruction();
+          for (var n=1;n<menu.choices.length;n++) {
+            addInstructionAt(menu.choices[n].loc-1, function(){
               machine.setLoc(newI);
             });
-          } else {
-            logger.error("END MENU WITHOUT BEGIN MENU\n");
-	    return false;
           }
-          return true;
-        },
-        menuChoice: function(key,exp1,num) {
-          if (loopStack[loopStack.length-1] && loopStack[loopStack.length-1].type === MENU) {
-            if (loopStack[loopStack.length-1].choices.length > 0)
-              pushInstruction(null); // Replace with goto end
-            loopStack[loopStack.length-1].choices.push({key:key,
-                                                                        exp:exp1,
-                                                                        loc:nextInstruction()});
-          } else {
-            // XXX handle errors
-            logger.error("CHOICE OUTSIDE OF A MENU\n");
-	    return false;
-          }
-          return true;
-        },
-        menuHideIf: function(boolExp,num) {
-          if (!boolExp) {
-            logger.error("Invalid HIDE IF on line "+num+"\n");
-            return false;
-          }
-          if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-            logger.error("HIDE IF OUTSIDE OF A MENU\n");
-            return false;
-          }
-          var choices = loopStack[loopStack.length-1].choices;
-          if (choices.length === 0) {
-            logger.error("HIDE IF found before CHOICE\n");
-            return false;
-          }
-          if (choices[choices.length-1].loc !== nextInstruction()) {
-            logger.error("HIDE IF does not immediately follow CHOICE\n");
-            return false;
-          }
-          if (choices[choices.length-1].hideIf) {
-            logger.error("Multiple HIDE IFs for single CHOICE\n");
-            return false;
-          }
-          choices[choices.length-1].hideIf = boolExp;
- 
-          return true;
-          
-        },
-        color: function(exp,num) {
-          var color = this._expressionToFunction(exp);
-          pushInstruction(function(){
-            display.setColor(color());
-            machine.advance();
+          addInstructionAt(lastMenuI, function(){
+            machine.setLoc(newI);
           });
-          return true;
-        },
-        bgColor: function(c,num) {
-          var color = this._expressionToFunction(c);
-          pushInstruction(function(){
-            display.setBGColor(color());
-            machine.advance();
-          });
-          return true;
-        },
-        sleep: function(duration,num) {
-          if (!duration) {
-            logger.error("Invalid SLEEP on line "+num+"\n");
-            return false;
-          }
-          duration = this._expressionToFunction(duration);
-          pushInstruction(function() {
-            machine.advance();
-            machine.setInterruptDelay(duration());
-          });
-          return true;
-        },
-        input: function(varname,num) {
-          if (varTypes[varname] === undefined) {
-            logger.error(varname+" undefined in INPUT\n");
-            return;
-          }
-          pushInstruction(function() {
-            machine.setInterruptDelay(0);
-            machine.setInputVariable(varname);
-            machine.advance();
-          });
-          return true;
-        },
-        play: function(abc,num) {
-	  if (!abc) {
-	    logger.error("Invalid PLAY on line "+num+"\n");
-	    return false;
-	  }
-	  var notes = this._expressionToFunction(abc);
-          pushInstruction(function() {
-	    audio.play(notes());
-            machine.advance();
-          });
-          return true;
-        },
-        forStatement: function(varname,first,last,num) {
-          if (!first || !last) {
-            logger.error("what the FOR on line "+num+"\n");
-            return false;
-          }
-          //addFor: function(varname,first,last) {
-          if (varTypes[varname] === undefined) {
-            logger.error(varname+" undefined in FOR\n");
-            return;
-          }
-          
-          first = this._expressionToFunction(first);
-          last = this._expressionToFunction(last);
-
-          pushInstruction(null); // Fill it in when we get the NEXT
-          loopStack.push({type:FOR,varname:varname,
-                                  last:last,
-                                  first:first,
-                                  top:nextInstruction()});
-
-          return true;
-        },
-        letStatement: function(varname,exp,num) {
-          if (!varname) {
-            logger.error("Invalid expression assigned to "+varname+" on line "+num+"\n");
-            return false;
-          }
-          if (varTypes[varname] === undefined) {
-            logger.error(varname+" undefined in assignment\n");
-            return;
-          }
-          var value = this._expressionToFunction(exp);
-          pushInstruction(function() {
-            machine.setGlobal(varname,value());
-            machine.advance();
-          });
-          return true;
-        },
-        comment: function(tokens, num) {
-          return true;
-        },
-        clear: function(num) {
-          pushInstruction(function(){
-            display.clear();
-            machine.advance();
-            // Give up the CPU to allow display
-            machine.setInterruptDelay(0);
-          });
-          return true;
-        },
-        next: function(varExp,num) {
-          var varname = varExp[0].value;
-          var obj = loopStack.pop();
-          if ((!obj) || obj.type !== FOR || varname != obj.varname) {
-            logger.error("ERROR: NEXT WITHOUT MATCHING FOR\n");
-          } else {
-            var first = obj.first;
-            var last = obj.last;
-            pushInstruction(function(){
-              if (machine.getGlobal(varname)>=last()){
-                machine.advance();
-              } else {
-                machine.incGlobal(varname);
-                machine.setLoc(obj.top);
-              }
-            });
-            var after = nextInstruction();
-            addInstructionAt(obj.top-1,function(){
-              machine.setGlobal(obj.varname, first());
-              if (machine.getGlobal(obj.varname)<=last()){
-                machine.advance()
-              } else {
-                machine.incGlobal(obj.varname);
-                machine.setLoc(after);
-              }
-            });
-          }
-          return true;
+        } else {
+          logger.error("END MENU WITHOUT BEGIN MENU\n");
+	  return false;
         }
-      };
-      }()
+        return true;
+      },
+      menuChoice: function(key,exp1,num) {
+        if (loopStack[loopStack.length-1] && loopStack[loopStack.length-1].type === MENU) {
+          if (loopStack[loopStack.length-1].choices.length > 0)
+            pushInstruction(null); // Replace with goto end
+          loopStack[loopStack.length-1].choices.push({key:key,
+                                                      exp:exp1,
+                                                      loc:nextInstruction()});
+        } else {
+          // XXX handle errors
+          logger.error("CHOICE OUTSIDE OF A MENU\n");
+	  return false;
+        }
+        return true;
+      },
+      menuHideIf: function(boolExp,num) {
+        if (!boolExp) {
+          logger.error("Invalid HIDE IF on line "+num+"\n");
+          return false;
+        }
+        if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
+          logger.error("HIDE IF OUTSIDE OF A MENU\n");
+          return false;
+        }
+        var choices = loopStack[loopStack.length-1].choices;
+        if (choices.length === 0) {
+          logger.error("HIDE IF found before CHOICE\n");
+          return false;
+        }
+        if (choices[choices.length-1].loc !== nextInstruction()) {
+          logger.error("HIDE IF does not immediately follow CHOICE\n");
+          return false;
+        }
+        if (choices[choices.length-1].hideIf) {
+          logger.error("Multiple HIDE IFs for single CHOICE\n");
+          return false;
+        }
+        choices[choices.length-1].hideIf = boolExp;
+	
+        return true;
+        
+      },
+      color: function(exp,num) {
+        var color = expressionToFunction(exp);
+        pushInstruction(function(){
+          display.setColor(color());
+          machine.advance();
+        });
+        return true;
+      },
+      bgColor: function(c,num) {
+        var color = expressionToFunction(c);
+        pushInstruction(function(){
+          display.setBGColor(color());
+          machine.advance();
+        });
+        return true;
+      },
+      sleep: function(duration,num) {
+        if (!duration) {
+          logger.error("Invalid SLEEP on line "+num+"\n");
+          return false;
+        }
+        duration = expressionToFunction(duration);
+        pushInstruction(function() {
+          machine.advance();
+          machine.setInterruptDelay(duration());
+        });
+        return true;
+      },
+      input: function(varname,num) {
+        if (varTypes[varname] === undefined) {
+          logger.error(varname+" undefined in INPUT\n");
+          return;
+        }
+        pushInstruction(function() {
+          machine.setInterruptDelay(0);
+          machine.setInputVariable(varname);
+          machine.advance();
+        });
+        return true;
+      },
+      play: function(abc,num) {
+	if (!abc) {
+	  logger.error("Invalid PLAY on line "+num+"\n");
+	  return false;
+	}
+	var notes = expressionToFunction(abc);
+        pushInstruction(function() {
+	  audio.play(notes());
+          machine.advance();
+        });
+        return true;
+      },
+      forStatement: function(varname,first,last,num) {
+        if (!first || !last) {
+          logger.error("what the FOR on line "+num+"\n");
+          return false;
+        }
+        //addFor: function(varname,first,last) {
+        if (varTypes[varname] === undefined) {
+          logger.error(varname+" undefined in FOR\n");
+          return;
+        }
+        
+        first = expressionToFunction(first);
+        last = expressionToFunction(last);
+
+        pushInstruction(null); // Fill it in when we get the NEXT
+        loopStack.push({type:FOR,varname:varname,
+                        last:last,
+                        first:first,
+                        top:nextInstruction()});
+
+        return true;
+      },
+      letStatement: function(varname,exp,num) {
+        if (!varname) {
+          logger.error("Invalid expression assigned to "+varname+" on line "+num+"\n");
+          return false;
+        }
+        if (varTypes[varname] === undefined) {
+          logger.error(varname+" undefined in assignment\n");
+          return;
+        }
+        var value = expressionToFunction(exp);
+        pushInstruction(function() {
+          machine.setGlobal(varname,value());
+          machine.advance();
+        });
+        return true;
+      },
+      comment: function(tokens, num) {
+        return true;
+      },
+      clear: function(num) {
+        pushInstruction(function(){
+          display.clear();
+          machine.advance();
+          // Give up the CPU to allow display
+          machine.setInterruptDelay(0);
+        });
+        return true;
+      },
+      next: function(varExp,num) {
+        var varname = varExp[0].value;
+        var obj = loopStack.pop();
+        if ((!obj) || obj.type !== FOR || varname != obj.varname) {
+          logger.error("ERROR: NEXT WITHOUT MATCHING FOR\n");
+        } else {
+          var first = obj.first;
+          var last = obj.last;
+          pushInstruction(function(){
+            if (machine.getGlobal(varname)>=last()){
+              machine.advance();
+            } else {
+              machine.incGlobal(varname);
+              machine.setLoc(obj.top);
+            }
+          });
+          var after = nextInstruction();
+          addInstructionAt(obj.top-1,function(){
+            machine.setGlobal(obj.varname, first());
+            if (machine.getGlobal(obj.varname)<=last()){
+              machine.advance()
+            } else {
+              machine.incGlobal(obj.varname);
+              machine.setLoc(after);
+            }
+          });
+        }
+        return true;
+      }
+    };
+  }
+
+  return {
+    numPasses: function() { return 2; },
+    handlerForPass: function(pass) {
+      if (pass === 0)
+	return TypeGeneratorPass();
+      else if (pass === 1)
+	return CodeGeneratorPass();
+    },
+    // Called after code generation is complete to check for stupidness
+    validate: function () {
+      // Calling fake subroutines is stupid
+      for (var i=0;i<calledSubs.length;i++) {
+        var name=calledSubs[i];
+        if (!code[name]) {
+          logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
+          return false;
+        }
+      }
+      return true;
+    },
+    // Called after code generation is complete and validated
+    // Make the code
+    generate: function () {
+      // Initialize numeric values to 0, strings to empty string
+      // Variables with unknown types remain undefined, always fail in comparisons
+      var vars = {};
+      for (var v in varTypes) {
+        if (varTypes[v] === NUMERIC)
+          vars[v] = 0;
+        else if (varTypes[v] === STRING)
+          vars[v] = "";
+      }
+      machine.init(code, vars);
+    },
+    argType: function(sub,pos) {
+      return varTypes[argNameByArity(sub,pos)];
     }
+  };
 }
