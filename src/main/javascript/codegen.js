@@ -2,8 +2,25 @@
 
 function CodeGen(display, audio, machine, logger) {
 
+  // Constants representing types
+  var STRING_TYPE = {};
+  var NUMERIC_TYPE = {}
+
+  // expression types
+  var BOOLEXPRESSION={};
+  var EXPRESSION={};
+
+// Block types for loop stack
+  var FOR={};
+  var IF={};
+  var RANDOM={};
+  var MENU={};
+  var ASK={};
+  var WHILE={};
+  var SUBROUTINE={};
+
     // BEGIN Initialize integration between components
-    
+
     audio.setOnAudioComplete(machine.getOnAudioComplete());
 
     // This runs on form submit or when an menu option is clicked,
@@ -15,27 +32,27 @@ function CodeGen(display, audio, machine, logger) {
       }
       if (e)
 	e.preventDefault();
-      
+
       // Scroll to the input
       display.scroll();
     });
 
     // END Initialize integration between components
-    
+
     // Private variables
     var loopStack = [];  // Keeps track of nested loops
 
-    // Map of variable name to STRING, NUMERIC, or list of matches
+    // Map of variable name to STRING_TYPE, NUMERIC_TYPE, or list of matches
     // There are special names for subtroutine args
     var varTypes = {};
 
     var subArgNames = {};      // Map of subroutine to list of param names
-      
+
     var subArgCount = {}; // Map of subroutine to integer param count                                                     // Used when subs are called before declaration
 
     var code = {"!":[]}; // map of function names to list of instructions
     var currentSub = "!"; // Name of the sub we're currently adding code to
-      
+
     var calledSubs = [];  // Subroutines that were called before being defined
                      // So we can check that they eventually get defined
 
@@ -55,24 +72,6 @@ function CodeGen(display, audio, machine, logger) {
       code[currentSub][loc] = instruction;
     };
 
-    function comparisonOpToCode(opToken) {
-      if (opToken.type === EQUALS) {
-        return '===';
-      } else if (opToken.type === LESS) {
-        return '<';
-      } else if (opToken.type === GREATER) {
-        return '>';
-      } else if (opToken.type === GREATEROREQUAL) {
-        return '>=';
-      } else if (opToken.type === LESSOREQUAL) {
-        return '<=';
-      } else if (opToken.type === NOTEQUAL) {
-        return '!=';
-      } else {
-        return null
-      }
-    };
-
     function localVarName(name) {
       if (currentSub !== "!") {
         var pos = 0;
@@ -85,7 +84,7 @@ function CodeGen(display, audio, machine, logger) {
       }
       return name;
     };
-    
+
     // Name of the return value for the given sub
     // Used internally in varTypes to keep track of type
     function returnValueName(sub) {
@@ -102,7 +101,7 @@ function CodeGen(display, audio, machine, logger) {
 
   function TypeGeneratorPass() {
       /* Pumpkin Spice has implied, static typing
-         
+
          Certain types of expressions have a specific type
          FOR loop variables are numeric, for example
 
@@ -112,36 +111,36 @@ function CodeGen(display, audio, machine, logger) {
 
          A variable that's not used might not have a type
          Anything that's used ends up with a type
-         
-         
+
+
          Types are determined in the first pass of the compiler by
          building a map of variables to their types.
 
          Variables with unknown types are associated with a list of
          variables with the same type. As types are determined, these
          lists are used to fill in missing types
-         
+
           Possible return values:
-            STRING - this is a string
-            NUMERIC - this is a numeric type
+            STRING_TYPE - this is a string
+            NUMERIC_TYPE - this is a numeric type
             null - something is wrong
             Array - we haven't figured it out - this is a list of identifiers
 
          The second pass uses this type data to generate code
-         
+
       */
 
       function assignTypes(variables,type) {
         // type must be resolved before this is called
-        if (type !== STRING && type !== NUMERIC) {
+        if (type !== STRING_TYPE && type !== NUMERIC_TYPE) {
           logger.error("TYPE SYSTEM ERROR\n");
           return false;
         }
         var sameTypeVars = [];
         for (var i=0;i<variables.length;i++) {
           if (varTypes[variables[i]] &&
-              varTypes[variables[i]] !== STRING &&
-              varTypes[variables[i]] !== NUMERIC) {
+              varTypes[variables[i]] !== STRING_TYPE &&
+              varTypes[variables[i]] !== NUMERIC_TYPE) {
             var sameTypeTemp = varTypes[variables[i]];
             for (var j=0;j<sameTypeTemp.length;j++)
               sameTypeVars.push(sameTypeTemp[j]);
@@ -159,17 +158,17 @@ function CodeGen(display, audio, machine, logger) {
         } else {
           return true;
         }
-        
+
       };
       function saveUnassignedTypes(variables) {
         // This is O(n^2) in the worst case
-        // 
+        //
         // There's a much better way to handle this
-        
+
         for (var i=0;i<variables.length;i++) {
           if (varTypes[variables[i]] &&
-              (varTypes[variables[i]]===STRING ||
-               varTypes[variables[i]]===NUMERIC)) {
+              (varTypes[variables[i]]===STRING_TYPE ||
+               varTypes[variables[i]]===NUMERIC_TYPE)) {
             logger.error("UNASSIGNED TYPE NOT RESOLVED CORRECTLY\n");
             throw "typeassignerror"; // We should never get here
           }
@@ -186,17 +185,17 @@ function CodeGen(display, audio, machine, logger) {
       function genTypesForExpressionPair(type1,type2) {
         // Returns type of expression pair
         // Just like findTypeOfTokenExpression can return
-        //   STRING, NUMERIC, null, or list
-        
+        //   STRING_TYPE, NUMERIC_TYPE, null, or list
+
         // Something is bad
         if (type1 === null || type2 === null)
           return null;
-        
+
         // The first expression can be resolved
-        if (type1 === STRING || type1 === NUMERIC) {
+        if (type1 === STRING_TYPE || type1 === NUMERIC_TYPE) {
           if (type2 === type1) {
             return type1;
-          } else if (type2 !== STRING && type2 !== NUMERIC) {
+          } else if (type2 !== STRING_TYPE && type2 !== NUMERIC_TYPE) {
             // Type 2 is a list of unknowns
             assignTypes(type2,type1);
             return type1;
@@ -205,11 +204,11 @@ function CodeGen(display, audio, machine, logger) {
             return null;
           }
         }
-        
+
         // The first expression could not be resolved
-        
+
         // The second expression can be resolved
-        if (type2 === STRING || type2 === NUMERIC) {
+        if (type2 === STRING_TYPE || type2 === NUMERIC_TYPE) {
           assignTypes(type1,type2);
           return type2;
         }
@@ -234,27 +233,37 @@ function CodeGen(display, audio, machine, logger) {
       expressionHandler:  function() {
         // Finds the type of an unknown expression, returning
         // the type or a list of variables with the type
-        
+
         // XXX Handle errors so we can differentiate between
         //     parser errors and type errors
-        
+
         // Possible return values for all functions:
-        // STRING - this is a string
-        // NUMERIC - this is a numeric type
+        // STRING_TYPE - this is a string
+        // NUMERIC_TYPE - this is a numeric type
         // null - something is wrong
         // Array - we haven't figured it out - this is a list of identifiers
+	function numericExpression(a,b) {
+	  if (a === null || b === null) {
+            return null;
+          }
+          if (genTypesForExpressionPair(a,NUMERIC_TYPE) &&
+              genTypesForExpressionPair(b,NUMERIC_TYPE))
+            return NUMERIC_TYPE;
+          else
+            return null;
+        }
 	return {
         numericLiteral: function(value) {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         stringLiteral: function(value) {
-          return STRING;
+          return STRING_TYPE;
         },
         randomBuiltin: function(value) {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         piBuiltin: function() {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         variable: function(name) {
           name = localVarName(name);
@@ -265,13 +274,21 @@ function CodeGen(display, audio, machine, logger) {
             return varTypes[name];
           }
         },
-        expression: function(value,resultType) {
-          return null; // Expression tokens shouldn't exist in the first pass
-        },
-        validateSubExpression: function(subExp,type) {
-          if (type !== undefined && subExp !== type) {
+        validateNumericSubExpression: function(subExp) {
+          if (subExp !== NUMERIC_TYPE) {
             // if it's not an exact match, check it out
-            subExp = genTypesForExpressionPair(type,subExp)
+            subExp = genTypesForExpressionPair(NUMERIC_TYPE,subExp)
+            if (!subExp) {
+              logger.error("TYPE MISMATCH.");
+              return null;
+            }
+          }
+          return subExp;
+        },
+        validateStringSubExpression: function(subExp) {
+          if (subExp !== STRING_TYPE) {
+            // if it's not an exact match, check it out
+            subExp = genTypesForExpressionPair(STRING_TYPE,subExp)
             if (!subExp) {
               logger.error("TYPE MISMATCH.");
               return null;
@@ -280,31 +297,31 @@ function CodeGen(display, audio, machine, logger) {
           return subExp;
         },
         cintBuiltin: function(value) {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         intBuiltin: function(param) {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         fixBuiltin: function(param) {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         absBuiltin: function(param) {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         strzBuiltin: function(param) {
-          return STRING;
+          return STRING_TYPE;
         },
         leftzBuiltin: function(param) {
-          return STRING;
+          return STRING_TYPE;
         },
         rightzBuiltin: function(param) {
-          return STRING;
+          return STRING_TYPE;
         },
         valBuiltin: function(param) {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         lenBuiltin: function(param) {
-          return NUMERIC;
+          return NUMERIC_TYPE;
         },
         parenExpression: function(subExp) {
           return subExp;
@@ -328,9 +345,29 @@ function CodeGen(display, audio, machine, logger) {
           // XXX This doesn't make sense. There is no boolean type
           return exp1;
         },
-        boolBinaryExpression: function(exp1,op,exp2) {
+        boolEqualExpression: function(exp1,exp2) {
           // Returns the type of exp1, exp2 rather than type BOOL
-          return genTypesForExpressionPair(exp1,exp2);         
+          return genTypesForExpressionPair(exp1,exp2);
+        },
+        boolLessExpression: function(exp1,exp2) {
+          // Returns the type of exp1, exp2 rather than type BOOL
+          return genTypesForExpressionPair(exp1,exp2);
+        },
+        boolGreaterExpression: function(exp1,exp2) {
+          // Returns the type of exp1, exp2 rather than type BOOL
+          return genTypesForExpressionPair(exp1,exp2);
+        },
+        boolLessOrEqualExpression: function(exp1,exp2) {
+          // Returns the type of exp1, exp2 rather than type BOOL
+          return genTypesForExpressionPair(exp1,exp2);
+        },
+        boolGreaterOrEqualExpression: function(exp1,exp2) {
+          // Returns the type of exp1, exp2 rather than type BOOL
+          return genTypesForExpressionPair(exp1,exp2);
+        },
+        boolNotEqualExpression: function(exp1,exp2) {
+          // Returns the type of exp1, exp2 rather than type BOOL
+          return genTypesForExpressionPair(exp1,exp2);
         },
         callSubroutine: function(name,argExps) {
           // XXX similar to statement
@@ -365,27 +402,23 @@ function CodeGen(display, audio, machine, logger) {
           else
             return [retName];
         },
-        binaryExpression: function(operator,a,b) {
-          if (a === null || b === null) {
+        additionExpression: function(a,b) {
+	  if (a === null || b === null) {
             return null;
           }
-          if (operator===PLUS) {
-            return genTypesForExpressionPair(a,b);
-          } else {
-            if (genTypesForExpressionPair(a,NUMERIC) &&
-                genTypesForExpressionPair(b,NUMERIC))
-              return NUMERIC;
-            else
-              return null;
-          }
-        }
-        };
+	  // Could be string or numeric
+	  return genTypesForExpressionPair(a,b);
+	},
+        subtractionExpression: numericExpression,
+        multiplicationExpression: numericExpression,
+        divisionExpression: numericExpression
+       };
       }(),
       printString: function(value,newline,pause,num) {
         return (value !== null && value !== undefined);
       },
       printExp: function(exp,newline,pause,num) {
-        var result = genTypesForExpressionPair(exp,STRING);
+        var result = genTypesForExpressionPair(exp,STRING_TYPE);
         if (!result) {
           logger.error("Type mismatch for PRINT on line "+num+"\n");
         }
@@ -397,7 +430,7 @@ function CodeGen(display, audio, machine, logger) {
           return false;
         }
         return true;
-        
+
       },
       endIf: function(num) {
         return true;
@@ -414,7 +447,7 @@ function CodeGen(display, audio, machine, logger) {
           return false;
         }
         return true;
-        
+
       },
       beginRandom: function(num) {
         return true;
@@ -516,13 +549,13 @@ function CodeGen(display, audio, machine, logger) {
         return true;
       },
       beginAsk: function(promptExp,num) {
-        var result = genTypesForExpressionPair(promptExp,STRING);
+        var result = genTypesForExpressionPair(promptExp,STRING_TYPE);
         if (result === null) {
           logger.error("Type mismatch for ASK on line "+num+"\n");
           return false;
         } else {
           return true;
-        }      
+        }
       },
       askColor: function(value,num) {
         return true;
@@ -546,7 +579,7 @@ function CodeGen(display, audio, machine, logger) {
         return true;
       },
       beginMenu: function(promptExp,num) {
-        var result = genTypesForExpressionPair(promptExp,STRING);
+        var result = genTypesForExpressionPair(promptExp,STRING_TYPE);
         if (result === null) {
           logger.error("Type mismatch for BEGIN MENU on line "+num+"\n");
           return false;
@@ -570,7 +603,7 @@ function CodeGen(display, audio, machine, logger) {
         return true;
       },
       menuChoice: function(charExp,textExp,num) {
-        var result = genTypesForExpressionPair(textExp,STRING);
+        var result = genTypesForExpressionPair(textExp,STRING_TYPE);
         if (result === null) {
           logger.error("Type mismatch for MENU CHOICE on line "+num+"\n");
           return false;
@@ -587,7 +620,7 @@ function CodeGen(display, audio, machine, logger) {
         }
       },
       color: function(valueExp,num) {
-        var result = genTypesForExpressionPair(valueExp,NUMERIC);
+        var result = genTypesForExpressionPair(valueExp,NUMERIC_TYPE);
         if (result === null) {
           logger.error("Type mismatch for COLOR on line "+num+"\n");
           return false;
@@ -596,7 +629,7 @@ function CodeGen(display, audio, machine, logger) {
         }
       },
       bgColor: function(valueExp,num) {
-        var result = genTypesForExpressionPair(valueExp,NUMERIC);
+        var result = genTypesForExpressionPair(valueExp,NUMERIC_TYPE);
         if (result === null) {
           logger.error("Type mismatch for BGCOLOR on line "+num+"\n");
           return false;
@@ -605,20 +638,20 @@ function CodeGen(display, audio, machine, logger) {
         }
       },
       sleep: function(valueExp,num) {
-        var result = genTypesForExpressionPair(valueExp,NUMERIC);
+        var result = genTypesForExpressionPair(valueExp,NUMERIC_TYPE);
         if (result === null) {
           logger.error("Type mismatch for SLEEP on line "+num+"\n");
           return false;
         } else {
           return true;
-        }       
+        }
       },
       input: function(valueExp,num) {
-        assignTypes([valueExp],STRING);
+        assignTypes([valueExp],STRING_TYPE);
         return true;
       },
       play: function(valueExp,num) {
-	var result = genTypesForExpressionPair(valueExp,STRING);
+	var result = genTypesForExpressionPair(valueExp,STRING_TYPE);
 	if (result === null) {
 	  logger.error("Type mismatch for PLAY on line "+num+"\n");
 	  return false;
@@ -627,14 +660,14 @@ function CodeGen(display, audio, machine, logger) {
 	}
       },
       forStatement: function(varExp,startExp,endExp,num) {
-        if (!assignTypes([varExp],NUMERIC) ||
-            genTypesForExpressionPair(startExp,NUMERIC)===null ||
-            genTypesForExpressionPair(endExp,NUMERIC)===null) {
-          logger.error("Type mismatch for FOR on line "+num+"\n");       
+        if (!assignTypes([varExp],NUMERIC_TYPE) ||
+            genTypesForExpressionPair(startExp,NUMERIC_TYPE)===null ||
+            genTypesForExpressionPair(endExp,NUMERIC_TYPE)===null) {
+          logger.error("Type mismatch for FOR on line "+num+"\n");
         } else {
           return true;
         }
-        
+
       },
       letStatement: function(varExp,valueExp,num) {
         if (varExp === null || valueExp === null) {
@@ -643,14 +676,14 @@ function CodeGen(display, audio, machine, logger) {
         }
         varExp = localVarName(varExp);
         // Value exp has an unknown type
-        if (valueExp !== STRING && valueExp !== NUMERIC) {
+        if (valueExp !== STRING_TYPE && valueExp !== NUMERIC_TYPE) {
           // The variable has a type- set the arg based on that
           if (varTypes[varExp] &&
-              (varTypes[varExp] === STRING ||
-               varTypes[varExp] === NUMERIC)) {
+              (varTypes[varExp] === STRING_TYPE ||
+               varTypes[varExp] === NUMERIC_TYPE)) {
             return assignTypes(valueExp,varTypes[varExp]);
           } else {
-            
+
             // There are no types yet
             var unassigned = [varExp];
             for (var i=0;i<valueExp.length;i++) {
@@ -682,14 +715,14 @@ function CodeGen(display, audio, machine, logger) {
 
   function CodeGeneratorPass(){
     // XXX handle errors by throwing an exception
-    // XXX don't pass in the line number- let the caller handle the exception and print errors	
-    
+    // XXX don't pass in the line number- let the caller handle the exception and print errors
+
     /*
       I'm implementing subroutine expressions by running each
       subroutine referenced in the expression and saving the results
       of each subroutine in a temp variable, then using the temp variable
       in the expression.
-      
+
       This counter guarantees that there's no overlap in the names of
       those variables.
     */
@@ -713,7 +746,7 @@ function CodeGen(display, audio, machine, logger) {
         var listFunc = eval(text);
         return listFunc[0];
       };
-      
+
       for (var i=0;i<exp.subs.length;i++) {
         callSubroutine(exp.subs[i].name,exp.subs[i].args,0);
         // wrap in function tocreate new temp for each iteration
@@ -724,7 +757,7 @@ function CodeGen(display, audio, machine, logger) {
 	    machine.advance();
           });})();
       }
-      
+
       return stringToFunction(exp.value);
     }
 
@@ -737,9 +770,9 @@ function CodeGen(display, audio, machine, logger) {
       }
       var retName = returnValueName(sub);
       var ret;
-      if (varTypes[retName] === STRING) {
+      if (varTypes[retName] === STRING_TYPE) {
         ret = "";
-      } else if (varTypes[retName] === NUMERIC) {
+      } else if (varTypes[retName] === NUMERIC_TYPE) {
         ret = 0;
       }
       pushInstruction(function () {
@@ -751,7 +784,7 @@ function CodeGen(display, audio, machine, logger) {
         machine.callSub(sub,argVals,ret);
       });
       return true;
-    }	  
+    }
     // Hack to get variable names from optimised code by stringifying a
     // function definition This let's us fully optimize and still eval()
     // code
@@ -759,11 +792,11 @@ function CodeGen(display, audio, machine, logger) {
     // Typical Usage: nameFromFunctionString(function{NAME}.toString())
     function nameFromFunctionString(o) {
       var start = o.indexOf('{')+1;
-      
+
       // Some old Firefoxen insert whitespace in the stringified function
       while (o[start] < o.length && o[start]===' ' || o[start]==='\n' || o[start]==='\r' || o[start]==='\t')
         start++;
-      
+
       //  Some old Firefoxen insert semicolons
       var end = o.indexOf(';');
       if (end === -1)
@@ -776,7 +809,7 @@ function CodeGen(display, audio, machine, logger) {
       /** @suppress {uselessCode} */
       var vname = (function(){machine.getGlobal}).toString();
       vname = nameFromFunctionString(vname);
-      
+
       var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
       return vname+'(\''+escaped+'\')';
     };
@@ -786,7 +819,7 @@ function CodeGen(display, audio, machine, logger) {
       /** @suppress {uselessCode} */
       var vname = (function(){machine.getLocal}).toString();
       vname = nameFromFunctionString(vname);
-      
+
       var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
       return vname+'(\''+escaped+'\')';
     };
@@ -797,17 +830,17 @@ function CodeGen(display, audio, machine, logger) {
 	// Returns an EXPRESSION token or null
         // XXX Handle errors
 	// XXX Fail if types are incorrect in every case
-	
-        
+
+
         // This is vastly simplified because we keep JavaScript semantics for
         // operator precendence.
-	
-	return {          
+
+	return {
           numericLiteral: function(value) {
-            return {type:EXPRESSION,value:value,resultType:NUMERIC,subs:[]};
+            return {type:EXPRESSION,value:value,resultType:NUMERIC_TYPE,subs:[]};
           },
           stringLiteral: function(value) {
-            return {type:EXPRESSION,value:JSON.stringify(value),resultType:STRING,subs:[]};
+            return {type:EXPRESSION,value:JSON.stringify(value),resultType:STRING_TYPE,subs:[]};
           },
           randomBuiltin: function(l,h) {
             // XXX make constant
@@ -815,10 +848,10 @@ function CodeGen(display, audio, machine, logger) {
             /** @suppress {uselessCode} */
             var rndname = (function(){machine.random}).toString();
             rndname = nameFromFunctionString(rndname);
-            return {type:EXPRESSION,value:(rndname+'('+l.value+','+h.value+')'),resultType:NUMERIC,subs:l.subs.concat(h.subs)};
+            return {type:EXPRESSION,value:(rndname+'('+l.value+','+h.value+')'),resultType:NUMERIC_TYPE,subs:l.subs.concat(h.subs)};
           },
           piBuiltin: function() {
-            return {type:EXPRESSION,value:'Math.PI',resultType:NUMERIC,subs:[]};
+            return {type:EXPRESSION,value:'Math.PI',resultType:NUMERIC_TYPE,subs:[]};
           },
           variable: function(name) {
             // Check to see that variable has type data
@@ -835,42 +868,46 @@ function CodeGen(display, audio, machine, logger) {
               return {type:EXPRESSION,value:variableName(name),resultType:varTypes[localName],subs:[]};
             }
           },
-          expression: function(value,resultType,subs) {
-            return {type:EXPRESSION,value:value,resultType:resultType,subs:subs};
+          validateStringSubExpression: function(result) {
+            if (!result || result.resultType !== STRING_TYPE) {
+              return null;
+            } else {
+              return result;
+            }
           },
-          validateSubExpression: function(result,type) {
-            if (!result || result.resultType !== type) {
+          validateNumericSubExpression: function(result) {
+            if (!result || result.resultType !== NUMERIC_TYPE) {
               return null;
             } else {
               return result;
             }
           },
           cintBuiltin: function(p) {
-            return {type:EXPRESSION,value:('Math.ceil('+p.value+')'),resultType:NUMERIC,subs:p.subs};
+            return {type:EXPRESSION,value:('Math.ceil('+p.value+')'),resultType:NUMERIC_TYPE,subs:p.subs};
           },
           intBuiltin: function(p) {
-            return {type:EXPRESSION,value:('Math.floor('+p.value+')'),resultType:NUMERIC,subs:p.subs};
+            return {type:EXPRESSION,value:('Math.floor('+p.value+')'),resultType:NUMERIC_TYPE,subs:p.subs};
           },
           fixBuiltin: function(p) {
-            return {type:EXPRESSION,value:('Math.trunc('+p.value+')'),resultType:NUMERIC,subs:p.subs};
+            return {type:EXPRESSION,value:('Math.trunc('+p.value+')'),resultType:NUMERIC_TYPE,subs:p.subs};
           },
           absBuiltin: function(p) {
-            return {type:EXPRESSION,value:('Math.abs('+p.value+')'),resultType:NUMERIC,subs:p.subs};
+            return {type:EXPRESSION,value:('Math.abs('+p.value+')'),resultType:NUMERIC_TYPE,subs:p.subs};
           },
           strzBuiltin: function(p) {
-            return {type:EXPRESSION,value:('('+p.value+').toString(10)'),resultType:STRING,subs:p.subs};
+            return {type:EXPRESSION,value:('('+p.value+').toString(10)'),resultType:STRING_TYPE,subs:p.subs};
           },
           leftzBuiltin: function(p,n) {
-            return {type:EXPRESSION,value:('('+p.value+').substring(0,'+n.value+')'),resultType:STRING,subs:p.subs.concat(n.subs)};
+            return {type:EXPRESSION,value:('('+p.value+').substring(0,'+n.value+')'),resultType:STRING_TYPE,subs:p.subs.concat(n.subs)};
           },
           rightzBuiltin: function(p,n) {
-            return {type:EXPRESSION,value:('('+p.value+').substring(('+p.value+').length-'+n.value+',('+p.value+').length)'),resultType:STRING,subs:p.subs.concat(n.subs)};
+            return {type:EXPRESSION,value:('('+p.value+').substring(('+p.value+').length-'+n.value+',('+p.value+').length)'),resultType:STRING_TYPE,subs:p.subs.concat(n.subs)};
           },
           valBuiltin: function(p) {
-            return {type:EXPRESSION,value:('Number('+p.value+')'),resultType:NUMERIC,subs:p.subs};
+            return {type:EXPRESSION,value:('Number('+p.value+')'),resultType:NUMERIC_TYPE,subs:p.subs};
           },
           lenBuiltin: function(p) {
-            return {type:EXPRESSION,value:('('+p.value+').length'),resultType:NUMERIC,subs:p.subs};
+            return {type:EXPRESSION,value:('('+p.value+').length'),resultType:NUMERIC_TYPE,subs:p.subs};
           },
           parenExpression: function(inner) {
             if (!inner)
@@ -897,46 +934,80 @@ function CodeGen(display, audio, machine, logger) {
               return null;
             return {type:BOOLEXPRESSION,value:'!'+exp1.value,subs:exp1.subs};
           },
-          boolBinaryExpression: function(exp1,opToken,exp2) {
-            var op = comparisonOpToCode(opToken);
-            return {type:BOOLEXPRESSION,value:exp1.value+op+exp2.value,subs:exp1.subs.concat(exp2.subs)};
+          boolEqualExpression: function(exp1,exp2) {
+            return {type:BOOLEXPRESSION,value:exp1.value+'==='+exp2.value,subs:exp1.subs.concat(exp2.subs)};
+          },
+          boolLessExpression: function(exp1,exp2) {
+            return {type:BOOLEXPRESSION,value:exp1.value+'<'+exp2.value,subs:exp1.subs.concat(exp2.subs)};
+          },
+          boolGreaterExpression: function(exp1,exp2) {
+            return {type:BOOLEXPRESSION,value:exp1.value+'>'+exp2.value,subs:exp1.subs.concat(exp2.subs)};
+          },
+          boolLessOrEqualExpression: function(exp1,exp2) {
+            return {type:BOOLEXPRESSION,value:exp1.value+'<='+exp2.value,subs:exp1.subs.concat(exp2.subs)};
+          },
+          boolGreaterOrEqualExpression: function(exp1,exp2) {
+            return {type:BOOLEXPRESSION,value:exp1.value+'>='+exp2.value,subs:exp1.subs.concat(exp2.subs)};
+          },
+          boolNotEqualExpression: function(exp1,exp2) {
+            return {type:BOOLEXPRESSION,value:exp1.value+'!='+exp2.value,subs:exp1.subs.concat(exp2.subs)};
           },
           callSubroutine: function(name,argExps) {
+	    // Check the types of the argument expressions
+	    for (var i = 0; i < argExps.length ; i++) {
+	      var type = varTypes[argNameByArity(name,i)];
+	      if (type === STRING_TYPE)
+		argExps[i] = this.validateStringSubExpression(argExps[i]);
+	      else if (type === NUMERIC_TYPE)
+		argExps[i] = this.validateNumericSubExpression(argExps[i]);
+	      else if (type !== undefined) {
+		logger.error("Invalid type for subroutine "+name+" argument "+i);
+		argExps[i] = null;
+	      }
+	    }
+
 	    // subroutine results are saved in a temp variable
 	    var temp = nextExpressionSubroutineName();
 	    // Expressions have a list of subroutines the need to be called
 	    // before they are run
 	    var subs = [{temp:temp,name:name,args:argExps}];
 	    var retName = returnValueName(name);
-	    
+
 	    // The name of the variable where the temps are stored
 	    var t = localVariableName(temp);
 	    return {type:EXPRESSION,value:t,resultType:varTypes[retName],subs:subs};
 	  },
-          binaryExpression: function(operator,a,b) {
-            if (a.resultType !== b.resultType ||
-                (a.resultType === STRING && operator !== PLUS)) {
+	  additionExpression: function(a,b) {
+	    if (a.resultType !== b.resultType)
+	      return null;
+	    if (a.resultType === STRING_TYPE) {
+	      // Silently truncate long strings
+              return {type:EXPRESSION,value:'('+a.value+'+'+b.value+').slice(0,255)',resultType:a.resultType,subs:a.subs.concat(b.subs)};
+            } else {
+              return {type:EXPRESSION,value:a.value+'+'+b.value,resultType:a.resultType,subs:a.subs.concat(b.subs)};
+            }
+	  },
+	  subtractionExpression: function(a,b) {
+	    if (a.resultType !== b.resultType ||
+                a.resultType === STRING_TYPE) {
               return null;
             }
-            switch (operator) {
-            case PLUS:
-              if (a.resultType === STRING) {
-                // Silently truncate long strings
-                return {type:EXPRESSION,value:'('+a.value+'+'+b.value+').slice(0,255)',resultType:a.resultType,subs:a.subs.concat(b.subs)};
-              } else {
-                return {type:EXPRESSION,value:a.value+'+'+b.value,resultType:a.resultType,subs:a.subs.concat(b.subs)};
-              }
-            case MINUS:
-              return {type:EXPRESSION,value:a.value+'-'+b.value,resultType:a.resultType,subs:a.subs.concat(b.subs)};    
-            case TIMES:
-              return {type:EXPRESSION,value:a.value+'*'+b.value,resultType:a.resultType,subs:a.subs.concat(b.subs)};    
-            case DIV:
-              return {type:EXPRESSION,value:a.value+'/'+b.value,resultType:a.resultType,subs:a.subs.concat(b.subs)};
-            default:
+            return {type:EXPRESSION,value:a.value+'-'+b.value,resultType:a.resultType,subs:a.subs.concat(b.subs)};
+	  },
+	  multiplicationExpression: function(a,b) {
+	    if (a.resultType !== b.resultType ||
+                a.resultType === STRING_TYPE) {
               return null;
             }
-            
-          }
+            return {type:EXPRESSION,value:a.value+'*'+b.value,resultType:a.resultType,subs:a.subs.concat(b.subs)};
+	  },
+	  divisionExpression: function(a,b) {
+	    if (a.resultType !== b.resultType ||
+                a.resultType === STRING_TYPE) {
+              return null;
+            }
+            return {type:EXPRESSION,value:a.value+'/'+b.value,resultType:a.resultType,subs:a.subs.concat(b.subs)};
+	  }
         };
       }(),
       printString: function(text,newline,pause,num) {
@@ -952,7 +1023,7 @@ function CodeGen(display, audio, machine, logger) {
           pushInstruction(function() {
             display.printMenu([function(){return text;}],[""],
                               undefined,undefined,undefined,undefined,undefined);
-            
+
             machine.setInterruptDelay(0);
             machine.setInputVariable("!"); // Internal name
             machine.advance();
@@ -968,7 +1039,7 @@ function CodeGen(display, audio, machine, logger) {
         return true;
       },
       printExp: function(exp,newline,pause,num) {
-        if (!exp || (exp.resultType !== STRING)) {
+        if (!exp || (exp.resultType !== STRING_TYPE)) {
           logger.error("Invalid PRINT on line "+num+"\n");
           return false;
         }
@@ -1025,7 +1096,7 @@ function CodeGen(display, audio, machine, logger) {
             else
               machine.setLoc(pos);
           });
-          
+
           if (!!obj.elseloc) {
             var end=nextInstruction();
             addInstructionAt(obj.elseloc,function(){
@@ -1096,7 +1167,7 @@ function CodeGen(display, audio, machine, logger) {
 	}
 		       );
 	return true;
-	
+
       },
       beginSubroutine: function(sub, args, num) {
         if (code[sub] !== undefined) {
@@ -1171,7 +1242,7 @@ function CodeGen(display, audio, machine, logger) {
             } else if (numNulls > 0) {
               logger.error("ERROR: MIXED RANDOM MODES - EITHER SPECIFY CHANCE PERCENT OR DON'T\n");
             }
-            
+
             var total = 0;
             for (var n=0;n<events.length;n++) {
               total += events[n].chance;
@@ -1213,7 +1284,7 @@ function CodeGen(display, audio, machine, logger) {
                 pushInstruction(null);
               obj.events.push({loc:nextInstruction(),
                                chance:null});
-              
+
             } else {
               var chance = Number(percent);
               if (chance < 0.001 || chance > 99.999) {
@@ -1495,7 +1566,7 @@ function CodeGen(display, audio, machine, logger) {
 
            Another strategy might be to stuff all the calls into the
            first instruction and avoid the jumps.
-           
+
         */
         var menu = loopStack.pop();
         if (menu && menu.type === MENU) {
@@ -1545,7 +1616,7 @@ function CodeGen(display, audio, machine, logger) {
             }
             machine.retreat();
           });
-          
+
           addInstructionAt(menu.loc,function(){
             machine.setLoc(lastMenuI+1);
           });
@@ -1601,9 +1672,9 @@ function CodeGen(display, audio, machine, logger) {
           return false;
         }
         choices[choices.length-1].hideIf = boolExp;
-	
+
         return true;
-        
+
       },
       color: function(exp,num) {
         var color = expressionToFunction(exp);
@@ -1667,7 +1738,7 @@ function CodeGen(display, audio, machine, logger) {
           logger.error(varname+" undefined in FOR\n");
           return;
         }
-        
+
         first = expressionToFunction(first);
         last = expressionToFunction(last);
 
@@ -1766,15 +1837,12 @@ function CodeGen(display, audio, machine, logger) {
       // Variables with unknown types remain undefined, always fail in comparisons
       var vars = {};
       for (var v in varTypes) {
-        if (varTypes[v] === NUMERIC)
+        if (varTypes[v] === NUMERIC_TYPE)
           vars[v] = 0;
-        else if (varTypes[v] === STRING)
+        else if (varTypes[v] === STRING_TYPE)
           vars[v] = "";
       }
       machine.init(code, vars);
-    },
-    argType: function(sub,pos) {
-      return varTypes[argNameByArity(sub,pos)];
     }
   };
 }

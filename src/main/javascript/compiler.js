@@ -2,7 +2,31 @@
 function Compiler(codegen,logger){
   var started = false;
   var finished = false;
-  
+
+  // Unique identifiers for token types
+
+  var STRING={};
+  var NUMERIC={};
+  var IDENTIFIER={};
+  var COLON={};
+  var SEMICOLON={};
+  var SINGLEQUOTE={};
+  var OPENPAREN={};
+  var CLOSEPAREN={};
+  var COMMA={};
+  var EQUALS={};
+  var NOTEQUAL={};
+  var GREATEROREQUAL={};
+  var GREATER={};
+  var LESSOREQUAL={};
+  var LESS={};
+  var PLUS={};
+  var MINUS={};
+  var TIMES={};
+  var DIV={};
+  var NOT={};
+
+
   function tokenizeLine(line) {
     var minlow='a'.charCodeAt(0);
     var maxlow='z'.charCodeAt(0);
@@ -214,11 +238,11 @@ function Compiler(codegen,logger){
             }
             pos++;
           }
-          
+
           if (pos===tokens.length && tokens[pos-1].type!==CLOSEPAREN) {
             return null;
           }
-          if (isBoolParen){ 
+          if (isBoolParen){
             var result = _boolExpression(tokens.slice(1,pos-1),handler);
             if (!result) {
               return null;
@@ -263,13 +287,30 @@ function Compiler(codegen,logger){
         var exp2=expression(tokens.slice(pos+1,endpos));
         if (!exp1 || !exp2)
           return null;
-        exp1 =  handler.boolBinaryExpression(exp1,tokens[pos],exp2);
+	var opType = tokens[pos].type;
+	if (opType === EQUALS) {
+	  exp1 =  handler.boolEqualExpression(exp1,exp2);
+	} else if (opType === LESS) {
+	  exp1 =  handler.boolLessExpression(exp1,exp2);
+	} else if (opType === GREATER) {
+	  exp1 =  handler.boolGreaterExpression(exp1,exp2);
+	} else if (opType === GREATEROREQUAL) {
+	  exp1 =  handler.boolGreaterOrEqualExpression(exp1,exp2);
+	} else if (opType === LESSOREQUAL) {
+	  exp1 =  handler.boolLessOrEqualExpression(exp1,exp2);
+	} else if (opType === NOTEQUAL) {
+	  exp1 =  handler.boolNotEqualExpression(exp1,exp2);
+	} else {
+	  logger.error("Invalid comparison type for boolean");
+          exp1 = null;
+	}
+
         // Handle a binary operator
         if (endpos !== tokens.length) {
           if (tokens[endpos].value !== "AND" && tokens[endpos].value !== "OR") {
             return null;
           }
-          
+
           exp2 = boolExpression(tokens.slice(endpos+1,tokens.length));
           if (!exp2)
             return null;
@@ -289,9 +330,9 @@ function Compiler(codegen,logger){
         return null;
       else
         return result;
-      
+
     }
-    
+
     if (!started && tokens.length>0) {
       started = true;
       if (tokens.length>=4 && tokens[0].type===LESS && tokens[1].type===NOT && tokens[2].type===MINUS && tokens[3].type===MINUS ) {
@@ -343,7 +384,7 @@ function Compiler(codegen,logger){
 	  return handler.waitForMusic();
         } else if (tokens[0].value==='BEGIN' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
           return handler.beginRandom(num);
-          
+
         } else if (tokens[0].value==='SUBROUTINE' && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
           var args = [];
           var pos = 2;
@@ -391,10 +432,10 @@ function Compiler(codegen,logger){
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
           return handler.endRandom(num);
-          
+
         } else if (tokens[0].value==='WITH' && tokens.length == 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHANCE' && tokens[2].type === NUMERIC) {
           return handler.withChance(tokens[2].value,num);
-          
+
         } else if (tokens[0].value==='WITH' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHANCE') {
           return handler.withEvenChance(num);
 
@@ -406,7 +447,7 @@ function Compiler(codegen,logger){
 
         } else if (tokens[0].value==='ASK' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'PROMPT' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type === NUMERIC) {
           return handler.askPromptColor(tokens[3].value,num);
-          
+
         } else if (tokens[0].value==='ASK' && tokens.length >= 2) {
           return handler.beginAsk(expression(tokens.slice(1,tokens.length)),num);
 
@@ -424,10 +465,10 @@ function Compiler(codegen,logger){
 
         } else if (tokens[0].value==='END' && tokens.length === 2 && tokens[1].value==='ASK') {
           return handler.endAsk(num);
-          
+
         } else if (tokens[0].value==='BEGIN' && tokens.length > 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'MENU') {
           return handler.beginMenu(expression(tokens.slice(2,tokens.length)),num);
-          
+
         } else if (tokens[0].value==='MENU' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'COLOR' && tokens[2].type===NUMERIC) {
           return handler.menuColor(tokens[2].value,num);
 
@@ -445,7 +486,7 @@ function Compiler(codegen,logger){
           return handler.menuHideIf(boolExp, num);
 
         } else if (tokens[0].value==='MENU' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'PROMPT' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type===NUMERIC) {
-          return handler.menuPromptColor(tokens[3].value,num);            
+          return handler.menuPromptColor(tokens[3].value,num);
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'MENU') {
           return handler.endMenu(num);
@@ -454,7 +495,7 @@ function Compiler(codegen,logger){
           return handler.menuChoice(tokens[1].value,expression(tokens.slice(2,tokens.length)),num);
         } else if (tokens[0].value==='CHOICE' && tokens.length > 2 && tokens[1].type === NUMERIC) {
           return handler.menuChoice((tokens[1].value).toString(10),expression(tokens.slice(2,tokens.length)),num);
-          
+
         } else if (tokens[0].value==='WHILE') {
           var exp2end;
           if (tokens[tokens.length-1].type===IDENTIFIER &&
@@ -472,15 +513,15 @@ function Compiler(codegen,logger){
         } else if (tokens[0].value==='END' && tokens.length===2 &&
                    tokens[1].type===IDENTIFIER && tokens[1].value==='IF') {
           return handler.endIf(num);
-          
+
         } else if ((tokens[0].value==='WEND' && tokens.length===1) ||
                    (tokens[0].value==='END' && tokens.length===2 &&
                     tokens[1].value==='WHILE')) {
           return handler.endWhile(num);
-          
+
         } else if (tokens[0].value==='ELSE' && tokens.length===1) {
           return handler.elseStatement(num);
-          
+
         } else if (tokens[0].value==='COLOR') {
           return handler.color(expression(tokens.slice(1,tokens.length)),num);
 
@@ -503,7 +544,7 @@ function Compiler(codegen,logger){
             logger.error("Invalid FOR on line "+num+"\n");
             return false;
           }
-          
+
           var pos  = 3;
           while (pos < tokens.length &&
                  !(tokens[pos].type === IDENTIFIER &&
@@ -540,8 +581,25 @@ function Compiler(codegen,logger){
   function parseExpressionWithHandler(tokens,handler) {
     function subExpression(tokens,type) {
       var exp = parseExpressionWithHandler(tokens,handler);
-      return handler.validateSubExpression(exp,type);
+      if (type === NUMERIC)
+	return handler.validateNumericSubExpression(exp);
+      else if (type === STRING)
+	return handler.validateStringSubExpression(exp);
+      else
+	return null;
     };
+    function binaryExpression(expType,head,tail) {
+      if (expType === PLUS) {
+        return handler.additionExpression(head,tail);
+      } else if (expType === MINUS) {
+        return handler.subtractionExpression(head,tail);
+      } else if (expType === TIMES) {
+        return handler.multiplicationExpression(head,tail);
+      } else if (expType === DIV) {
+        return handler.divisionExpression(head,tail);
+      }
+    }
+
     if (tokens.length === 0) {
       return null;
     } else if (tokens.length === 1) {
@@ -558,8 +616,6 @@ function Compiler(codegen,logger){
         } else {
           return handler.variable(tokens[0].value);
         }
-      } else if (tokens[0].type===EXPRESSION) {
-        return handler.expression(tokens[0].value,tokens[0].resultType,tokens[0].subs);
       } else {
         // Something doesn't make sense
         return null;
@@ -630,7 +686,7 @@ function Compiler(codegen,logger){
       } else if (tokens[0].value === 'RANDOM') {
         head = handler.randomBuiltin(paramExp[0],paramExp[1]);
       }
-      
+
       // There is nothing following this function
       if (i == tokens.length) {
         return head;
@@ -641,7 +697,7 @@ function Compiler(codegen,logger){
         if (tail === null) {
           return null;
         }
-        return handler.binaryExpression(tokens[i].type,head,tail);      
+	return binaryExpression(tokens[i].type,head,tail);
       } else {
         // Invalid expression
         return null;
@@ -660,9 +716,7 @@ function Compiler(codegen,logger){
 	    parendepth--;
           pos++;
 	}
-	// XXX codegen shouldn't expose it's internal type representation
-        var type = codegen.argType(tokens[1].value,argExps.length);
-        argExps.push(subExpression(tokens.slice(start,pos),type));
+        argExps.push(parseExpressionWithHandler(tokens.slice(start,pos),handler));
         pos++; // skip the comma
         start = pos;
       }
@@ -693,7 +747,7 @@ function Compiler(codegen,logger){
       // or what's in the parens is bad
       if (pos==tokens.length || result === null)
         return result;
-      
+
       // There's a binary operator after this
       if (tokens[pos].type === MINUS ||
           tokens[pos].type === TIMES || tokens[pos].type === DIV) {
@@ -701,12 +755,12 @@ function Compiler(codegen,logger){
         if (tail === null)
           return null;
         else
-          return handler.binaryExpression(tokens[pos].type,result,tail);
+          return binaryExpression(tokens[pos].type,result,tail);
       } else if (tokens[pos].type === PLUS) {
         var tail = parseExpressionWithHandler(tokens.slice(pos+1,tokens.length),handler);
         if (tail===null)
           return null;
-        return handler.binaryExpression(tokens[pos].type,
+        return binaryExpression(tokens[pos].type,
                                         result,
                                         tail);
       } else {
@@ -723,7 +777,7 @@ function Compiler(codegen,logger){
         var tail = parseExpressionWithHandler(tokens.slice(2,tokens.length),handler);
         if (tail===null)
           return null;
-        return handler.binaryExpression(tokens[1].type,
+        return binaryExpression(tokens[1].type,
                                         head,
                                         tail);
       } else {
@@ -733,13 +787,13 @@ function Compiler(codegen,logger){
         var tail = subExpression(tokens.slice(2,tokens.length),NUMERIC);
         if (tail===null)
           return null;
-        return handler.binaryExpression(tokens[1].type,head,tail);
-        
+        return binaryExpression(tokens[1].type,head,tail);
+
       }
     } else {
       // Something unrecognized
       return null;
-    }      
+    }
   }
   function compileText(text, pass) {
     var lines = text.split("\r\n");
@@ -755,7 +809,7 @@ function Compiler(codegen,logger){
     }
     return true;
   }
-  
+
   return {
     compile: function(programText) {
       for (var pass = 0;pass < codegen.numPasses();pass++) {

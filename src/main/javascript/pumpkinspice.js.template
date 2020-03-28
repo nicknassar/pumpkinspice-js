@@ -18,48 +18,6 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
 {{legacy.js}}
 
 /***********************************************************************
-  BEGIN Global Variables
-***********************************************************************/
-
-  // Unique identifiers for various things
-  // Some are token types, some are variable types, some are for loop types
-  // Some are used interchangably for more than one type (For example, string
-  // expressions and string tokens both use STRING)
-  var IDENTIFIER={}; //
-  var STRING={};
-  var NUMERIC={};
-  var EQUALS={};
-  var COLON={};
-  var SEMICOLON={};
-  var PLUS={};
-  var SINGLEQUOTE={};
-  var MINUS={};
-  var TIMES={};
-  var DIV={};
-  var OPENPAREN={};
-  var CLOSEPAREN={};
-  var COMMA={};
-  var GREATEROREQUAL={};
-  var GREATER={};
-  var LESSOREQUAL={};
-  var NOTEQUAL={};
-  var LESS={};
-  var NOT={};
-  var EXPRESSION={};
-  var FOR={};
-  var IF={};
-  var RANDOM={};
-  var MENU={};
-  var ASK={};
-  var WHILE={};
-  var SUBROUTINE={};
-  var BOOLEXPRESSION={};
-
-/***********************************************************************
-  END Global Variables
-***********************************************************************/
-
-/***********************************************************************
   BEGIN Global Functions
 ***********************************************************************/
 
@@ -80,9 +38,9 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
     } else if (c == 1) { // Blue
       return [0,0,170];
     } else if (c == 2) { // Green
-      return [0,170,0]; 
+      return [0,170,0];
     } else if (c == 3) { // Cyan
-      return [0,170,170]; 
+      return [0,170,170];
     } else if (c == 4) { // Red
       return [170,0,0];
     } else if (c == 5) { // Magenta
@@ -96,9 +54,9 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
     } else if (c == 9) { // Light Blue
       return [85, 85, 255];
     } else if (c == 10) { // Light Green
-      return [85, 255, 85]; 
+      return [85, 255, 85];
     } else if (c == 11) { // Light Cyan
-      return [85, 255, 255];  
+      return [85, 255, 255];
     } else if (c == 12) { // Light Red
       return [255, 85, 85];
     } else if (c == 13) { // Light Magenta
@@ -113,7 +71,7 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
       // Any function calling intToColor should check for null return values
       return null;
     }
-  };  
+  };
 
 /***********************************************************************
   END Global Functions
@@ -125,8 +83,8 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
 {{machine.js}}
 {{codegen.js}}
 {{compiler.js}}
-  
-  var globalDisplay = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam); 
+
+  var globalDisplay = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
   var globalLogger = Logger(globalDisplay);
   var globalAudio = Audio(globalLogger);
   var globalMachine = Machine(globalDisplay, globalLogger);
@@ -137,7 +95,7 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
   compiler.compile(programTextParam);
   // XXX add function to check if compile is valid
   // XXX verify that error handling works with accessibility
-  
+
   globalMachine.go();
 }
 
