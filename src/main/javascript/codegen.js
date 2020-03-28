@@ -19,26 +19,6 @@ function CodeGen(display, audio, machine, logger) {
   var WHILE={};
   var SUBROUTINE={};
 
-    // BEGIN Initialize integration between components
-
-    audio.setOnAudioComplete(machine.getOnAudioComplete());
-
-    // This runs on form submit or when an menu option is clicked,
-    // grabbing and processing the text in the inputTextElement
-    display.setInputHandler(function(e) {
-      audio.go();
-      if (machine.isWaitingForInput()) {
-	machine.acceptInput(display.getInputValue());
-      }
-      if (e)
-	e.preventDefault();
-
-      // Scroll to the input
-      display.scroll();
-    });
-
-    // END Initialize integration between components
-
     // Private variables
     var loopStack = [];  // Keeps track of nested loops
 
