@@ -186,9 +186,17 @@ function go() {
     random: function(l,h) {
       return Math.floor(Math.floor(l)+Math.random()*(1+Math.floor(h)-Math.floor(l)));
     },
-    play: function(notes) {
-      audio.play(notes);
-    },
+    // Audio function
+    play: audio.play,
+
+    // Display functions
+    printMenu: display.printMenu,
+    print: display.print,
+    printAsk: display.printAsk,
+    setColor: display.setColor,
+    setBGColor: display.setBGColor,
+    clear: display.clear,
+
     init: function(code_param, vars_param) {
       code = code_param;
       vars = vars_param; // Variables

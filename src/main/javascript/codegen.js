@@ -1,6 +1,6 @@
   //     Maybe pass in an error handler?
 
-function CodeGen(display, machine, logger) {
+function CodeGen(machine, logger) {
 
   // Constants representing types
   var STRING_TYPE = {};
@@ -772,7 +772,7 @@ function CodeGen(display, machine, logger) {
       }
       if (pause) {
         pushInstruction(function() {
-          display.printMenu([function(){return text;}],[""],
+          machine.printMenu([function(){return text;}],[""],
                             undefined,undefined,undefined,undefined,undefined);
 
           machine.setInterruptDelay(0);
@@ -781,7 +781,7 @@ function CodeGen(display, machine, logger) {
         });
       } else {
         pushInstruction(function(){
-          if (display.print(text))
+          if (machine.print(text))
             // Give up the CPU to allow display
             machine.setInterruptDelay(0);
           machine.advance();
@@ -801,7 +801,7 @@ function CodeGen(display, machine, logger) {
       var text = expressionToFunction(exp);
       if (pause) {
         pushInstruction(function() {
-          display.printMenu([text],[""],
+          machine.printMenu([text],[""],
                             undefined,undefined,undefined,undefined,undefined);
           machine.setInterruptDelay(0);
           machine.setInputVariable("!"); // Internal name
@@ -809,7 +809,7 @@ function CodeGen(display, machine, logger) {
         });
       } else {
         pushInstruction(function(){
-          if (display.print(text()))
+          if (machine.print(text()))
             // Give up the CPU to allow display
             machine.setInterruptDelay(0);
           machine.advance();
@@ -1223,7 +1223,7 @@ function CodeGen(display, machine, logger) {
         var prompt = ask.prompt;
         var top = ask.top;
         addInstructionAt(ask.loc, function(){
-          display.printAsk(prompt,ask.defaultValue,ask.color,ask.bgColor,ask.promptColor);
+          machine.printAsk(prompt,ask.defaultValue,ask.color,ask.bgColor,ask.promptColor);
           machine.setInterruptDelay(0);
           machine.setInputVariable("!"); // Invalid as an identifier
           machine.advance();
@@ -1400,7 +1400,7 @@ function CodeGen(display, machine, logger) {
               filteredKeys.push(choiceKeys[n]);
             }
           }
-          display.printMenu(filteredText,filteredKeys,prompt,menu.color,menu.bgColor,menu.promptColor,menu.choiceColor);
+          machine.printMenu(filteredText,filteredKeys,prompt,menu.color,menu.bgColor,menu.promptColor,menu.choiceColor);
           machine.setInterruptDelay(0);
           machine.setInputVariable("!"); // Invalid as an identifier
           machine.advance();
@@ -1482,7 +1482,7 @@ function CodeGen(display, machine, logger) {
     function color(exp,num) {
       var color = expressionToFunction(exp);
       pushInstruction(function(){
-        display.setColor(color());
+        machine.setColor(color());
         machine.advance();
       });
       return true;
@@ -1491,7 +1491,7 @@ function CodeGen(display, machine, logger) {
     function bgColor(c,num) {
       var color = expressionToFunction(c);
       pushInstruction(function(){
-        display.setBGColor(color());
+        machine.setBGColor(color());
         machine.advance();
       });
       return true;
@@ -1581,7 +1581,7 @@ function CodeGen(display, machine, logger) {
 
     function clear(num) {
       pushInstruction(function(){
-        display.clear();
+        machine.clear();
         machine.advance();
         // Give up the CPU to allow display
         machine.setInterruptDelay(0);

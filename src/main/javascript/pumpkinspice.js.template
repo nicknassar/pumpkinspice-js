@@ -88,7 +88,7 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
   var globalLogger = Logger(globalDisplay);
   var globalAudio = Audio(globalLogger);
   var globalMachine = Machine(globalDisplay, globalAudio, globalLogger);
-  var globalCodegen = CodeGen(globalDisplay, globalMachine, globalLogger);
+  var globalCodegen = CodeGen(globalMachine, globalLogger);
   var compiler = Compiler(globalCodegen,globalLogger);
 
 
