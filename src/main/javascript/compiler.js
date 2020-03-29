@@ -810,22 +810,25 @@ function Compiler(codegen,logger){
     return true;
   }
 
-  return {
-    compile: function(programText) {
-      for (var pass = 0;pass < codegen.numPasses();pass++) {
-        started = false;
-        finished = false;
-	if (!compileText(programText, pass)) {
-          // XXX Reset things here?
-          return false;
-	}
-      }
-      if (codegen.validate()) {
-        codegen.generate();
-        return true;
-      } else {
+  function compile(programText) {
+    for (var pass = 0;pass < codegen.numPasses();pass++) {
+      started = false;
+      finished = false;
+      if (!compileText(programText, pass)) {
+        // XXX Reset things here?
         return false;
       }
+      }
+    if (codegen.validate()) {
+      codegen.generate();
+      return true;
+    } else {
+      return false;
     }
+  }
+
+  // export just one funtion
+  return {
+    compile: compile
   };
 }
