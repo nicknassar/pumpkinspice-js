@@ -51,7 +51,7 @@ function Machine(display, audio, logger) {
   var returnValue;
 
   // hash of function names to list of functions
-  var code;
+  var code = {"!":[]};
 
   // hash of global variables by name
   var vars;
@@ -82,6 +82,32 @@ function Machine(display, audio, logger) {
     window.setTimeout(go,0);
     display.print("\n");
     display.clearMenu();
+  }
+
+  function nextInstruction(sub) {
+    if (sub===undefined)
+      sub = "!";
+    return code[sub].length;
+  }
+
+  function pushInstruction(instruction, sub) {
+    if (sub===undefined)
+      sub = "!";
+    return code[sub].push(instruction);
+  }
+
+  function addInstructionAt(loc, instruction, sub) {
+    if (sub===undefined)
+      sub = "!";
+    code[sub][loc] = instruction;
+  }
+
+  function createSubroutine(sub) {
+    code[sub] = [];
+  }
+
+  function isSubroutineDefined(sub) {
+    return (code[sub] !== undefined);
   }
 
 // The main loop
@@ -133,6 +159,7 @@ function go() {
     display.sendUpdates();
 }
 
+
   // XXX Error handling?
    return {
     // Data functions
@@ -169,6 +196,14 @@ function go() {
       waitFlags = (waitFlags | 1);
     },
 
+     // Code generation functions
+     nextInstruction: nextInstruction,
+     pushInstruction: pushInstruction,
+     addInstructionAt: addInstructionAt,
+     createSubroutine: createSubroutine,
+     isSubroutineDefined: isSubroutineDefined,
+
+
     // Execution control functions
     advance: function () {
       callstack[callstack.length-1].loc++;
@@ -197,8 +232,7 @@ function go() {
     setBGColor: display.setBGColor,
     clear: display.clear,
 
-    init: function(code_param, vars_param) {
-      code = code_param;
+    init: function(vars_param) {
       vars = vars_param; // Variables
 
       // register for return values

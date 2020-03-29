@@ -30,30 +30,13 @@ function CodeGen(machine, logger) {
 
   var subArgCount = {}; // Map of subroutine to integer param count                                                     // Used when subs are called before declaration
 
-  var code = {"!":[]}; // map of function names to list of instructions
-  var currentSub = "!"; // Name of the sub we're currently adding code to
+  var currentSub; // Name of the sub we're currently adding code to
 
   var calledSubs = [];  // Subroutines that were called before being defined
   // So we can check that they eventually get defined
 
-  // XXX move code related functions to Machine
-  //     In general, this class shouldn't know the Machine how is
-  //     implemented. This class should know how to compose
-  //     machine operations to form code
-
-  // location of the next instruction
-  function nextInstruction() {
-    return code[currentSub].length;
-  };
-  function pushInstruction(instruction) {
-    return code[currentSub].push(instruction);
-  };
-  function addInstructionAt(loc,instruction) {
-    code[currentSub][loc] = instruction;
-  };
-
   function localVarName(name) {
-    if (currentSub !== "!") {
+    if (currentSub !== undefined) {
       var pos = 0;
       while (pos < subArgNames[currentSub].length){
         if (subArgNames[currentSub][pos] === name) {
@@ -78,6 +61,15 @@ function CodeGen(machine, logger) {
     return sub+"!"+pos; // Implicit conversion from number to string
   };
 
+  function pushInstruction(instruction) {
+    return machine.pushInstruction(instruction, currentSub);
+  }
+  function addInstructionAt(loc, instruction) {
+    machine.addInstructionAt(loc, instruction, currentSub);
+  }
+  function nextInstruction() {
+    return machine.nextInstruction(currentSub);
+  }
 
   function TypeGeneratorPass() {
     /* Pumpkin Spice has implied, static typing
@@ -303,7 +295,7 @@ function CodeGen(machine, logger) {
     }
 
     function endSubroutine(num) {
-      currentSub = "!";
+      currentSub = undefined;
       return true;
     }
 
@@ -313,7 +305,7 @@ function CodeGen(machine, logger) {
         return false;
 
       }
-      if (currentSub === "!") {
+      if (currentSub === undefined) {
         logger.error("RETURN OUTSIDE OF SUBROUTINE ON LINE "+num+"\n");
         return false;
       }
@@ -953,7 +945,7 @@ function CodeGen(machine, logger) {
     }
 
     function beginSubroutine(sub, args, num) {
-      if (code[sub] !== undefined) {
+      if (machine.isSubroutineDefined(sub)) {
         logger.error("SUBROUTINE "+sub+" ALREADY DEFINED");
       } else {
         var i
@@ -966,7 +958,7 @@ function CodeGen(machine, logger) {
         if (i === loopStack.length) {
           loopStack.push({type:SUBROUTINE});
           currentSub = sub;
-          code[sub] = [];
+          machine.createSubroutine(sub);
         }
       }
       return true;
@@ -978,7 +970,7 @@ function CodeGen(machine, logger) {
 	return false;
       } else {
         loopStack.pop();
-        currentSub = "!";
+        currentSub = undefined;
       }
       return true;
     }
@@ -1943,7 +1935,7 @@ function CodeGen(machine, logger) {
     // Calling fake subroutines is stupid
     for (var i=0;i<calledSubs.length;i++) {
       var name=calledSubs[i];
-      if (!code[name]) {
+      if (!machine.isSubroutineDefined(name)) {
         logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
         return false;
       }
@@ -1961,7 +1953,7 @@ function CodeGen(machine, logger) {
       else if (varTypes[v] === STRING_TYPE)
         vars[v] = "";
     }
-    machine.init(code, vars);
+    machine.init(vars);
   }
 
   return {
