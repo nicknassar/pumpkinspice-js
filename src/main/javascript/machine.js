@@ -186,6 +186,9 @@ function go() {
     random: function(l,h) {
       return Math.floor(Math.floor(l)+Math.random()*(1+Math.floor(h)-Math.floor(l)));
     },
+    play: function(notes) {
+      audio.play(notes);
+    },
     init: function(code_param, vars_param) {
       code = code_param;
       vars = vars_param; // Variables

@@ -1,6 +1,6 @@
   //     Maybe pass in an error handler?
 
-function CodeGen(display, audio, machine, logger) {
+function CodeGen(display, machine, logger) {
 
   // Constants representing types
   var STRING_TYPE = {};
@@ -1530,7 +1530,7 @@ function CodeGen(display, audio, machine, logger) {
       }
       var notes = expressionToFunction(abc);
       pushInstruction(function() {
-	audio.play(notes());
+	machine.play(notes());
         machine.advance();
       });
       return true;
