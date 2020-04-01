@@ -30,7 +30,7 @@ class TemplateFiller {
 	    source = null;
 	    destination = null;
 	}
-	
+
 	boolean isValid() {
 	    return source != null && destination != null;
 	}
@@ -41,7 +41,7 @@ class TemplateFiller {
 	    for (String arg: args) {
 		if (config.source == null) {
 		    config.source = arg;
-		    
+
 		    File src = new File(config.source);
 		    config.templateFolder = src.getParent();
 
@@ -81,8 +81,6 @@ class TemplateFiller {
 	}
     }
 
-    private BufferedWriter out;
-    private BufferedReader template;
     private TemplateConfig config;
 
     TemplateFiller(TemplateConfig config) {
@@ -90,35 +88,41 @@ class TemplateFiller {
     }
 
     public void run() throws Error {
+        BufferedReader template;
+        BufferedWriter out;
 	try {
+            template = new BufferedReader(new InputStreamReader(new FileInputStream(config.source), Charset.forName("UTF-8").newDecoder()));
 	    out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(config.destination), Charset.forName("UTF-8").newEncoder()));
-	    template = new BufferedReader(new InputStreamReader(new FileInputStream(config.source), Charset.forName("UTF-8").newDecoder()));
 	} catch (FileNotFoundException e) {
 	    throw new Error(e);
 	}
-	fillTemplate();
+	fillTemplate(template, out);
+        try {
+            out.close();
+        } catch (IOException e) {
+            throw new Error(e);
+        }
     }
-    
-    private void fillTemplate() throws Error {
+
+    private void fillTemplate(BufferedReader template, BufferedWriter out) throws Error {
 	try {
-	    
+
 	    String line = template.readLine();
 	    while (line != null) {
-		fillLine(line);
+		fillLine(line, out);
 		line = template.readLine();
 	    }
-	    out.close();
 	} catch (IOException e) {
 	    throw new Error(e);
 	}
     }
-    
-    private void fillLine(String line) throws IOException {
+
+    private void fillLine(String line, BufferedWriter out) throws IOException, Error {
 	int start = 0;
 	int match = line.indexOf("{{", start);
 	while (match > -1) {
 	    out.write(line.substring(start, match));
-	    
+
 	    int end = line.indexOf("}}",match);
 	    if (end == -1) {
 		out.newLine();
@@ -128,27 +132,12 @@ class TemplateFiller {
 	    }
 
 	    String filename = line.substring(match+2,end);
-	    dumpFile(filename);
-	    
+            BufferedReader subTemplate = new BufferedReader(new InputStreamReader(new FileInputStream(config.templateFolder+File.separatorChar+filename), Charset.forName("UTF-8").newDecoder()));
+            fillTemplate(subTemplate, out);
+
 	    match = line.indexOf("{{", start);
 	}
 	out.write(line.substring(start, line.length()));
 	out.newLine();
     }
-
-    private void dumpFile(String filename) throws IOException {
-	dump(new BufferedReader(new InputStreamReader(new FileInputStream(config.templateFolder+File.separatorChar+filename), Charset.forName("UTF-8").newDecoder())));
-    }
-    
-    private void dump(BufferedReader in) throws IOException {
-	String line = in.readLine();
-	while (line != null) {
-	    out.write(line);
-	    line = in.readLine();
-
-	    // No trailing newline
-	    if (line != null)
-		out.newLine();
-	}
-    }
-}  
+}
