@@ -1,0 +1,111 @@
+  //     Maybe pass in an error handler?
+
+function CodeGen(machine, logger) {
+
+  // Constants representing types
+  var STRING_TYPE = {};
+  var NUMERIC_TYPE = {}
+
+  // Block types for loop stack
+  var FOR={};
+  var IF={};
+  var RANDOM={};
+  var MENU={};
+  var ASK={};
+  var WHILE={};
+  var SUBROUTINE={};
+
+  // Private variables
+  var loopStack = [];  // Keeps track of nested loops
+
+  // Map of variable name to STRING_TYPE, NUMERIC_TYPE, or list of matches
+  // There are special names for subtroutine args
+  var varTypes = {};
+
+  var subArgNames = {};      // Map of subroutine to list of param names
+
+  var subArgCount = {}; // Map of subroutine to integer param count                                                     // Used when subs are called before declaration
+
+  var currentSub; // Name of the sub we're currently adding code to
+
+  var calledSubs = [];  // Subroutines that were called before being defined
+  // So we can check that they eventually get defined
+
+  function localVarName(name) {
+    if (currentSub !== undefined) {
+      var pos = 0;
+      while (pos < subArgNames[currentSub].length){
+        if (subArgNames[currentSub][pos] === name) {
+          return argNameByArity(currentSub,pos);
+        }
+        pos++;
+      }
+    }
+    return name;
+  };
+
+  // Name of the return value for the given sub
+  // Used internally in varTypes to keep track of type
+  function returnValueName(sub) {
+    return sub+"!";
+  };
+
+  // Call with FOO,0 to get the name of the first arg of subroutine FOO
+  // Call with FOO,1 to get the name of the second arg of subroutine FOO
+  // Used internally in varTypes to keep track of type
+  function argNameByArity(sub,pos) {
+    return sub+"!"+pos; // Implicit conversion from number to string
+  };
+
+{{type_generator_pass.js.template}}
+{{code_generator_pass.js.template}}
+
+  var handler1 = TypeGeneratorPass();
+  var handler2 = CodeGeneratorPass();
+
+  function numPasses() {
+    return 2;
+  }
+
+  function handlerForPass(pass) {
+      if (pass === 0)
+	return handler1;
+      else if (pass === 1)
+	return handler2;
+  }
+
+  function validate() {
+    // Calling fake subroutines is stupid
+    for (var i=0;i<calledSubs.length;i++) {
+      var name=calledSubs[i];
+      if (!machine.isSubroutineDefined(name)) {
+        logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function generate() {
+    // Initialize numeric values to 0, strings to empty string
+    // Variables with unknown types remain undefined, always fail in comparisons
+    var vars = {};
+    for (var v in varTypes) {
+      if (varTypes[v] === NUMERIC_TYPE)
+        vars[v] = 0;
+      else if (varTypes[v] === STRING_TYPE)
+        vars[v] = "";
+    }
+    machine.init(vars);
+  }
+
+  return {
+    numPasses: numPasses,
+    handlerForPass: handlerForPass,
+    // Called after code generation is complete to check for stupidness
+    validate: validate,
+    // Called after code generation is complete and validated
+    // Make the code
+    generate: generate
+  };
+}

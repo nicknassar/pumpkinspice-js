@@ -30,7 +30,7 @@ JAVA_TOOLS_CLASSES := $(BUILD_TOOLS_DIR)/com/nicknassar/pumpkinspice/TemplateFil
 OPTIMIZED_RESOURCES := $(BUILD_RESOURCE_DIR)/pumpkinspice.optimized.js $(BUILD_RESOURCE_DIR)/index.html.template
 DEBUG_RESOURCES := $(BUILD_RESOURCE_DIR)/pumpkinspice.js $(BUILD_RESOURCE_DIR)/index.html.template
 
-JAVASCRIPT_SOURCES := $(SRC_DIR)/main/javascript/pumpkinspice.js.template $(SRC_DIR)/main/javascript/initialize.js $(SRC_DIR)/main/javascript/audio.js $(SRC_DIR)/main/javascript/logger.js $(SRC_DIR)/main/javascript/display.js  $(SRC_DIR)/main/javascript/machine.js  $(SRC_DIR)/main/javascript/legacy.js $(SRC_DIR)/main/javascript/codegen.js $(SRC_DIR)/main/javascript/compiler.js
+JAVASCRIPT_SOURCES := $(SRC_DIR)/main/javascript/pumpkinspice.js.template $(SRC_DIR)/main/javascript/initialize.js $(SRC_DIR)/main/javascript/audio.js $(SRC_DIR)/main/javascript/logger.js $(SRC_DIR)/main/javascript/display.js  $(SRC_DIR)/main/javascript/machine.js  $(SRC_DIR)/main/javascript/legacy.js $(SRC_DIR)/main/javascript/codegen.js.template $(SRC_DIR)/main/javascript/code_generator_pass.js.template $(SRC_DIR)/main/javascript/type_generator_pass.js.template $(SRC_DIR)/main/javascript/code_generator_expression_handler.js $(SRC_DIR)/main/javascript/type_generator_expression_handler.js $(SRC_DIR)/main/javascript/compiler.js
 
 .PHONY: all
 all: test.html test.debug.html $(OUTPUT_JAR)

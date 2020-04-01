@@ -81,7 +81,7 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
 {{logger.js}}
 {{audio.js}}
 {{machine.js}}
-{{codegen.js}}
+{{codegen.js.template}}
 {{compiler.js}}
 
   var globalDisplay = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
