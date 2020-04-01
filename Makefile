@@ -6,11 +6,13 @@ BUILD_DIR := build
 SRC_DIR := src
 BUILD_SOURCE_DIR := $(SRC_DIR)/build/java
 BUILD_OUTPUT_DIR := $(BUILD_DIR)/classes
+BUILD_TOOLS_DIR := $(BUILD_DIR)/tools
 RESOURCE_DIR := $(SRC_SIR)/resources
 BUILD_RESOURCE_DIR := $(BUILD_DIR)/resources
 CLOSURE_COMPILER_JAR := $(wildcard lib/closure-compiler-v[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].jar)
 OUTPUT_JAR := pumpkinspice2html-v$(BUILD_VERSION).jar
 JFLAGS := -sourcepath $(BUILD_SOURCE_DIR) -d $(BUILD_OUTPUT_DIR)
+TOOLS_JFLAGS := -sourcepath $(BUILD_SOURCE_DIR) -d $(BUILD_TOOLS_DIR)
 JAVAC := javac
 JAVA := java
 JAR := jar
@@ -22,8 +24,8 @@ else
 endif
 vpath %.html.template $(RESOURCE_DIR)
 vpath %.java $(BUILD_SOURCE_DIR)
-vpath %.class $(BUILD_OUTPUT_DIR)
-JAVA_CLASSES := com/nicknassar/pumpkinspice/Builder.class com/nicknassar/pumpkinspice/TemplateFiller.class
+JAVA_BUILD_CLASSES := $(BUILD_OUTPUT_DIR)/com/nicknassar/pumpkinspice/Builder.class
+JAVA_TOOLS_CLASSES := $(BUILD_TOOLS_DIR)/com/nicknassar/pumpkinspice/TemplateFiller.class
 
 OPTIMIZED_RESOURCES := $(BUILD_RESOURCE_DIR)/pumpkinspice.optimized.js $(BUILD_RESOURCE_DIR)/index.html.template
 DEBUG_RESOURCES := $(BUILD_RESOURCE_DIR)/pumpkinspice.js $(BUILD_RESOURCE_DIR)/index.html.template
@@ -39,6 +41,8 @@ clean:
 	-rm test.html test.debug.html $(OUTPUT_JAR)
 
 $(BUILD_OUTPUT_DIR):
+	-$(MKDIR) -p $@
+$(BUILD_TOOLS_DIR):
 	-$(MKDIR) -p $@
 $(BUILD_RESOURCE_DIR):
 	-$(MKDIR) -p $@
@@ -57,11 +61,13 @@ else
 closure_compiler: $(CLOSURE_COMPILER_JAR)
 endif
 
-%.class: %.java | $(BUILD_OUTPUT_DIR)
+$(BUILD_OUTPUT_DIR)/com/nicknassar/pumpkinspice/Builder.class: $(BUILD_SOURCE_DIR)/com/nicknassar/pumpkinspice/Builder.java | $(BUILD_OUTPUT_DIR)
 	$(JAVAC) $(JFLAGS) $<
+$(BUILD_TOOLS_DIR)/com/nicknassar/pumpkinspice/TemplateFiller.class: $(BUILD_SOURCE_DIR)/com/nicknassar/pumpkinspice/TemplateFiller.java | $(BUILD_TOOLS_DIR)
+	$(JAVAC) $(TOOLS_JFLAGS) $<
 
-$(BUILD_RESOURCE_DIR)/pumpkinspice.js: $(JAVASCRIPT_SOURCES) $(JAVA_CLASSES) | $(BUILD_RESOURCE_DIR)
-	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(BUILD_OUTPUT_DIR)" com.nicknassar.pumpkinspice.TemplateFiller $< $@
+$(BUILD_RESOURCE_DIR)/pumpkinspice.js: $(JAVASCRIPT_SOURCES) $(JAVA_TOOLS_CLASSES) | $(BUILD_RESOURCE_DIR)
+	$(JAVA) -classpath "$(BUILD_TOOLS_DIR)" com.nicknassar.pumpkinspice.TemplateFiller $< $@
 
 $(BUILD_RESOURCE_DIR)/pumpkinspice.optimized.js: $(BUILD_RESOURCE_DIR)/pumpkinspice.js | $(BUILD_RESOURCE_DIR) closure_compiler
 	$(JAVA) -jar $(CLOSURE_COMPILER_JAR) --compilation_level ADVANCED_OPTIMIZATIONS --js $< --js_output_file $@
@@ -69,10 +75,10 @@ $(BUILD_RESOURCE_DIR)/pumpkinspice.optimized.js: $(BUILD_RESOURCE_DIR)/pumpkinsp
 $(BUILD_RESOURCE_DIR)/index.html.template: $(SRC_DIR)/resources/index.html.template | $(BUILD_RESOURCE_DIR)
 	cp $< $@
 
-%.html: %.pumpkinspice $(JAVA_CLASSES) $(OPTIMIZED_RESOURCES)
+%.html: %.pumpkinspice $(JAVA_BUILD_CLASSES) $(OPTIMIZED_RESOURCES)
 	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(BUILD_OUTPUT_DIR)" com.nicknassar.pumpkinspice.Builder $<
 
-%.debug.html: %.pumpkinspice $(JAVA_CLASSES) $(DEBUG_RESOURCES)
+%.debug.html: %.pumpkinspice $(JAVA_BUILD_CLASSES) $(DEBUG_RESOURCES)
 	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(BUILD_OUTPUT_DIR)" com.nicknassar.pumpkinspice.Builder --debug $<
 
 $(OUTPUT_JAR): $(JAVA_CLASSES) $(DEBUG_RESOURCES) $(OPTIMIZED_RESOURCES)
