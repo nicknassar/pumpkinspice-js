@@ -11,15 +11,21 @@
       var BOOLEXPRESSION={};
       var EXPRESSION={};
 
+      // expression result types
+      var NUMERIC_TYPE={};
+      var STRING_TYPE={};
+
       // This is vastly simplified because we keep JavaScript semantics for
       // operator precendence.
 
       function numericExpression(value) {
         return numericExpressionWithSubs(value,[]);
       }
+
       function numericExpressionWithSubs(value, subs) {
         return {type:EXPRESSION,value:value,resultType:NUMERIC_TYPE,subs:subs};
       }
+
       function numericBinaryExpression(op,exp1,exp2) {
         if ((!exp1 || !exp2) ||
             (exp1.resultType !== NUMERIC_TYPE) ||
@@ -62,26 +68,22 @@
       }
 
       function variable(name) {
-        // Check to see that variable has type data
-        var localName = localVarName(name);
-        var varType = varTypes[localName];
-        if (!varType) {
-          return null;
-        }
-
         // Handle case of subroutine local
-        if (localName !== name) {
-          if (varType == STRING_TYPE)
+        if (typeManager.localVariableDefined(currentSub, name)) {
+          if (typeManager.localHasStringType(currentSub, name))
             return stringExpression(localVariableName(name));
-          else if (varType == NUMERIC_TYPE)
+          else if (typeManager.localHasNumericType(currentSub, name))
             return numericExpression(localVariableName(name));
 
         } else { // It's a plain old global variable
-          if (varType == STRING_TYPE)
+          if (typeManager.globalHasStringType(name))
             return stringExpression(variableName(name));
-          else if (varType == NUMERIC_TYPE)
+          else if (typeManager.globalHasNumericType(name))
             return numericExpression(variableName(name));
         }
+
+        // Fall through if the varible doesn't have a type
+        return null;
       }
 
       function validateStringSubExpression(result) {
@@ -173,12 +175,11 @@
       function callSubroutine(name,argExps) {
 	// Check the types of the argument expressions
 	for (var i = 0; i < argExps.length ; i++) {
-	  var type = varTypes[argNameByArity(name,i)];
-	  if (type === STRING_TYPE)
+	  if (typeManager.subArgHasStringType(name,i))
 	    argExps[i] = validateStringSubExpression(argExps[i]);
-	  else if (type === NUMERIC_TYPE)
+	  else if (typeManager.subArgHasNumericType(name,i))
 	    argExps[i] = validateNumericSubExpression(argExps[i]);
-	  else if (type !== undefined) {
+	  else if (!typeManager.subArgHasUndefinedType(name,i)) {
 	    logger.error("Invalid type for subroutine "+name+" argument "+i);
 	    argExps[i] = null;
 	  }
@@ -189,14 +190,12 @@
 	// Expressions have a list of subroutines the need to be called
 	// before they are run
 	var subs = [{temp:temp,name:name,args:argExps}];
-	var retName = returnValueName(name);
 
 	// The name of the variable where the temps are stored
 	var t = localVariableName(temp);
-        var returnType = varTypes[retName];
-        if (returnType === STRING_TYPE)
+        if (typeManager.subHasStringReturnType(name))
           return stringExpressionWithSubs(t,subs);
-        else if (returnType === NUMERIC_TYPE)
+        else if (typeManager.subHasNumericReturnType(name))
           return numericExpressionWithSubs(t,subs);
       }
       function additionExpression(a,b) {

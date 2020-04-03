@@ -1,4 +1,4 @@
-  function TypeGeneratorPass() {
+  function TypeGeneratorPass(typeManager) {
     /* Pumpkin Spice has implied, static typing
 
        Certain types of expressions have a specific type
@@ -11,122 +11,7 @@
        A variable that's not used might not have a type
        Anything that's used ends up with a type
 
-
-       Types are determined in the first pass of the compiler by
-       building a map of variables to their types.
-
-       Variables with unknown types are associated with a list of
-       variables with the same type. As types are determined, these
-       lists are used to fill in missing types
-
-       Possible return values:
-       STRING_TYPE - this is a string
-       NUMERIC_TYPE - this is a numeric type
-       null - something is wrong
-       Array - we haven't figured it out - this is a list of identifiers
-
-       The second pass uses this type data to generate code
-
     */
-
-    function assignTypes(variables,type) {
-      // type must be resolved before this is called
-      if (type !== STRING_TYPE && type !== NUMERIC_TYPE) {
-        logger.error("TYPE SYSTEM ERROR\n");
-        return false;
-      }
-      var sameTypeVars = [];
-      for (var i=0;i<variables.length;i++) {
-        if (varTypes[variables[i]] &&
-            varTypes[variables[i]] !== STRING_TYPE &&
-            varTypes[variables[i]] !== NUMERIC_TYPE) {
-          var sameTypeTemp = varTypes[variables[i]];
-          for (var j=0;j<sameTypeTemp.length;j++)
-            sameTypeVars.push(sameTypeTemp[j]);
-          varTypes[variables[i]] = type;
-        } else if (varTypes[variables[i]] !== undefined &&
-                   varTypes[variables[i]] !== type) {
-          logger.error("TYPE MISMATCH\n");
-          return false;
-        } else {
-          varTypes[variables[i]] = type;
-        }
-      }
-      if (sameTypeVars.length > 0) {
-        return assignTypes(sameTypeVars,type);
-      } else {
-        return true;
-      }
-
-    };
-    function saveUnassignedTypes(variables) {
-      // This is O(n^2) in the worst case
-      //
-      // There's a much better way to handle this
-
-      for (var i=0;i<variables.length;i++) {
-        if (varTypes[variables[i]] &&
-            (varTypes[variables[i]]===STRING_TYPE ||
-             varTypes[variables[i]]===NUMERIC_TYPE)) {
-          logger.error("UNASSIGNED TYPE NOT RESOLVED CORRECTLY\n");
-          throw "typeassignerror"; // We should never get here
-        }
-        if (varTypes[variables[i]]) {
-          for (var j=0;j<variables.length;j++) {
-            varTypes[variables[i]].push(variables[j]);
-          }
-        } else {
-          // Copy the current list to varTypes
-          varTypes[variables[i]] = variables.slice(0);
-        }
-      }
-    };
-    function genTypesForExpressionPair(type1,type2) {
-      // Returns type of expression pair
-      // Just like findTypeOfTokenExpression can return
-      //   STRING_TYPE, NUMERIC_TYPE, null, or list
-
-      // Something is bad
-      if (type1 === null || type2 === null)
-        return null;
-
-      // The first expression can be resolved
-      if (type1 === STRING_TYPE || type1 === NUMERIC_TYPE) {
-        if (type2 === type1) {
-          return type1;
-        } else if (type2 !== STRING_TYPE && type2 !== NUMERIC_TYPE) {
-          // Type 2 is a list of unknowns
-          assignTypes(type2,type1);
-          return type1;
-        } else {
-          // It's not a match and it's not unknown
-          return null;
-        }
-      }
-
-      // The first expression could not be resolved
-
-      // The second expression can be resolved
-      if (type2 === STRING_TYPE || type2 === NUMERIC_TYPE) {
-        assignTypes(type1,type2);
-        return type2;
-      }
-
-      // There's probably a better way to combine two lists
-      var undefineds = [];
-      for (var i=0;i<type1.length;i++) {
-        undefineds.push(type1[i]);
-      }
-      for (var i=0;i<type2.length;i++) {
-        undefineds.push(type2[i]);
-      }
-      if (undefineds.length === 0)
-        return null;
-      else {
-        saveUnassignedTypes(undefineds);
-        return undefineds;
-      }
-    };
 
 /***********************************************************************
   BEGIN Type Gen functions
@@ -140,7 +25,7 @@
     }
 
     function printExp(exp,newline,pause,num) {
-      var result = genTypesForExpressionPair(exp,STRING_TYPE);
+      var result = typeManager.genTypesForStringExpression(exp);
       if (!result) {
         logger.error("Type mismatch for PRINT on line "+num+"\n");
       }
@@ -167,58 +52,28 @@
       // XXX CHECK THAT VARIABLE HASN'T BEEN DEFINED
       // XXX WHEN VARS ARE DEFINED, CHECK THAT SUBROUTINE HASN'T BEEN DEFINED
       // If there's an existing subArgNames entry, this had already been defined!
-      if (subArgNames[name] !== undefined) {
+      if (typeManager.subIsDefined(name)) {
         logger.error("SUBROUTINE "+name+" REDEFINED on line "+num+"\n");
         return false;
       } else {
         // This is the current sub now.
         currentSub = name;
 
-        // Save the arg names
-        subArgNames[name] = args;
-
         // We've never seen this before. Save the count, too
-        if (subArgCount[name] === undefined) {
-          subArgCount[name] = args.length;
-        } else { // We've seen this called. Check that the param count matches.
-          if (subArgCount[name] !== args.length) {
-            logger.error("SUBROUTINE "+name+" HAS "+args.length+" args but was called with "+subArgCount[name]+" on line "+num+"\n");
-            return false;
+        if (typeManager.getSubArgCount(name) === undefined ||
+            typeManager.getSubArgCount(name) == args.length) {
+          typeManager.setSubArgNames(name, args);
 
-          }
+        } else { // We've seen this called. Check that the param count matches.
+          logger.error("SUBROUTINE "+name+" HAS "+args.length+" args but was called with "+typeManager.getSubArgCount(name)+" on line "+num+"\n");
+          return false;
         }
         return true;
       }
     }
 
     function callSubroutine(name, argExps, num) {
-      if (subArgCount[name] === undefined) {
-        subArgCount[name] = argExps.length;
-        calledSubs[calledSubs.length] = name;
-      }
-      if (subArgCount[name] !== argExps.length) {
-        logger.error("SUBROUTINE "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]+" on line "+num+"\n");
-        return false;
-      }
-      for (var i=0;i<argExps.length;i++) {
-        if (argExps[i] === null) {
-          logger.error("Invalid argument to "+name+" on line "+num+"\n");
-          return false;
-        }
-        var varName = argNameByArity(name,i);
-        if (varTypes[varName]) {
-          var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
-          if (!result) {
-            logger.error("Invalid argument type mismatch in "+name+" on line "+num+"\n");
-            return false;
-          } else {
-            varTypes[varName] = result;
-          }
-        } else {
-          varTypes[varName] = argExps[i];
-        }
-      }
-      return true;
+      return typeManager.callSubroutineStatement(name, argExps);
     }
 
     function endSubroutine(num) {
@@ -227,32 +82,11 @@
     }
 
     function returnStatement(exp, num) {
-      if (exp === null) {
-        logger.error("INVALID RETURN EXPRESSION ON LINE "+num+"\n");
-        return false;
-
-      }
-      if (currentSub === undefined) {
-        logger.error("RETURN OUTSIDE OF SUBROUTINE ON LINE "+num+"\n");
-        return false;
-      }
-      var retValName=returnValueName(currentSub);
-      if (varTypes[retValName]) {
-        var result = genTypesForExpressionPair(exp,varTypes[retValName]);
-        if (!result) {
-          logger.error("TYPE MISMATCH IN RETURN ON "+num+"\n");
-          return false;
-        } else {
-          varTypes[retValName] = result;
-        }
-      } else {
-        varTypes[retValName] = exp;
-      }
-      return true;
+      return typeManager.returnStatement(currentSub, exp);
     }
 
     function beginAsk(promptExp,num) {
-      var result = genTypesForExpressionPair(promptExp,STRING_TYPE);
+      var result = typeManager.genTypesForStringExpression(promptExp);
       if (result === null) {
         logger.error("Type mismatch for ASK on line "+num+"\n");
         return false;
@@ -262,7 +96,7 @@
     }
 
     function beginMenu(promptExp,num) {
-      var result = genTypesForExpressionPair(promptExp,STRING_TYPE);
+      var result = typeManager.genTypesForStringExpression(promptExp);
       if (result === null) {
         logger.error("Type mismatch for BEGIN MENU on line "+num+"\n");
         return false;
@@ -272,7 +106,7 @@
     }
 
     function menuChoice(charExp,textExp,num) {
-      var result = genTypesForExpressionPair(textExp,STRING_TYPE);
+      var result = typeManager.genTypesForStringExpression(textExp);
       if (result === null) {
         logger.error("Type mismatch for MENU CHOICE on line "+num+"\n");
         return false;
@@ -291,7 +125,7 @@
     }
 
     function color(valueExp,num) {
-      var result = genTypesForExpressionPair(valueExp,NUMERIC_TYPE);
+      var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
         logger.error("Type mismatch for COLOR on line "+num+"\n");
         return false;
@@ -301,7 +135,7 @@
     }
 
     function bgColor(valueExp,num) {
-      var result = genTypesForExpressionPair(valueExp,NUMERIC_TYPE);
+      var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
         logger.error("Type mismatch for BGCOLOR on line "+num+"\n");
         return false;
@@ -311,7 +145,7 @@
     }
 
     function sleep(valueExp,num) {
-      var result = genTypesForExpressionPair(valueExp,NUMERIC_TYPE);
+      var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
         logger.error("Type mismatch for SLEEP on line "+num+"\n");
         return false;
@@ -321,12 +155,11 @@
     }
 
     function input(valueExp,num) {
-      assignTypes([valueExp],STRING_TYPE);
-      return true;
+      return typeManager.assignGlobalStringType(valueExp);
     }
 
     function play(valueExp,num) {
-      var result = genTypesForExpressionPair(valueExp,STRING_TYPE);
+      var result = typeManager.genTypesForStringExpression(valueExp);
       if (result === null) {
 	logger.error("Type mismatch for PLAY on line "+num+"\n");
 	return false;
@@ -336,9 +169,9 @@
     }
 
     function forStatement(varExp,startExp,endExp,num) {
-      if (!assignTypes([varExp],NUMERIC_TYPE) ||
-          genTypesForExpressionPair(startExp,NUMERIC_TYPE)===null ||
-          genTypesForExpressionPair(endExp,NUMERIC_TYPE)===null) {
+      if (!typeManager.assignGlobalNumericType(varExp) ||
+          typeManager.genTypesForNumericExpression(startExp)===null ||
+          typeManager.genTypesForNumericExpression(endExp)===null) {
         logger.error("Type mismatch for FOR on line "+num+"\n");
       } else {
         return true;
@@ -351,29 +184,33 @@
         logger.error("Type mismatch for assignment to "+varExp+" on line "+num+"\n");
         return false;
       }
-      varExp = localVarName(varExp);
+      if (typeManager.localVariableDefined(currentSub, varExp)) {
+        logger.error("Local variable assignment not supported, yet!\n");
+        return false;
+      }
       // Value exp has an unknown type
-      if (valueExp !== STRING_TYPE && valueExp !== NUMERIC_TYPE) {
-        // The variable has a type- set the arg based on that
-        if (varTypes[varExp] &&
-            (varTypes[varExp] === STRING_TYPE ||
-             varTypes[varExp] === NUMERIC_TYPE)) {
-          return assignTypes(valueExp,varTypes[varExp]);
-        } else {
-
-          // There are no types yet
-          var unassigned = [varExp];
-          for (var i=0;i<valueExp.length;i++) {
-            unassigned.push(valueExp[i]);
-          }
-          saveUnassignedTypes(unassigned);
-          return true;
-        }
-      } else {
-        if (!assignTypes([varExp],valueExp)) {
+      if (typeManager.isStringType(valueExp)) {
+        if (!typeManager.assignGlobalStringType(varExp)) {
           logger.error("Type mismatch for assignment to "+varExp+" on line "+num+".\n");
           return false;
+        } else
+          return true;
+      } else if (typeManager.isNumericType(valueExp)) {
+        if (!typeManager.assignGlobalNumericType(varExp)) {
+          logger.error("Type mismatch for assignment to "+varExp+" on line "+num+".\n");
+          return false;
+        } else
+          return true;
+      } else {
+        // The variable has a type- set the arg based on that
+        if (typeManager.globalHasStringType(varExp)) {
+          return typeManager.assignUnknownsStringTypes(valueExp);
+        } else if (typeManager.globalHasNumericType(varExp)) {
+          return typeManager.assignUnknownsNumericType(valueExp);
         } else {
+          // There are no types yet
+
+          typeManager.addGlobalToUnassignedType(valueExp, varExp);
           return true;
         }
       }

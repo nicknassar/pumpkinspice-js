@@ -1,4 +1,4 @@
-  function CodeGeneratorPass(){
+  function CodeGeneratorPass(typeManager){
     // XXX handle errors by throwing an exception
     // XXX don't pass in the line number- let the caller handle the exception and print errors
 
@@ -130,10 +130,6 @@
     }
 
     function printExp(exp,newline,pause,num) {
-      if (!exp || (exp.resultType !== STRING_TYPE)) {
-        logger.error("Invalid PRINT on line "+num+"\n");
-        return false;
-      }
       if (newline) {
         exp.value = exp.value+"+\"\\n\"";
       }
@@ -158,16 +154,15 @@
     }
 
     function callSubroutine(sub, argExps, num) {
-      var argNames = subArgNames[sub];
+      var argNames = typeManager.getSubArgNames(sub);
       var fArgs = [];
       for (var i=0;i<argExps.length;i++) {
         fArgs.push(expressionToFunction(argExps[i]));
       }
-      var retName = returnValueName(sub);
       var ret;
-      if (varTypes[retName] === STRING_TYPE) {
+      if (typeManager.subHasStringReturnType(sub)) {
         ret = "";
-      } else if (varTypes[retName] === NUMERIC_TYPE) {
+      } else if (typeManager.subHasNumericReturnType(sub)) {
         ret = 0;
       }
       pushInstruction(function () {
@@ -850,7 +845,7 @@
     }
 
     function input(varname,num) {
-      if (varTypes[varname] === undefined) {
+      if (typeManager.globalHasUndefinedType(varname)) {
         logger.error(varname+" undefined in INPUT\n");
         return;
       }
@@ -881,7 +876,7 @@
         return false;
       }
       //addFor: function(varname,first,last) {
-      if (varTypes[varname] === undefined) {
+      if (typeManager.globalHasUndefinedType(varname)) {
         logger.error(varname+" undefined in FOR\n");
         return;
       }
@@ -902,7 +897,7 @@
         logger.error("Invalid expression assigned to "+varname+" on line "+num+"\n");
         return false;
       }
-      if (varTypes[varname] === undefined) {
+      if (typeManager.globalHasUndefinedType(varname)) {
         logger.error(varname+" undefined in assignment\n");
         return;
       }
