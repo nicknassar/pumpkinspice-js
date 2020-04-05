@@ -1,6 +1,21 @@
-  function CodeGeneratorPass(typeManager){
+function CodeGeneratorPass(typeManager, machine, logger){
     // XXX handle errors by throwing an exception
     // XXX don't pass in the line number- let the caller handle the exception and print errors
+
+    // Block types for loop stack
+    var FOR={};
+    var IF={};
+    var RANDOM={};
+    var MENU={};
+    var ASK={};
+    var WHILE={};
+    var SUBROUTINE={};
+
+    // Private variables
+    var loopStack = [];  // Keeps track of nested loops
+
+    var currentSub; // Name of the sub we're currently adding code to
+
 
     // Adding instructions to the machine
     function pushInstruction(instruction) {
@@ -956,52 +971,318 @@
   END Code Gen functions
 ***********************************************************************/
 
-{{code_generator_expression_handler.js}}
-    var expressionHandler = ExpressionHandler();
+/***********************************************************************
+  BEGIN Code Gen pass expression handler
+***********************************************************************/
+      // generate expressions
+      // Returns an EXPRESSION token or null
+      // XXX Handle errors
+      // XXX Fail if types are incorrect in every case
 
-    return {
-      expressionHandler: expressionHandler,
-      printString: printString,
-      printExp: printExp,
-      ifStatement: ifStatement,
-      endIf: endIf,
-      elseStatement: elseStatement,
-      endWhile: endWhile,
-      whileStatement: whileStatement,
-      beginRandom: beginRandom,
-      waitForMusic: waitForMusic,
-      beginSubroutine: beginSubroutine,
-      callSubroutine: callSubroutine,
-      endSubroutine: endSubroutine,
-      returnStatement: returnStatement,
-      endRandom: endRandom,
-      withChance: withChance,
-      withEvenChance: withEvenChance,
-      beginAsk: beginAsk,
-      askColor: askColor,
-      askBGColor: askBGColor,
-      askPromptColor: askPromptColor,
-      onNo: onNo,
-      onYes: onYes,
-      askDefault: askDefault,
-      endAsk: endAsk,
-      beginMenu: beginMenu,
-      menuColor: menuColor,
-      menuBGColor: menuBGColor,
-      menuChoiceColor: menuChoiceColor,
-      menuPromptColor: menuPromptColor,
-      endMenu: endMenu,
-      menuChoice: menuChoice,
-      menuHideIf: menuHideIf,
-      color: color,
-      bgColor: bgColor,
-      sleep: sleep,
-      input: input,
-      play: play,
-      forStatement: forStatement,
-      letStatement: letStatement,
-      comment: comment,
-      clear: clear,
-      next: next
-    };
+      // expression types
+      var BOOLEXPRESSION={};
+      var EXPRESSION={};
+
+      // expression result types
+      var NUMERIC_TYPE={};
+      var STRING_TYPE={};
+
+      // This is vastly simplified because we keep JavaScript semantics for
+      // operator precendence.
+
+      function numericLiteralExpression(value) {
+        return numericExpressionWithSubs(value,[]);
+      }
+
+      function numericExpressionWithSubs(value, subs) {
+        return {type:EXPRESSION,value:value,resultType:NUMERIC_TYPE,subs:subs};
+      }
+
+      function numericBinaryExpression(op,exp1,exp2) {
+        if ((!exp1 || !exp2) ||
+            (exp1.resultType !== NUMERIC_TYPE) ||
+            (exp2.resultType !== NUMERIC_TYPE)) {
+          return null;
+        }
+        return numericExpressionWithSubs(exp1.value+op+exp2.value,exp1.subs.concat(exp2.subs));
+      }
+
+      function stringExpression(value) {
+        return stringExpressionWithSubs(value,[]);
+      }
+      function stringExpressionWithSubs(value, subs) {
+        return {type:EXPRESSION,value:value,resultType:STRING_TYPE,subs:subs};
+      }
+      function boolExpressionWithSubs(value,subs) {
+        return {type:BOOLEXPRESSION,value:value,subs:subs};
+      }
+      function boolBinaryExpression(op,exp1,exp2) {
+        if (!exp1 || !exp2)
+          return null;
+        return boolExpressionWithSubs(exp1.value+op+exp2.value,exp1.subs.concat(exp2.subs));
+      }
+
+      function stringLiteralExpression(value) {
+        return stringExpression(JSON.stringify(value));
+      }
+
+      function randomBuiltinExpression(l,h){
+        // XXX make constant
+        // Hack to find name of variable, so optimizers can do their work
+        /** @suppress {uselessCode} */
+        var rndname = (function(){machine.random}).toString();
+        rndname = nameFromFunctionString(rndname);
+        return numericExpressionWithSubs(rndname+'('+l.value+','+h.value+')',l.subs.concat(h.subs));
+      }
+
+      function piBuiltinExpression() {
+        return numericLiteralExpression('Math.PI');
+      }
+
+      function variableExpression(name) {
+        // Handle case of subroutine local
+        if (typeManager.localVariableDefined(currentSub, name)) {
+          if (typeManager.localHasStringType(currentSub, name))
+            return stringExpression(localVariableName(name));
+          else if (typeManager.localHasNumericType(currentSub, name))
+            return numericLiteralExpression(localVariableName(name));
+
+        } else { // It's a plain old global variable
+          if (typeManager.globalHasStringType(name))
+            return stringExpression(variableName(name));
+          else if (typeManager.globalHasNumericType(name))
+            return numericLiteralExpression(variableName(name));
+        }
+
+        // Fall through if the varible doesn't have a type
+        return null;
+      }
+
+      function validateStringSubExpression(result) {
+        if (!result || result.resultType !== STRING_TYPE) {
+          return null;
+        } else {
+          return result;
+        }
+      }
+      function validateNumericSubExpression(result) {
+        if (!result || result.resultType !== NUMERIC_TYPE) {
+          return null;
+        } else {
+          return result;
+        }
+      }
+
+      function cintBuiltinExpression(p) {
+        return numericExpressionWithSubs('Math.ceil('+p.value+')',p.subs);
+      }
+      function intBuiltinExpression(p) {
+        return numericExpressionWithSubs('Math.floor('+p.value+')',p.subs);
+      }
+      function fixBuiltinExpression(p) {
+        return numericExpressionWithSubs('Math.trunc('+p.value+')',p.subs);
+      }
+      function absBuiltinExpression(p) {
+        return numericExpressionWithSubs('Math.abs('+p.value+')',p.subs);
+      }
+      function strzBuiltinExpression(p) {
+        return stringExpressionWithSubs('('+p.value+').toString(10)',p.subs);
+      }
+      function leftzBuiltinExpression(p,n) {
+        return stringExpressionWithSubs('('+p.value+').substring(0,'+n.value+')',p.subs.concat(n.subs));
+      }
+      function rightzBuiltinExpression(p,n) {
+        return stringExpressionWithSubs('('+p.value+').substring(('+p.value+').length-'+n.value+',('+p.value+').length)',p.subs.concat(n.subs));
+      }
+      function valBuiltinExpression(p) {
+        return numericExpressionWithSubs('Number('+p.value+')',p.subs);
+      }
+      function lenBuiltinExpression(p) {
+        return numericExpressionWithSubs('('+p.value+').length',p.subs);
+      }
+      function parenExpression(inner) {
+        if (!inner)
+          return null;
+        if (inner.resultType === NUMERIC_TYPE)
+          return numericExpressionWithSubs('('+inner.value+')',inner.subs);
+        else if (inner.resultType === STRING_TYPE)
+          return stringExpressionWithSubs('('+inner.value+')',inner.subs);
+        else
+          return null;
+      }
+      function boolParenExpression(result) {
+        if (!result)
+          return null;
+        return boolExpressionWithSubs('('+result.value+')',result.subs);
+      }
+      function boolOrExpression(exp1,exp2) {
+        return boolBinaryExpression('||',exp1,exp2);
+      }
+      function boolAndExpression(exp1,exp2) {
+        return boolBinaryExpression('&&',exp1,exp2);
+      }
+      function boolNotExpression(exp1) {
+        if (!exp1)
+          return null;
+        return boolExpressionWithSubs('!'+exp1.value,exp1.subs);
+      }
+      function boolEqualExpression(exp1,exp2) {
+        return boolBinaryExpression('===',exp1,exp2);
+      }
+      function boolLessExpression(exp1,exp2) {
+        return boolBinaryExpression('<',exp1,exp2);
+      }
+      function boolGreaterExpression(exp1,exp2) {
+        return boolBinaryExpression('>',exp1,exp2);
+      }
+      function boolLessOrEqualExpression(exp1,exp2) {
+        return boolBinaryExpression('<=',exp1,exp2);
+      }
+      function boolGreaterOrEqualExpression(exp1,exp2) {
+        return boolBinaryExpression('>=',exp1,exp2);
+      }
+      function boolNotEqualExpression(exp1,exp2) {
+        return boolBinaryExpression('!==',exp1,exp2);
+      }
+      function callSubroutineExpression(name,argExps) {
+	// Check the types of the argument expressions
+	for (var i = 0; i < argExps.length ; i++) {
+	  if (typeManager.subArgHasStringType(name,i))
+	    argExps[i] = validateStringSubExpression(argExps[i]);
+	  else if (typeManager.subArgHasNumericType(name,i))
+	    argExps[i] = validateNumericSubExpression(argExps[i]);
+	  else if (!typeManager.subArgHasUndefinedType(name,i)) {
+	    logger.error("Invalid type for subroutine "+name+" argument "+i);
+	    argExps[i] = null;
+	  }
+	}
+
+	// subroutine results are saved in a temp variable
+	var temp = nextExpressionSubroutineName();
+	// Expressions have a list of subroutines the need to be called
+	// before they are run
+	var subs = [{temp:temp,name:name,args:argExps}];
+
+	// The name of the variable where the temps are stored
+	var t = localVariableName(temp);
+        if (typeManager.subHasStringReturnType(name))
+          return stringExpressionWithSubs(t,subs);
+        else if (typeManager.subHasNumericReturnType(name))
+          return numericExpressionWithSubs(t,subs);
+      }
+      function additionExpression(a,b) {
+	if (a.resultType === STRING_TYPE && b.resultType === STRING_TYPE) {
+	  // Silently truncate long strings
+          return stringExpressionWithSubs('('+a.value+'+'+b.value+').slice(0,255)',a.subs.concat(b.subs));
+        } else {
+          return numericBinaryExpression('+',a,b);
+        }
+      }
+      function subtractionExpression(a,b) {
+        return numericBinaryExpression('-',a,b);
+      }
+      function multiplicationExpression(a,b) {
+        return numericBinaryExpression('*',a,b);
+      }
+      function divisionExpression(a,b) {
+        return numericBinaryExpression('/',a,b);
+      }
+
+/***********************************************************************
+  END Code Gen pass expression handler
+***********************************************************************/
+  function finalize() {
+    // XXX check that there are no empty code locations, etc.
+    if (typeManager.validate()) {
+      // Maybe make this less machine specific?
+      machine.init(typeManager.getVarsObject());
+      return true;
+    } else {
+      return false;
+    }
   }
+
+  return {
+
+    // Statements
+    printString: printString,
+    printExp: printExp,
+    ifStatement: ifStatement,
+    endIf: endIf,
+    elseStatement: elseStatement,
+    endWhile: endWhile,
+    whileStatement: whileStatement,
+    beginRandom: beginRandom,
+    waitForMusic: waitForMusic,
+    beginSubroutine: beginSubroutine,
+    callSubroutine: callSubroutine,
+    endSubroutine: endSubroutine,
+    returnStatement: returnStatement,
+    endRandom: endRandom,
+    withChance: withChance,
+    withEvenChance: withEvenChance,
+    beginAsk: beginAsk,
+    askColor: askColor,
+    askBGColor: askBGColor,
+    askPromptColor: askPromptColor,
+    onNo: onNo,
+    onYes: onYes,
+    askDefault: askDefault,
+    endAsk: endAsk,
+    beginMenu: beginMenu,
+    menuColor: menuColor,
+    menuBGColor: menuBGColor,
+    menuChoiceColor: menuChoiceColor,
+    menuPromptColor: menuPromptColor,
+    endMenu: endMenu,
+    menuChoice: menuChoice,
+    menuHideIf: menuHideIf,
+    color: color,
+    bgColor: bgColor,
+    sleep: sleep,
+    input: input,
+    play: play,
+    forStatement: forStatement,
+    letStatement: letStatement,
+    comment: comment,
+    clear: clear,
+    next: next,
+
+    // Expressions
+    numericLiteralExpression: numericLiteralExpression,
+    stringLiteralExpression: stringLiteralExpression,
+    randomBuiltinExpression: randomBuiltinExpression,
+    piBuiltinExpression: piBuiltinExpression,
+    variableExpression: variableExpression,
+    validateStringSubExpression: validateStringSubExpression,
+    validateNumericSubExpression: validateNumericSubExpression,
+    cintBuiltinExpression: cintBuiltinExpression,
+    intBuiltinExpression: intBuiltinExpression,
+    fixBuiltinExpression: fixBuiltinExpression,
+    absBuiltinExpression: absBuiltinExpression,
+    strzBuiltinExpression: strzBuiltinExpression,
+    leftzBuiltinExpression: leftzBuiltinExpression,
+    rightzBuiltinExpression: rightzBuiltinExpression,
+    valBuiltinExpression: valBuiltinExpression,
+    lenBuiltinExpression: lenBuiltinExpression,
+    parenExpression: parenExpression,
+    boolParenExpression: boolParenExpression,
+    boolOrExpression: boolOrExpression,
+    boolAndExpression: boolAndExpression,
+    boolNotExpression: boolNotExpression,
+    boolEqualExpression: boolEqualExpression,
+    boolLessExpression: boolLessExpression,
+    boolGreaterExpression: boolGreaterExpression,
+    boolLessOrEqualExpression: boolLessOrEqualExpression,
+    boolGreaterOrEqualExpression: boolGreaterOrEqualExpression,
+    boolNotEqualExpression: boolNotEqualExpression,
+    callSubroutineExpression: callSubroutineExpression,
+    additionExpression: additionExpression,
+    subtractionExpression: subtractionExpression,
+    multiplicationExpression: multiplicationExpression,
+    divisionExpression: divisionExpression,
+
+    // Call at end of data
+    finalize: finalize
+  };
+}

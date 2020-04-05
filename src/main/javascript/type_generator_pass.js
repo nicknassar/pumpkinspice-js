@@ -1,4 +1,4 @@
-  function TypeGeneratorPass(typeManager) {
+function TypeGeneratorPass(typeManager, logger) {
     /* Pumpkin Spice has implied, static typing
 
        Certain types of expressions have a specific type
@@ -13,8 +13,12 @@
 
     */
 
+    var currentSub; // Name of the sub we're currently adding code to
+
 /***********************************************************************
-  BEGIN Type Gen functions
+  BEGIN Compiler Type Pass statement functions
+
+  Statement functions return true on success, false if there's an error
 ***********************************************************************/
     function trueFunc() {
       return true;
@@ -217,56 +221,184 @@
     }
 
 /***********************************************************************
-  END Type Gen functions
+  END Compiler Type Pass statement functions
+***********************************************************************/
+/***********************************************************************
+  BEGIN Compiler Type Pass expression functions
+
+  Expression functions return a type indicator created and managed by
+  the TypeManager
+
 ***********************************************************************/
 
-{{type_generator_expression_handler.js}}
+      function numericExpression(a,b) {
+	if (a === null || b === null) {
+          return null;
+        }
+        if (typeManager.genTypesForNumericExpression(a) &&
+            typeManager.genTypesForNumericExpression(b))
+          return typeManager.numericTypeIndicator();
+        else
+          return null;
+      }
 
-    var expressionHandler = ExpressionHandler();
+      function variableExpression(name) {
+        if (typeManager.localVariableDefined(currentSub, name)) {
+          if (typeManager.localHasUndefinedType(currentSub, name)) {
+            return typeManager.localVariableIndicator(currentSub, name);
+          } else if (typeManager.localHasStringType(currentSub, name)) {
+            return typeManager.stringTypeIndicator();
+          } else if (typeManager.localHasNumericType(currentSub, name)) {
+            return typeManager.numericTypeIndicator();
+          }
+        } else {
+          if (typeManager.globalHasUndefinedType(name)) {
+            return typeManager.globalVariableIndicator(name); // unknown
+          } else if (typeManager.globalHasStringType(name)) {
+            return typeManager.stringTypeIndicator();
+          } else if (typeManager.globalHasNumericType(name)) {
+            return typeManager.numericTypeIndicator();
+          }
+        }
+      }
 
-    return {
-      expressionHandler: expressionHandler,
-      printString: printString,
-      printExp: printExp,
-      ifStatement: ifStatement,
-      endIf: trueFunc,
-      elseStatement: trueFunc,
-      endWhile: trueFunc,
-      whileStatement: whileStatement,
-      beginRandom: trueFunc,
-      waitForMusic: trueFunc,
-      beginSubroutine: beginSubroutine,
-      callSubroutine: callSubroutine,
-      endSubroutine: endSubroutine,
-      returnStatement: returnStatement,
-      endRandom: trueFunc,
-      withChance: trueFunc,
-      withEvenChance: trueFunc,
-      beginAsk: beginAsk,
-      askColor: trueFunc,
-      askBGColor: trueFunc,
-      askPromptColor: trueFunc,
-      onNo: trueFunc,
-      onYes: trueFunc,
-      askDefault: trueFunc,
-      endAsk: trueFunc,
-      beginMenu: beginMenu,
-      menuColor: trueFunc,
-      menuBGColor: trueFunc,
-      menuChoiceColor: trueFunc,
-      menuPromptColor: trueFunc,
-      endMenu: trueFunc,
-      menuChoice: menuChoice,
-      menuHideIf: menuHideIf,
-      color: color,
-      bgColor: bgColor,
-      sleep: sleep,
-      input: input,
-      play: play,
-      forStatement: forStatement,
-      letStatement: letStatement,
-      comment: trueFunc,
-      clear: trueFunc,
-      next: trueFunc
+      function validateNumericSubExpression(subExp) {
+        if (!typeManager.isNumericType(subExp)) {
+          // if it's not an exact match, check it out
+          subExp = typeManager.genTypesForNumericExpression(subExp)
+          if (!subExp) {
+            logger.error("TYPE MISMATCH.");
+            return null;
+          }
+        }
+        return subExp;
+      }
+
+      function validateStringSubExpression(subExp) {
+        if (!typeManager.isStringType(subExp)) {
+          // if it's not an exact match, check it out
+          subExp = typeManager.genTypesForStringExpression(subExp)
+          if (!subExp) {
+            logger.error("TYPE MISMATCH.");
+            return null;
+          }
+        }
+        return subExp;
+      }
+
+      function passthroughExpression(exp) {
+        return exp;
+      }
+
+      function binaryBoolExpression(exp1,exp2) {
+        // XXX This doesn't make sense. There is no boolean type
+        if (!exp1 || !exp2)
+          return null;
+        return exp1;
+      }
+
+      function callSubroutineExpression(name,argExps) {
+        return typeManager.callSubroutineExpression(name, argExps);
+      }
+
+    var expressionHandler = {
+
     };
+
+/***********************************************************************
+  END Compiler Type Pass expression functions
+
+  Expression functions return a type indicator created and managed by
+  the TypeManager
+
+***********************************************************************/
+
+  function finalize() {
+    return true;
   }
+
+  return {
+    // Statements
+    printString: printString,
+    printExp: printExp,
+    ifStatement: ifStatement,
+    endIf: trueFunc,
+    elseStatement: trueFunc,
+    endWhile: trueFunc,
+    whileStatement: whileStatement,
+    beginRandom: trueFunc,
+    waitForMusic: trueFunc,
+    beginSubroutine: beginSubroutine,
+    callSubroutine: callSubroutine,
+    endSubroutine: endSubroutine,
+    returnStatement: returnStatement,
+    endRandom: trueFunc,
+    withChance: trueFunc,
+    withEvenChance: trueFunc,
+    beginAsk: beginAsk,
+    askColor: trueFunc,
+    askBGColor: trueFunc,
+    askPromptColor: trueFunc,
+    onNo: trueFunc,
+    onYes: trueFunc,
+    askDefault: trueFunc,
+    endAsk: trueFunc,
+    beginMenu: beginMenu,
+    menuColor: trueFunc,
+    menuBGColor: trueFunc,
+    menuChoiceColor: trueFunc,
+    menuPromptColor: trueFunc,
+    endMenu: trueFunc,
+    menuChoice: menuChoice,
+    menuHideIf: menuHideIf,
+    color: color,
+    bgColor: bgColor,
+    sleep: sleep,
+    input: input,
+    play: play,
+    forStatement: forStatement,
+    letStatement: letStatement,
+    comment: trueFunc,
+    clear: trueFunc,
+    next: trueFunc,
+
+    // Expressions
+    numericLiteralExpression: typeManager.numericTypeIndicator,
+    stringLiteralExpression: typeManager.stringTypeIndicator,
+    randomBuiltinExpression: typeManager.numericTypeIndicator,
+    piBuiltinExpression: typeManager.numericTypeIndicator,
+    variableExpression: variableExpression,
+    validateNumericSubExpression: validateNumericSubExpression,
+    validateStringSubExpression: validateStringSubExpression,
+    cintBuiltinExpression: typeManager.numericTypeIndicator,
+    intBuiltinExpression: typeManager.numericTypeIndicator,
+    fixBuiltinExpression: typeManager.numericTypeIndicator,
+    absBuiltinExpression: typeManager.numericTypeIndicator,
+    strzBuiltinExpression: typeManager.stringTypeIndicator,
+    leftzBuiltinExpression: typeManager.stringTypeIndicator,
+    rightzBuiltinExpression: typeManager.stringTypeIndicator,
+    valBuiltinExpression: typeManager.numericTypeIndicator,
+    lenBuiltinExpression: typeManager.numericTypeIndicator,
+    parenExpression: passthroughExpression,
+    // XXX Bool expressions doesn't make sense. There is no boolean type
+    //     They return the type of the expressions being compared
+    boolParenExpression: passthroughExpression,
+    boolOrExpression: binaryBoolExpression,
+    boolAndExpression: binaryBoolExpression,
+    boolNotExpression: passthroughExpression,
+    boolEqualExpression: typeManager.genTypesForExpressionPair,
+    boolLessExpression: typeManager.genTypesForExpressionPair,
+    boolGreaterExpression: typeManager.genTypesForExpressionPair,
+    boolLessOrEqualExpression: typeManager.genTypesForExpressionPair,
+    boolGreaterOrEqualExpression: typeManager.genTypesForExpressionPair,
+    boolNotEqualExpression: typeManager.genTypesForExpressionPair,
+    callSubroutineExpression: callSubroutineExpression,
+    additionExpression: typeManager.genTypesForExpressionPair,
+    subtractionExpression: numericExpression,
+    multiplicationExpression: numericExpression,
+    divisionExpression: numericExpression,
+
+    // When we're done
+    finalize: finalize
+  };
+}

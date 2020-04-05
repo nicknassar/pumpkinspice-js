@@ -1,4 +1,4 @@
-  function TypeManager() {
+  function TypeManager(logger) {
     /*
 
       Types are determined in the first pass of the compiler by
@@ -398,15 +398,16 @@
 
     function validate() {
       // Calling fake subroutines is stupid
+      // XXX this doesn't even work
       // XXX There's probably more we can check for
-    for (var i=0;i<calledSubs.length;i++) {
-      var name=calledSubs[i];
-      if (!machine.isSubroutineDefined(name)) {
-        logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
-        return false;
-      }
-    }
-    return true;
+      // for (var i=0;i<calledSubs.length;i++) {
+      //   var name=calledSubs[i];
+      //   if (!machine.isSubroutineDefined(name)) {
+      //     logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
+      //     return false;
+      //   }
+      // }
+      return true;
     }
 
     return {

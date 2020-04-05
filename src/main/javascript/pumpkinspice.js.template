@@ -81,20 +81,26 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
 {{logger.js}}
 {{audio.js}}
 {{machine.js}}
-{{codegen.js.template}}
+{{type_manager.js}}
+{{type_generator_pass.js}}
+{{code_generator_pass.js}}
 {{compiler.js}}
 
   var globalDisplay = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
   var globalLogger = Logger(globalDisplay);
   var globalAudio = Audio(globalLogger);
   var globalMachine = Machine(globalDisplay, globalAudio, globalLogger);
-  var globalCodegen = CodeGen(globalMachine, globalLogger);
-  var compiler = Compiler(globalCodegen,globalLogger);
+
+  var globalTypeManager = TypeManager(globalLogger);
+  var handler1 = TypeGeneratorPass(globalTypeManager, globalLogger);
+  var handler2 = CodeGeneratorPass(globalTypeManager, globalMachine, globalLogger);
+
+  var compiler = Compiler([handler1, handler2],globalLogger);
 
 
-  compiler.compile(programTextParam);
-  // XXX add function to check if compile is valid
-  // XXX verify that error handling works with accessibility
+  if (!compiler.compile(programTextParam)) {
+     globalLogger.error("COMPILE FAILED!");
+  }
 
   globalMachine.go();
 }

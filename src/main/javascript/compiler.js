@@ -1,5 +1,5 @@
 // XXX Pass error handler into the compile() function?
-function Compiler(codegen,logger){
+function Compiler(handlers,logger){
   var started = false;
   var finished = false;
 
@@ -189,18 +189,18 @@ function Compiler(codegen,logger){
     return tokens;
   }
 
-  function parseLine(line,num,pass) {
+  function parseLine(line,num,handler) {
     var tokens = tokenizeLine(line);
     if (!tokens) {
       logger.error("Could not parse line "+num);
       return false;
     }
-    return parseLineWithHandler(codegen.handlerForPass(pass),tokens,num);
+    return parseLineWithHandler(handler,tokens,num);
   }
 
   function parseLineWithHandler(handler,tokens,num) {
     function expression(tokens) {
-      return parseExpressionWithHandler(tokens,handler.expressionHandler);
+      return parseExpressionWithHandler(tokens,handler);
     };
     function boolExpression(tokens) {
       // Given tokens for a boolean expression, return
@@ -325,7 +325,7 @@ function Compiler(codegen,logger){
         }
       }
 
-      var result = _boolExpression(tokens, handler.expressionHandler);
+      var result = _boolExpression(tokens, handler);
       if (!result)
         return null;
       else
@@ -604,17 +604,17 @@ function Compiler(codegen,logger){
       return null;
     } else if (tokens.length === 1) {
       if (tokens[0].type===NUMERIC){
-        return handler.numericLiteral(tokens[0].value);
+        return handler.numericLiteralExpression(tokens[0].value);
       } else if (tokens[0].type===STRING){
         // silently truncate long strings
         if (tokens[0].value.length>255)
           tokens[0].value=tokens[0].value.slice(0,255);
-        return handler.stringLiteral(tokens[0].value);
+        return handler.stringLiteralExpression(tokens[0].value);
       } else if (tokens[0].type===IDENTIFIER) {
         if (tokens[0].value==='PI') {
-          return handler.piBuiltin();
+          return handler.piBuiltinExpression();
         } else {
-          return handler.variable(tokens[0].value);
+          return handler.variableExpression(tokens[0].value);
         }
       } else {
         // Something doesn't make sense
@@ -666,25 +666,25 @@ function Compiler(codegen,logger){
 
       var head;
       if (tokens[0].value === 'ABS') {
-        head = handler.absBuiltin(paramExp[0]);
+        head = handler.absBuiltinExpression(paramExp[0]);
       } else if (tokens[0].value === 'CINT') {
-        head = handler.cintBuiltin(paramExp[0]);
+        head = handler.cintBuiltinExpression(paramExp[0]);
       } else if (tokens[0].value === 'FIX') {
-        head = handler.fixBuiltin(paramExp[0]);
+        head = handler.fixBuiltinExpression(paramExp[0]);
       } else if (tokens[0].value === 'INT') {
-        head = handler.intBuiltin(paramExp[0]);
+        head = handler.intBuiltinExpression(paramExp[0]);
       } else if (tokens[0].value === 'LEN') {
-        head = handler.lenBuiltin(paramExp[0]);
+        head = handler.lenBuiltinExpression(paramExp[0]);
       } else if (tokens[0].value === 'STR$') {
-        head = handler.strzBuiltin(paramExp[0]);
+        head = handler.strzBuiltinExpression(paramExp[0]);
       } else if (tokens[0].value === 'VAL') {
-        head = handler.valBuiltin(paramExp[0]);
+        head = handler.valBuiltinExpression(paramExp[0]);
       } else if (tokens[0].value === 'LEFT$') {
-        head = handler.leftzBuiltin(paramExp[0],paramExp[1]);
+        head = handler.leftzBuiltinExpression(paramExp[0],paramExp[1]);
       } else if (tokens[0].value === 'RIGHT$') {
-        head = handler.rightzBuiltin(paramExp[0],paramExp[1]);
+        head = handler.rightzBuiltinExpression(paramExp[0],paramExp[1]);
       } else if (tokens[0].value === 'RANDOM') {
-        head = handler.randomBuiltin(paramExp[0],paramExp[1]);
+        head = handler.randomBuiltinExpression(paramExp[0],paramExp[1]);
       }
 
       // There is nothing following this function
@@ -720,7 +720,7 @@ function Compiler(codegen,logger){
         pos++; // skip the comma
         start = pos;
       }
-      return handler.callSubroutine(tokens[1].value,argExps);
+      return handler.callSubroutineExpression(tokens[1].value,argExps);
 
     } else if (tokens.length >= 2 && tokens[0].type===PLUS && tokens[1].type===NUMERIC) {
       // A numeric expression starting with plus
@@ -795,14 +795,14 @@ function Compiler(codegen,logger){
       return null;
     }
   }
-  function compileText(text, pass) {
+  function compileText(text, handler) {
     var lines = text.split("\r\n");
     if (lines.length===1)
       lines = text.split("\n");
     if (lines.length===1)
       lines = text.split("\r");
     for (var n=0;n<lines.length;n++) {
-      if (!parseLine(lines[n],n,pass)) {
+      if (!parseLine(lines[n],n,handler)) {
         logger.error("ERROR ON LINE "+(n)+"\n");
         return false;
       }
@@ -811,20 +811,15 @@ function Compiler(codegen,logger){
   }
 
   function compile(programText) {
-    for (var pass = 0;pass < codegen.numPasses();pass++) {
+    for (var pass = 0;pass < handlers.length;pass++) {
       started = false;
       finished = false;
-      if (!compileText(programText, pass)) {
+      if (!compileText(programText, handlers[pass]) || !handlers[pass].finalize()) {
         // XXX Reset things here?
         return false;
       }
-      }
-    if (codegen.validate()) {
-      codegen.generate();
-      return true;
-    } else {
-      return false;
     }
+    return true;
   }
 
   // export just one funtion
