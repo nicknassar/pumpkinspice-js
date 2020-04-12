@@ -1,4 +1,3 @@
-// XXX Pass error handler into the compile() function?
 function Compiler(handlers,logger){
   var started = false;
   var finished = false;
@@ -80,7 +79,7 @@ function Compiler(handlers,logger){
           if (line[pos] === '\"') {
             pos+=2;
             if (pos>=line.length) {
-              logger.error("Parser Error: Unterminated string\n");
+              logger.error("Parser Error: Unterminated text. You need a \"");
               return null;
             }
             s+="\"";
@@ -90,7 +89,7 @@ function Compiler(handlers,logger){
           }
         }
         if (line[pos] !== '"') {
-          logger.error("Parser Error: Unterminated string\n");
+          logger.error("Parser Error: Unterminated text. You need a \"");
           return null;
         }
         pos++;
@@ -192,7 +191,7 @@ function Compiler(handlers,logger){
   function parseLine(line,num,handler) {
     var tokens = tokenizeLine(line);
     if (!tokens) {
-      logger.error("Could not parse line "+num);
+      logger.error("Parse error. I am confused");
       return false;
     }
     return parseLineWithHandler(handler,tokens,num);
@@ -274,7 +273,7 @@ function Compiler(handlers,logger){
           pos++;
         }
         if (pos === tokens.length) {
-          logger.error("No comparison operator on line "+num+"\n");
+          logger.error("No comparison operator");
           return null;
         }
         endpos = pos+1;
@@ -375,7 +374,7 @@ function Compiler(handlers,logger){
 
           var boolExp = boolExpression(tokens.slice(1,exp2end));
           if (!boolExp) {
-            logger.error("Invalid IF on line "+num+"\n");
+            logger.error("Invalid IF");
             return false;
           }
           return handler.ifStatement(boolExp, num);
@@ -480,7 +479,7 @@ function Compiler(handlers,logger){
         } else if (tokens[0].value==='HIDE' && tokens.length >= 5 && tokens[1].type === IDENTIFIER && tokens[1].value === 'IF' ) {
           var boolExp = boolExpression(tokens.slice(2,tokens.length));
           if (!boolExp) {
-            logger.error("Invalid HIDE IF on line "+num+"\n");
+            logger.error("Invalid HIDE IF");
             return false;
           }
           return handler.menuHideIf(boolExp, num);
@@ -505,7 +504,7 @@ function Compiler(handlers,logger){
             exp2end = tokens.length;
           var boolExp = boolExpression(tokens.slice(1,exp2end));
           if (!boolExp) {
-            logger.error("Invalid WHILE on line "+num+"\n");
+            logger.error("Invalid WHILE");
             return false;
           }
           return handler.whileStatement(boolExp, num);
@@ -532,7 +531,7 @@ function Compiler(handlers,logger){
           return handler.sleep(expression(tokens.slice(1,tokens.length)),num);
         } else if (tokens[0].value==='INPUT') {
           if (tokens.length !== 2 || tokens[1].type !== IDENTIFIER) {
-            logger.error("Invalid INPUT on line "+num+"\n");
+            logger.error("Invalid INPUT");
             return false;
           } else {
             return handler.input(tokens[1].value,num);
@@ -541,7 +540,7 @@ function Compiler(handlers,logger){
           return handler.play(expression(tokens.slice(1,tokens.length)),num);
         } else if (tokens[0].value==='FOR') {
           if(!(tokens.length>=6 && tokens[2].type === EQUALS && tokens[2].value === '=' && tokens[1].type === IDENTIFIER)) {
-            logger.error("Invalid FOR on line "+num+"\n");
+            logger.error("Invalid FOR");
             return false;
           }
 
@@ -552,7 +551,7 @@ function Compiler(handlers,logger){
             pos++;
           }
           if (pos === tokens.length) {
-            logger.error("Missing TO in FOR on line "+num+"\n");
+            logger.error("Missing TO in FOR");
             return false;
           }
           return handler.forStatement(tokens[1].value, expression(tokens.slice(3,pos)),
@@ -563,7 +562,7 @@ function Compiler(handlers,logger){
           return handler.letStatement(tokens[0].value,
                                       expression(tokens.slice(2,tokens.length)),num);
         } else {
-          logger.error("Unrecognized "+tokens[0].value+" on line "+num+"\n");
+          logger.error("I do not recognize "+tokens[0].value);
           return false;
         }
       } else if (tokens[0].type===SINGLEQUOTE) {
@@ -571,7 +570,7 @@ function Compiler(handlers,logger){
       } else if (tokens.length>=3 && tokens[0].type === MINUS && tokens[1].type === MINUS && tokens[2].type === GREATER) {
         finished = true;
       } else {
-        logger.error("Unexpected token on line "+num+": "+tokens[0].value+"\n");
+        logger.error("I am confused. I did not expect "+tokens[0].value);
         return false;
       }
     }
@@ -802,11 +801,14 @@ function Compiler(handlers,logger){
     if (lines.length===1)
       lines = text.split("\r");
     for (var n=0;n<lines.length;n++) {
+      logger.set_line_number(n);
       if (!parseLine(lines[n],n,handler)) {
-        logger.error("ERROR ON LINE "+(n)+"\n");
+        logger.error("Giving up trying to understand this program");
+        logger.clear_line_number();
         return false;
       }
     }
+    logger.clear_line_number();
     return true;
   }
 
@@ -815,7 +817,7 @@ function Compiler(handlers,logger){
       started = false;
       finished = false;
       if (!compileText(programText, handlers[pass]) || !handlers[pass].finalize()) {
-        // XXX Reset things here?
+        // Reset things here?
         return false;
       }
     }

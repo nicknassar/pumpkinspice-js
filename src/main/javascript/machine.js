@@ -150,7 +150,7 @@ function go() {
     }
     interruptDelay = null;
   } else if (callstack.length>0) {
-    logger.error("STACK OVERFLOW\nARE YOU TRYING SOME COMPUTER SCIENCE OR SOMETHING?\n");
+    logger.error("STACK OVERFLOW. Too many subroutines calling subroutines!");
     display.sendUpdates();
   }
 
@@ -160,7 +160,6 @@ function go() {
 }
 
 
-  // XXX Error handling?
    return {
     // Data functions
     getGlobal: function(varname) {

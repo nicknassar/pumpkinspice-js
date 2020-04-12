@@ -1,7 +1,4 @@
 function CodeGeneratorPass(typeManager, machine, logger){
-    // XXX handle errors by throwing an exception
-    // XXX don't pass in the line number- let the caller handle the exception and print errors
-
     // Block types for loop stack
     var FOR={};
     var IF={};
@@ -193,7 +190,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function ifStatement(boolExp,num){
       if (!boolExp) {
-        logger.error("Invalid IF on line "+num+"\n");
+        logger.error("Invalid IF");
         return false;
       }
       var test = expressionToFunction(boolExp);
@@ -208,7 +205,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function endIf(num) {
       var obj = loopStack.pop();
       if ((!obj) || obj.type !== IF) {
-        logger.error("ERROR: END IF WITHOUT MATCHING IF\n");
+        logger.error("ERROR: END IF WITHOUT MATCHING IF");
       } else {
         var pos;
         if (!obj.elseloc) {
@@ -237,7 +234,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function elseStatement(num) {
       var obj = loopStack[loopStack.length-1];
       if ((!obj) || obj.type !== IF) {
-        logger.error("ERROR: ELSE WITHOUT MATCHING IF\n");
+        logger.error("ERROR: ELSE WITHOUT MATCHING IF");
       } else {
         obj.elseloc=nextInstruction();
         pushInstruction(null);
@@ -248,7 +245,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function endWhile(num) {
       var obj = loopStack.pop();
       if ((!obj) || obj.type !== WHILE) {
-        logger.error("ERROR: WEND IF WITHOUT MATCHING WHILE\n");
+        logger.error("ERROR: WEND IF WITHOUT MATCHING WHILE");
       } else {
         var test = obj.test;
         pushInstruction(function(){
@@ -267,7 +264,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function whileStatement(exp,num){
       if (!exp) {
-        logger.error("Invalid WHILE on line "+num+"\n");
+        logger.error("Invalid WHILE");
         return false;
       }
       var top = nextInstruction();
@@ -357,11 +354,11 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function endRandom(num) {
       var obj = loopStack.pop();
       if ((!obj) || obj.type !== RANDOM) {
-        logger.error("ERROR: END RANDOM WITHOUT MATCHING BEGIN RANDOM on "+num+"\n");
+        logger.error("ERROR: END RANDOM WITHOUT MATCHING BEGIN RANDOM");
       } else {
         var events = obj.events;
         if (events.length < 1) {
-          logger.error("ERROR: RANDOM STATEMENTS REQUIRE AT LEAST 1 CHOICE\n");
+          logger.error("ERROR: RANDOM STATEMENTS REQUIRE AT LEAST 1 CHOICE");
         } else {
           var numNulls = 0;
           for (var n=0;n<events.length;n++) {
@@ -374,7 +371,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
               events[n].chance = 100.0/events.length;
             }
           } else if (numNulls > 0) {
-            logger.error("ERROR: MIXED RANDOM MODES - EITHER SPECIFY CHANCE PERCENT OR DON'T\n");
+            logger.error("ERROR: MIXED RANDOM MODES - EITHER SPECIFY CHANCE PERCENT OR DON'T");
           }
 
           var total = 0;
@@ -382,7 +379,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
             total += events[n].chance;
           }
           if (total < 99.999 || total > 100.001) {
-            logger.error("ERROR: THE CHANCES OF RANDOM EVENTS SHOULD ADD UP TO 100%\n");
+            logger.error("ERROR: THE CHANCES OF RANDOM EVENTS SHOULD ADD UP TO 100%");
           } else {
             var endloc = nextInstruction();
             for (var n=1;n<events.length;n++) {
@@ -409,10 +406,10 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function withChance(percent, num) {
       var obj = loopStack[loopStack.length-1];
       if ((!obj) || obj.type !== RANDOM) {
-        logger.error("ERROR: WITH CHANCE WITHOUT MATCHING BEGIN RANDOM\n");
+        logger.error("ERROR: WITH CHANCE WITHOUT MATCHING BEGIN RANDOM");
       } else {
         if (obj.events.length === 0 && nextInstruction() !== obj.loc+1) {
-          logger.error("ERROR: NO CODE ALLOWED BETWEEN BEGIN RANDOM AND FIRST WITH CHOICE\n");
+          logger.error("ERROR: NO CODE ALLOWED BETWEEN BEGIN RANDOM AND FIRST WITH CHOICE");
         } else {
           if (percent === undefined) {
             if (obj.events.length > 0) // Leave room for the jump to the end
@@ -423,7 +420,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
           } else {
             var chance = Number(percent);
             if (chance < 0.001 || chance > 99.999) {
-              logger.error("ERROR: CHANCES MUST BE BETWEEN 0 and 100\n");
+              logger.error("ERROR: CHANCES MUST BE BETWEEN 0 and 100");
             } else {
               if (obj.events.length > 0) // Leave room for the jump to the end
                 pushInstruction(null);
@@ -442,7 +439,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function beginAsk(prompt,num) {
       if (!prompt) {
-        logger.error("Invalid ASK statement line "+num+"\n");
+        logger.error("Invalid ASK statement");
         return false;
       }
       var top = nextInstruction();
@@ -464,15 +461,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function askColor(color,num) {
       var c = intToColor(color);
       if (c === null) {
-        logger.error("INVALID ASK COLOR\n");
+        logger.error("INVALID ASK COLOR");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-        logger.error("ASK COLOR OUTSIDE OF AN ASK\n");
+        logger.error("ASK COLOR OUTSIDE OF AN ASK");
         return false;
       }
       if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-        logger.error("ASK COLOR AFTER CODE\n");
+        logger.error("ASK COLOR AFTER CODE");
         return false;
       }
       loopStack[loopStack.length-1].color = c;
@@ -482,15 +479,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function askBGColor(color,num) {
       var c = intToColor(color);
       if (c === null) {
-        logger.error("INVALID ASK BGCOLOR\n");
+        logger.error("INVALID ASK BGCOLOR");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-        logger.error("ASK BGCOLOR OUTSIDE OF AN ASK\n");
+        logger.error("ASK BGCOLOR OUTSIDE OF AN ASK");
         return false;
       }
       if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-        logger.error("ASK BGCOLOR AFTER CODE\n");
+        logger.error("ASK BGCOLOR AFTER CODE");
         return false;
       }
       loopStack[loopStack.length-1].bgColor = c;
@@ -500,15 +497,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function askPromptColor(color,num) {
       var c = intToColor(color);
       if (c === null) {
-        logger.error("INVALID ASK PROMPT COLOR\n");
+        logger.error("INVALID ASK PROMPT COLOR");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-        logger.error("ASK PROMPT COLOR OUTSIDE OF AN ASK\n");
+        logger.error("ASK PROMPT COLOR OUTSIDE OF AN ASK");
         return false;
       }
       if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-        logger.error("ASK PROMPT COLOR AFTER CODE\n");
+        logger.error("ASK PROMPT COLOR AFTER CODE");
         return false;
       }
       loopStack[loopStack.length-1].promptColor = c;
@@ -521,7 +518,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
         ask.noLoc = nextInstruction();
         pushInstruction(null);
       } else {
-        logger.error("ON NO outside of an ASK\n");
+        logger.error("ON NO outside of an ASK");
         return false;
       }
       return true;
@@ -531,11 +528,11 @@ function CodeGeneratorPass(typeManager, machine, logger){
       var ask = loopStack[loopStack.length-1];
       if (ask && ask.type === ASK) {
         if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-          logger.error("ASK ON YES AFTER CODE\n");
+          logger.error("ASK ON YES AFTER CODE");
           return false;
         }
       } else {
-        logger.error("ON YES outside of an ASK\n");
+        logger.error("ON YES outside of an ASK");
         return false;
       }
       return true;
@@ -543,15 +540,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function askDefault(value,num) {
       if (value !== true && value !== false) {
-        logger.error("INVALID ASK DEFAULT\n");
+        logger.error("INVALID ASK DEFAULT");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== ASK) {
-        logger.error("DEFAULT OUTSIDE OF AN ASK\n");
+        logger.error("DEFAULT OUTSIDE OF AN ASK");
         return false;
       }
       if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
-        logger.error("ASK DEFAULT AFTER CODE\n");
+        logger.error("ASK DEFAULT AFTER CODE");
         return false;
       }
       loopStack[loopStack.length-1].defaultValue = value;
@@ -601,7 +598,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
           machine.setLoc(top);
         });
       } else {
-        logger.error("END ASK WITHOUT ASK\n");
+        logger.error("END ASK WITHOUT ASK");
 	return false;
       }
       return true;
@@ -609,7 +606,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function beginMenu(prompt,num) {
       if (!prompt) {
-        logger.error("Invalid MENU statement line "+num+"\n");
+        logger.error("Invalid MENU statement");
         return false;
       }
       loopStack.push({type:MENU,
@@ -629,15 +626,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function menuColor(color,num) {
       var c = intToColor(color);
       if (c === null) {
-        logger.error("INVALID MENU COLOR\n");
+        logger.error("INVALID MENU COLOR");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-        logger.error("MENU COLOR OUTSIDE OF A MENU\n");
+        logger.error("MENU COLOR OUTSIDE OF A MENU");
         return false;
       }
       if (loopStack[loopStack.length-1].choices.length > 0) {
-        logger.error("MENU COLOR AFTER CHOICE\n");
+        logger.error("MENU COLOR AFTER CHOICE");
         return false;
       }
       loopStack[loopStack.length-1].color = c;
@@ -647,15 +644,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function menuBGColor(color,num) {
       var c = intToColor(color);
       if (c === null) {
-        logger.error("INVALID MENU BGCOLOR\n");
+        logger.error("INVALID MENU BGCOLOR");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-        logger.error("MENU BGCOLOR OUTSIDE OF A MENU\n");
+        logger.error("MENU BGCOLOR OUTSIDE OF A MENU");
         return false;
       }
       if (loopStack[loopStack.length-1].choices.length > 0) {
-        logger.error("MENU BGCOLOR AFTER CHOICE\n");
+        logger.error("MENU BGCOLOR AFTER CHOICE");
         return false;
       }
       loopStack[loopStack.length-1].bgColor = c;
@@ -665,15 +662,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function menuChoiceColor(color,num) {
       var c = intToColor(color);
       if (c === null) {
-        logger.error("INVALID MENU CHOICE COLOR\n");
+        logger.error("INVALID MENU CHOICE COLOR");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-        logger.error("MENU CHOICE COLOR OUTSIDE OF A MENU\n");
+        logger.error("MENU CHOICE COLOR OUTSIDE OF A MENU");
         return false;
       }
       if (loopStack[loopStack.length-1].choices.length > 0) {
-        logger.error("MENU CHOICE COLOR AFTER CHOICE\n");
+        logger.error("MENU CHOICE COLOR AFTER CHOICE");
         return false;
       }
       loopStack[loopStack.length-1].choiceColor = c;
@@ -683,15 +680,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
     function menuPromptColor(color,num) {
       var c = intToColor(color);
       if (c === null) {
-        logger.error("INVALID MENU PROMPT COLOR\n");
+        logger.error("INVALID MENU PROMPT COLOR");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-        logger.error("MENU PROMPT COLOR OUTSIDE OF A MENU\n");
+        logger.error("MENU PROMPT COLOR OUTSIDE OF A MENU");
         return false;
       }
       if (loopStack[loopStack.length-1].choices.length > 0) {
-        logger.error("MENU PROMPT COLOR AFTER CHOICE\n");
+        logger.error("MENU PROMPT COLOR AFTER CHOICE");
         return false;
       }
       loopStack[loopStack.length-1].promptColor = c;
@@ -779,7 +776,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
           machine.setLoc(newI);
         });
       } else {
-        logger.error("END MENU WITHOUT BEGIN MENU\n");
+        logger.error("END MENU WITHOUT BEGIN MENU");
 	return false;
       }
       return true;
@@ -793,8 +790,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
                                                     exp:exp1,
                                                     loc:nextInstruction()});
       } else {
-        // XXX handle errors
-        logger.error("CHOICE OUTSIDE OF A MENU\n");
+        logger.error("CHOICE OUTSIDE OF A MENU");
 	return false;
       }
       return true;
@@ -802,24 +798,24 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function menuHideIf(boolExp,num) {
       if (!boolExp) {
-        logger.error("Invalid HIDE IF on line "+num+"\n");
+        logger.error("Invalid HIDE IF");
         return false;
       }
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== MENU) {
-        logger.error("HIDE IF OUTSIDE OF A MENU\n");
+        logger.error("HIDE IF OUTSIDE OF A MENU");
         return false;
       }
       var choices = loopStack[loopStack.length-1].choices;
       if (choices.length === 0) {
-        logger.error("HIDE IF found before CHOICE\n");
+        logger.error("HIDE IF found before CHOICE");
         return false;
       }
       if (choices[choices.length-1].loc !== nextInstruction()) {
-        logger.error("HIDE IF does not immediately follow CHOICE\n");
+        logger.error("HIDE IF does not immediately follow CHOICE");
         return false;
       }
       if (choices[choices.length-1].hideIf) {
-        logger.error("Multiple HIDE IFs for single CHOICE\n");
+        logger.error("Multiple HIDE IFs for single CHOICE");
         return false;
       }
       choices[choices.length-1].hideIf = boolExp;
@@ -848,7 +844,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function sleep(duration,num) {
       if (!duration) {
-        logger.error("Invalid SLEEP on line "+num+"\n");
+        logger.error("Invalid SLEEP");
         return false;
       }
       duration = expressionToFunction(duration);
@@ -861,7 +857,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function input(varname,num) {
       if (typeManager.globalHasUndefinedType(varname)) {
-        logger.error(varname+" undefined in INPUT\n");
+        logger.error(varname+" undefined in INPUT");
         return;
       }
       pushInstruction(function() {
@@ -874,7 +870,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function play(abc,num) {
       if (!abc) {
-	logger.error("Invalid PLAY on line "+num+"\n");
+	logger.error("Invalid PLAY");
 	return false;
       }
       var notes = expressionToFunction(abc);
@@ -887,12 +883,12 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function forStatement(varname,first,last,num) {
       if (!first || !last) {
-        logger.error("what the FOR on line "+num+"\n");
+        logger.error("what the FOR");
         return false;
       }
       //addFor: function(varname,first,last) {
       if (typeManager.globalHasUndefinedType(varname)) {
-        logger.error(varname+" undefined in FOR\n");
+        logger.error(varname+" undefined in FOR");
         return;
       }
 
@@ -909,11 +905,11 @@ function CodeGeneratorPass(typeManager, machine, logger){
     }
     function letStatement(varname,exp,num) {
       if (!varname) {
-        logger.error("Invalid expression assigned to "+varname+" on line "+num+"\n");
+        logger.error("Invalid expression assigned to "+varname);
         return false;
       }
       if (typeManager.globalHasUndefinedType(varname)) {
-        logger.error(varname+" undefined in assignment\n");
+        logger.error(varname+" undefined in assignment");
         return;
       }
       var value = expressionToFunction(exp);
@@ -942,7 +938,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       var varname = varExp[0].value;
       var obj = loopStack.pop();
       if ((!obj) || obj.type !== FOR || varname != obj.varname) {
-        logger.error("ERROR: NEXT WITHOUT MATCHING FOR\n");
+        logger.error("ERROR: NEXT WITHOUT MATCHING FOR");
       } else {
         var first = obj.first;
         var last = obj.last;
@@ -976,7 +972,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
 ***********************************************************************/
       // generate expressions
       // Returns an EXPRESSION token or null
-      // XXX Handle errors
       // XXX Fail if types are incorrect in every case
 
       // expression types

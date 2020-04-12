@@ -31,14 +31,14 @@ function TypeGeneratorPass(typeManager, logger) {
     function printExp(exp,newline,pause,num) {
       var result = typeManager.genTypesForStringExpression(exp);
       if (!result) {
-        logger.error("Type mismatch for PRINT on line "+num+"\n");
+        logger.error("Type mismatch for PRINT. I need text");
       }
       return result;
     }
 
     function ifStatement(boolExp,num){
       if (boolExp === null) {
-        logger.error("Invalid comparison for IF on line "+num+"\n");
+        logger.error("Invalid comparison for IF");
         return false;
       }
       return true;
@@ -46,7 +46,7 @@ function TypeGeneratorPass(typeManager, logger) {
 
     function whileStatement(exp,num){
       if (exp === null) {
-        logger.error("Type mismath for WHILE on line "+num+"\n");
+        logger.error("Type mismath for WHILE");
         return false;
       }
       return true;
@@ -57,7 +57,7 @@ function TypeGeneratorPass(typeManager, logger) {
       // XXX WHEN VARS ARE DEFINED, CHECK THAT SUBROUTINE HASN'T BEEN DEFINED
       // If there's an existing subArgNames entry, this had already been defined!
       if (typeManager.subIsDefined(name)) {
-        logger.error("SUBROUTINE "+name+" REDEFINED on line "+num+"\n");
+        logger.error("SUBROUTINE "+name+" REDEFINED");
         return false;
       } else {
         // This is the current sub now.
@@ -69,7 +69,7 @@ function TypeGeneratorPass(typeManager, logger) {
           typeManager.setSubArgNames(name, args);
 
         } else { // We've seen this called. Check that the param count matches.
-          logger.error("SUBROUTINE "+name+" HAS "+args.length+" args but was called with "+typeManager.getSubArgCount(name)+" on line "+num+"\n");
+          logger.error("SUBROUTINE "+name+" HAS "+args.length+" args but was called with "+typeManager.getSubArgCount(name));
           return false;
         }
         return true;
@@ -92,7 +92,7 @@ function TypeGeneratorPass(typeManager, logger) {
     function beginAsk(promptExp,num) {
       var result = typeManager.genTypesForStringExpression(promptExp);
       if (result === null) {
-        logger.error("Type mismatch for ASK on line "+num+"\n");
+        logger.error("Type mismatch for ASK");
         return false;
       } else {
         return true;
@@ -102,7 +102,7 @@ function TypeGeneratorPass(typeManager, logger) {
     function beginMenu(promptExp,num) {
       var result = typeManager.genTypesForStringExpression(promptExp);
       if (result === null) {
-        logger.error("Type mismatch for BEGIN MENU on line "+num+"\n");
+        logger.error("Type mismatch for BEGIN MENU");
         return false;
       } else {
         return true;
@@ -112,7 +112,7 @@ function TypeGeneratorPass(typeManager, logger) {
     function menuChoice(charExp,textExp,num) {
       var result = typeManager.genTypesForStringExpression(textExp);
       if (result === null) {
-        logger.error("Type mismatch for MENU CHOICE on line "+num+"\n");
+        logger.error("Type mismatch for MENU CHOICE");
         return false;
       } else {
         return true;
@@ -121,7 +121,7 @@ function TypeGeneratorPass(typeManager, logger) {
 
     function menuHideIf(boolExp,num) {
       if (boolExp === null) {
-        logger.error("Type mismatch for HIDE IF on line "+num+"\n");
+        logger.error("Type mismatch for HIDE IF");
         return false;
       } else {
         return true;
@@ -131,7 +131,7 @@ function TypeGeneratorPass(typeManager, logger) {
     function color(valueExp,num) {
       var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
-        logger.error("Type mismatch for COLOR on line "+num+"\n");
+        logger.error("Type mismatch for COLOR");
         return false;
       } else {
         return true;
@@ -141,7 +141,7 @@ function TypeGeneratorPass(typeManager, logger) {
     function bgColor(valueExp,num) {
       var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
-        logger.error("Type mismatch for BGCOLOR on line "+num+"\n");
+        logger.error("Type mismatch for BGCOLOR");
         return false;
       } else {
         return true;
@@ -151,7 +151,7 @@ function TypeGeneratorPass(typeManager, logger) {
     function sleep(valueExp,num) {
       var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
-        logger.error("Type mismatch for SLEEP on line "+num+"\n");
+        logger.error("Type mismatch for SLEEP");
         return false;
       } else {
         return true;
@@ -165,7 +165,7 @@ function TypeGeneratorPass(typeManager, logger) {
     function play(valueExp,num) {
       var result = typeManager.genTypesForStringExpression(valueExp);
       if (result === null) {
-	logger.error("Type mismatch for PLAY on line "+num+"\n");
+	logger.error("Type mismatch for PLAY");
 	return false;
       } else {
 	return true;
@@ -176,7 +176,7 @@ function TypeGeneratorPass(typeManager, logger) {
       if (!typeManager.assignGlobalNumericType(varExp) ||
           typeManager.genTypesForNumericExpression(startExp)===null ||
           typeManager.genTypesForNumericExpression(endExp)===null) {
-        logger.error("Type mismatch for FOR on line "+num+"\n");
+        logger.error("Type mismatch for FOR");
       } else {
         return true;
       }
@@ -185,23 +185,23 @@ function TypeGeneratorPass(typeManager, logger) {
 
     function letStatement(varExp,valueExp,num) {
       if (varExp === null || valueExp === null) {
-        logger.error("Type mismatch for assignment to "+varExp+" on line "+num+"\n");
+        logger.error("Type mismatch for assignment to "+varExp);
         return false;
       }
       if (typeManager.localVariableDefined(currentSub, varExp)) {
-        logger.error("Local variable assignment not supported, yet!\n");
+        logger.error("Local variable assignment not supported, yet!");
         return false;
       }
       // Value exp has an unknown type
       if (typeManager.isStringType(valueExp)) {
         if (!typeManager.assignGlobalStringType(varExp)) {
-          logger.error("Type mismatch for assignment to "+varExp+" on line "+num+".\n");
+          logger.error("Type mismatch for assignment to "+varExp);
           return false;
         } else
           return true;
       } else if (typeManager.isNumericType(valueExp)) {
         if (!typeManager.assignGlobalNumericType(varExp)) {
-          logger.error("Type mismatch for assignment to "+varExp+" on line "+num+".\n");
+          logger.error("Type mismatch for assignment to "+varExp);
           return false;
         } else
           return true;
@@ -267,7 +267,7 @@ function TypeGeneratorPass(typeManager, logger) {
           // if it's not an exact match, check it out
           subExp = typeManager.genTypesForNumericExpression(subExp)
           if (!subExp) {
-            logger.error("TYPE MISMATCH.");
+            logger.error("TYPE MISMATCH. I was expecting a number");
             return null;
           }
         }
@@ -279,7 +279,7 @@ function TypeGeneratorPass(typeManager, logger) {
           // if it's not an exact match, check it out
           subExp = typeManager.genTypesForStringExpression(subExp)
           if (!subExp) {
-            logger.error("TYPE MISMATCH.");
+            logger.error("TYPE MISMATCH. I was expecting text");
             return null;
           }
         }

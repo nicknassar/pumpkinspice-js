@@ -79,7 +79,7 @@
     function assignTypes(variables,type) {
       // type must be resolved before this is called
       if (type !== STRING_TYPE && type !== NUMERIC_TYPE) {
-        logger.error("TYPE SYSTEM ERROR\n");
+        logger.error("TYPE SYSTEM ERROR. I am very, confused about what is text and what is numbers");
         return false;
       }
       var sameTypeVars = [];
@@ -93,7 +93,8 @@
           varTypes[variables[i]] = type;
         } else if (varTypes[variables[i]] !== undefined &&
                    varTypes[variables[i]] !== type) {
-          logger.error("TYPE MISMATCH\n");
+          // Display more specific error
+          // logger.error("TYPE MISMATCH");
           return false;
         } else {
           varTypes[variables[i]] = type;
@@ -132,7 +133,7 @@
         if (varTypes[variables[i]] &&
             (varTypes[variables[i]]===STRING_TYPE ||
              varTypes[variables[i]]===NUMERIC_TYPE)) {
-          logger.error("UNASSIGNED TYPE NOT RESOLVED CORRECTLY\n");
+          logger.error("UNASSIGNED TYPE NOT RESOLVED CORRECTLY");
           throw "typeassignerror"; // We should never get here
         }
         if (varTypes[variables[i]]) {
@@ -308,19 +309,19 @@
         calledSubs[calledSubs.length] = name;
       }
       if (subArgCount[name] !== argExps.length) {
-        logger.error("SUBROUTINE "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]+"\n");
+        logger.error("SUBROUTINE "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]);
         return false;
       }
       for (var i=0;i<argExps.length;i++) {
         if (argExps[i] === null) {
-          logger.error("Invalid argument to "+name+"\n");
+          logger.error("Invalid argument to "+name);
           return false;
         }
         var varName = argNameByArity(name,i);
         if (varTypes[varName]) {
           var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
           if (!result) {
-            logger.error("Invalid argument type mismatch in "+name+"\n");
+            logger.error("Invalid argument type mismatch in "+name);
             return false;
           } else {
             // XXX should this be assignTypes?
@@ -336,18 +337,18 @@
 
     function returnStatement(sub, exp) {
       if (exp === null) {
-        logger.error("INVALID RETURN EXPRESSION\n");
+        logger.error("INVALID RETURN EXPRESSION");
         return false;
       }
       if (sub === undefined) {
-        logger.error("RETURN OUTSIDE OF SUBROUTINE\n");
+        logger.error("RETURN OUTSIDE OF SUBROUTINE");
         return false;
       }
       var retValName=returnValueName(sub);
       if (varTypes[retValName]) {
         var result = genTypesForExpressionPair(exp,varTypes[retValName]);
         if (!result) {
-          logger.error("TYPE MISMATCH IN RETURN\n");
+          logger.error("TYPE MISMATCH IN RETURN");
           return false;
         } else {
           // XXX should this be assignTypes?
@@ -366,19 +367,19 @@
           subArgCount[name] = argExps.length;
         }
         if (subArgCount[name] !== argExps.length) {
-          logger.error("SUBROUTINE CALL "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]+"\n");
+          logger.error("SUBROUTINE CALL "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]);
           return null;
         }
         for (var i=0;i<argExps.length;i++) {
           if (argExps[i] === null) {
-            logger.error("Invalid argument to SUBROUTINE CALL "+name+"\n");
+            logger.error("Invalid argument to SUBROUTINE CALL "+name);
             return null;
           }
           var varName = argNameByArity(name,i);
           if (varTypes[varName]) {
             var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
             if (!result) {
-              logger.error("Invalid argument type mismatch in CALL "+name+"\n");
+              logger.error("Invalid argument type mismatch in CALL "+name);
               return null;
             } else {
               // XXX should this be assignTypes?
@@ -403,7 +404,7 @@
       // for (var i=0;i<calledSubs.length;i++) {
       //   var name=calledSubs[i];
       //   if (!machine.isSubroutineDefined(name)) {
-      //     logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name+"!\n");
+      //     logger.error("ERROR: CALL TO FAKE SUBROUTINE "+name);
       //     return false;
       //   }
       // }

@@ -17,7 +17,7 @@ function Audio(logger) {
   (function() {
     var AudioContext= window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) {
-      logger.error("PC SPEAKER ERROR! AUDIO DISABLED\n\n");
+      logger.error("PC SPEAKER ERROR! AUDIO DISABLED");
       return;
     }
     audioCtx = new AudioContext();

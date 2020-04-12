@@ -99,7 +99,7 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
 
 
   if (!compiler.compile(programTextParam)) {
-     globalLogger.error("COMPILE FAILED!");
+    // Compilation failed
   }
 
   globalMachine.go();
