@@ -155,7 +155,7 @@ function go() {
   }
 
   // The program ended
-  if (callstack.length == 0 && display.hasPendingUpdates())
+  if (callstack.length == 0)
     display.sendUpdates();
 }
 
@@ -246,8 +246,7 @@ function go() {
      go: function() {
        // There was something output. Display it now
       // in case it was an error and go() is going to crash
-      if (display.hasPendingUpdates())
-	display.sendUpdates();
+       display.sendUpdates();
 
        go();
      }

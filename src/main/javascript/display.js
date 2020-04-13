@@ -65,10 +65,6 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
     handleInputEvent = handler;
   }
 
-  function hasPendingUpdates() {
-    return pendingUpdates.length > 0;
-  }
-
   function sendQuietBlockElementUpdates() {
     var spanNode=document.createElement("span");
     for (var i=0;i<pendingUpdates.length;i++) {
@@ -80,6 +76,10 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
   }
 
   function sendUpdates() {
+    if (pendingUpdates.length == 0) {
+      return;
+    }
+
     // Move old stuff over to the historyBlockElement
     var oldNodes = latestBlockElement.childNodes;
     while (oldNodes.length > 0) {
@@ -274,7 +274,6 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
   return {
     getInputValue: getInputValue,
     setInputHandler: setInputHandler,
-    hasPendingUpdates: hasPendingUpdates,
     sendQuietBlockElementUpdates: sendQuietBlockElementUpdates,
     sendUpdates: sendUpdates,
     clear: clear,
