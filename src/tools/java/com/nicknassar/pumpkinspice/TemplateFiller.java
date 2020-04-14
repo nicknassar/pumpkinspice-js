@@ -25,21 +25,54 @@ class TemplateFiller {
 	public String source;
 	public String destination;
 	public String templateFolder;
+        public String searchPath[];
 
         TemplateConfig() {
 	    source = null;
 	    destination = null;
 	}
 
+        void setSearchPath(String path) {
+            searchPath = path.split(File.pathSeparator);
+        }
+
+        String getSourcePath() throws Error {
+            return getFileOnPath(source);
+        }
+
+        String getFileOnPath(String filename) throws Error {
+            File f = new File(filename);
+            if (f.exists()) {
+                return filename;
+            } else if (searchPath != null) {
+                for (String path: searchPath) {
+                    f = new File(path, filename);
+                    if (f.exists()) {
+                        return f.getPath();
+                    }
+                }
+            } else if (templateFolder != null) {
+                f = new File(templateFolder, filename);
+                if (f.exists()) {
+                    return f.getPath();
+                }
+            }
+            throw new Error("Can't find file "+filename+" in path");
+        }
+
 	boolean isValid() {
-	    return source != null && destination != null;
-	}
+	    return source != null && destination != null;	}
 
 	static TemplateConfig parseArgs(String args[]) throws Error {
 	    TemplateConfig config = new TemplateConfig();
 	    String previousArg = null;
 	    for (String arg: args) {
-		if (config.source == null) {
+                if (arg.equals("--path")) {
+                    previousArg = arg;
+                } else if (previousArg != null && previousArg.equals("--path")) {
+                    config.setSearchPath(arg);
+                    previousArg = null;
+                } else if (config.source == null) {
 		    config.source = arg;
 
 		    File src = new File(config.source);
@@ -51,6 +84,8 @@ class TemplateFiller {
 		    throw new Error("Too many arguments");
 		}
 	    }
+            if (previousArg != null)
+                throw new Error("expected more arguments");
 	    if (config.source != null && config.destination == null) {
 		if (config.source.endsWith(".template")) {
 		    config.destination = config.source.substring(0, config.source.length()-9);
@@ -91,7 +126,7 @@ class TemplateFiller {
         BufferedReader template;
         BufferedWriter out;
 	try {
-            template = new BufferedReader(new InputStreamReader(new FileInputStream(config.source), Charset.forName("UTF-8").newDecoder()));
+            template = new BufferedReader(new InputStreamReader(new FileInputStream(config.getSourcePath()), Charset.forName("UTF-8").newDecoder()));
 	    out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(config.destination), Charset.forName("UTF-8").newEncoder()));
 	} catch (FileNotFoundException e) {
 	    throw new Error(e);
@@ -132,7 +167,7 @@ class TemplateFiller {
 	    }
 
 	    String filename = line.substring(match+2,end);
-            BufferedReader subTemplate = new BufferedReader(new InputStreamReader(new FileInputStream(config.templateFolder+File.separatorChar+filename), Charset.forName("UTF-8").newDecoder()));
+            BufferedReader subTemplate = new BufferedReader(new InputStreamReader(new FileInputStream(config.getFileOnPath(filename)), Charset.forName("UTF-8").newDecoder()));
             fillTemplate(subTemplate, out);
 
 	    match = line.indexOf("{{", start);

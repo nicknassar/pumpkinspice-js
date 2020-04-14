@@ -16,6 +16,9 @@ JAVASCRIPT_SOURCE_DIR := $(SRC_DIR)/main/javascript
 RESOURCE_DIR := $(SRC_DIR)/main/resources
 BUILD_RESOURCE_DIR := $(BUILD_DIR)/resources
 
+TEST_SOURCE_DIR := $(SRC_DIR)/test/javascript
+TEST_BUILD_DIR := $(BUILD_DIR)/test
+
 CLOSURE_COMPILER_JAR := $(wildcard lib/closure-compiler-v[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].jar)
 OUTPUT_JAR := $(DIST_DIR)/pumpkinspice2html-v$(BUILD_VERSION).jar
 
@@ -30,10 +33,11 @@ else
   PATH_SEPARATOR := :
 endif
 
-vpath %.js.template $(JAVASCRIPT_SOURCE_DIR)
-vpath %.js $(JAVASCRIPT_SOURCE_DIR) $(BUILD_RESOURCE_DIR)
+vpath %.js.template $(JAVASCRIPT_SOURCE_DIR) $(TEST_SOURCE_DIR)
+vpath %.js $(JAVASCRIPT_SOURCE_DIR) $(BUILD_RESOURCE_DIR)  $(TEST_SOURCE_DIR) $(TEST_BUILD_DIR)
 vpath %.optimized.js $(BUILD_RESOURCE_DIR)
 vpath %.html.template $(BUILD_RESOURCE_DIR)
+vpath %.html $(DIST_DIR)
 vpath %.java $(TOOLS_SOURCE_DIR) $(PUMPKINSPICE2HTML_SOURCE_DIR)
 vpath %.class $(PUMPKINSPICE2HTML_BUILD_DIR) $(TOOLS_BUILD_DIR)
 
@@ -42,11 +46,17 @@ JAVA_TOOLS_CLASSES := com/nicknassar/pumpkinspice/TemplateFiller.class
 
 OPTIMIZED_RESOURCES := pumpkinspice.optimized.js index.html.template
 DEBUG_RESOURCES := pumpkinspice.js index.html.template
+TEST_RESOURCES := run-tests.js index.html.template
+TEST_OUTPUT := run-tests.html
 
-JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js display.js  machine.js  legacy.js code_generator_pass.js type_generator_pass.js compiler.js type_manager.js
+JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js display.js  machine.js  legacy.js global-utilities.js code_generator_pass.js type_generator_pass.js compiler.js type_manager.js
+TEST_SOURCES := run-tests.js.template initialize-tests.js display.js legacy.js global-utilities.js
 
 .PHONY: all
 all: test.html test.debug.html $(OUTPUT_JAR)
+
+.PHONY: test
+test: $(TEST_OUTPUT)
 
 .PHONY: clean
 clean:
@@ -62,6 +72,8 @@ $(BUILD_RESOURCE_DIR):
 	-$(MKDIR) -p $@
 $(DIST_DIR):
 	-$(MKDIR) -p $@
+$(TEST_BUILD_DIR):
+	-$(MKDIR) -p $@
 
 .PHONY: closure_compiler
 ifeq ($(CLOSURE_COMPILER_JAR),)
@@ -76,6 +88,12 @@ closure_compiler:
 else
 closure_compiler: $(CLOSURE_COMPILER_JAR)
 endif
+
+run-tests.html: $(TEST_RESOURCES) $(JAVA_BUILD_CLASSES) | $(DIST_DIR)
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --title "Pumpkin Spice Tests" --javascript $(TEST_BUILD_DIR)/run-tests.js --nocode "$(DIST_DIR)/run-tests.html"
+
+run-tests.js: $(TEST_SOURCES) $(JAVA_TOOLS_CLASSES) | $(TEST_BUILD_DIR)
+	$(JAVA) -classpath "$(TOOLS_BUILD_DIR)" com.nicknassar.pumpkinspice.TemplateFiller --path "$(TEST_SOURCE_DIR)$(PATH_SEPARATOR)$(JAVASCRIPT_SOURCE_DIR)" $< "$(TEST_BUILD_DIR)/$@"
 
 com/nicknassar/pumpkinspice/Builder.class: com/nicknassar/pumpkinspice/Builder.java | $(PUMPKINSPICE2HTML_BUILD_DIR)
 	$(JAVAC) -d $(PUMPKINSPICE2HTML_BUILD_DIR) $<
