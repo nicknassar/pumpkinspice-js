@@ -8,11 +8,36 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
 {{legacy.js}}
 {{global_utilities.js}}
 
+{{compiler.js}}
+{{testing_logger.js}}
+{{testing_compiler_pass.js}}
 {{display.js}}
 
-  var display = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
 
-  display.print("TESTING\n");
+  var display = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
+  display.print("TESTING...\n");
+  display.sendUpdates();
+
+  var logger = TestingLogger();
+  var handler = TestingCompilerPass();
+  var compiler = Compiler([handler], logger);
+
+  function assert(value, message) {
+    if (!value) {
+      display.print(message+"\n");
+    }
+  }
+
+  var text = "PRINT \"Hello World!\"";
+  compiler.compile(text);
+  var handlerLog = handler.getLog();
+  assert(logger.getLog().length == 0, "Error compiling hello world");
+  assert(handlerLog.length == 3, "Unexpected result compiling hello world");
+  assert(handlerLog[0][0] == "stringLiteralExpression", "Expected string literal");
+  assert(handlerLog[1][0] == "printExp", "Expected print statement");
+  assert(handlerLog[2][0] == "finalize", "Expected finalize");
+
+  display.print("Done.\n")
   display.sendUpdates();
 }
 {{initialize_tests.js}}
