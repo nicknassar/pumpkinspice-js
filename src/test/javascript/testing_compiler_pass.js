@@ -3,6 +3,8 @@ function TestingCompilerPass() {
 
   function loggerWithName(name) {
     return function() {
+      console.log(name);
+      console.log(arguments);
       var call = [name];
       for (var i=0;i<arguments.length;i++)
         call.push(arguments[i]);

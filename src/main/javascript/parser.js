@@ -65,6 +65,7 @@ function Parser(handlers,logger){
 
       // Ignore nonsense on a comment line
       if (tokens.length > 0 && (tokens[0].value==='REM' || tokens[0].value==='\'')) {
+        tokens.push({type:STRING,value:line.substring(pos,line.length)});
         pos=line.length;
         break;
       }
@@ -79,7 +80,7 @@ function Parser(handlers,logger){
           if (line[pos] === '\"') {
             pos+=2;
             if (pos>=line.length) {
-              logger.error("Parser Error: Unterminated text. You need a \"");
+              logger.error("Parser Error: Unterminated text. You need to add or remove a \"");
               return null;
             }
             s+="\"";
@@ -192,9 +193,10 @@ function Parser(handlers,logger){
     var tokens = tokenizeLine(line);
     if (!tokens) {
       return false;
+    } else {
+      parseLineWithHandler(handler,tokens,num);
+      return true;
     }
-    parseLineWithHandler(handler,tokens,num);
-    return true;
   }
 
   function parseLineWithHandler(handler,tokens,num) {
@@ -355,7 +357,10 @@ function Parser(handlers,logger){
           else
             return handler.printExp(expression(tokens),newline,pause);
         } else if (tokens[0].value==='REM') {
-          return handler.comment(tokens.slice(1,tokens.length));
+          if (tokens.length>1)
+            return handler.comment(tokens[1].value);
+          else
+            return handler.comment("");
         } else if (tokens[0].value==='CLS') {
           return handler.clear(num);
         } else if (tokens[0].value==='NEXT') {
@@ -566,7 +571,10 @@ function Parser(handlers,logger){
           return false;
         }
       } else if (tokens[0].type===SINGLEQUOTE) {
-        return handler.comment(tokens.slice(1,tokens.length),num);
+        if (tokens.length>1)
+          return handler.comment(tokens[1].value);
+        else
+          return handler.comment("");
       } else if (tokens.length>=3 && tokens[0].type === MINUS && tokens[1].type === MINUS && tokens[2].type === GREATER) {
         finished = true;
       } else {
@@ -795,6 +803,7 @@ function Parser(handlers,logger){
     }
   }
   function compileText(text, handler) {
+    var success = true;
     var lines = text.split("\r\n");
     if (lines.length===1)
       lines = text.split("\n");
@@ -803,24 +812,28 @@ function Parser(handlers,logger){
     for (var n=0;n<lines.length;n++) {
       logger.set_line_number(n);
       if (!parseLine(lines[n],n,handler)) {
-        logger.clear_line_number();
-        return false;
+        success = false;
       }
     }
     logger.clear_line_number();
-    return true;
+    return success;
   }
 
   function compile(programText) {
-    for (var pass = 0;pass < handlers.length;pass++) {
+    var success = true;
+    for (var pass = 0;success && pass < handlers.length;pass++) {
       started = false;
       finished = false;
-      if (!compileText(programText, handlers[pass]) || !handlers[pass].finalize()) {
-        // Reset things here?
+      if (!compileText(programText, handlers[pass])) {
+        success = false;
+      }
+      if (!handlers[pass].finalize()) {
+        // The handler decides if the next pass should run
+        // Running even though the previous pass failed can give better error messages
         return false;
       }
     }
-    return true;
+    return success;
   }
 
   // export just one funtion

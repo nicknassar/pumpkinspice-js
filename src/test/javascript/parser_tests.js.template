@@ -21,10 +21,32 @@ function ParserTests(display) {
     },
     {
       code: "PRINT \"",
-      parsed: [],
+      parsed: [["finalize"]],
       errors: [[1, "unterminated string"]]
+    },
+    {
+      code: "REM this is a comment\n"+
+            "' comment 2\n"+
+            "REM\n"+
+            "'\n"+
+            "PRINT\n"+
+            "PRINT \"\n"+
+            "PRINT \"\"\"\n"+
+            "PRINT \"go\"",
+      parsed: [
+        ["comment","this is a comment"],
+        ["comment","comment 2"],
+        ["comment",""],
+        ["comment",""],
+        ["printString", "", true, false],
+        ["printString", "go", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [6, "unterminated string"],
+        [7, "unterminated string"]
+      ]
     }
-
   ];
 
   function compareNestedLists(listA, listB) {
@@ -41,6 +63,8 @@ function ParserTests(display) {
     return true;
   }
 
+  // Exact error messages aren't matched
+  // We want to know that an error on the same line is reported
   function compareErrorLists(listA, listB) {
     if (listA.length != listB.length)
       return false;
