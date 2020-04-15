@@ -6,7 +6,7 @@
 function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, inputFormElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam){
 
 {{legacy.js}}
-{{global-utilities.js}}
+{{global_utilities.js}}
 
 {{display.js}}
 
@@ -15,4 +15,4 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
   display.print("TESTING\n");
   display.sendUpdates();
 }
-{{initialize-tests.js}}
+{{initialize_tests.js}}

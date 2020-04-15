@@ -16,7 +16,7 @@
 function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitElementParam, inputFormElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam){
 
 {{legacy.js}}
-{{global-utilities.js}}
+{{global_utilities.js}}
 
 {{display.js}}
 {{logger.js}}

@@ -46,11 +46,11 @@ JAVA_TOOLS_CLASSES := com/nicknassar/pumpkinspice/TemplateFiller.class
 
 OPTIMIZED_RESOURCES := pumpkinspice.optimized.js index.html.template
 DEBUG_RESOURCES := pumpkinspice.js index.html.template
-TEST_RESOURCES := run-tests.js index.html.template
+TEST_RESOURCES := run_tests.js index.html.template
 TEST_OUTPUT := run-tests.html
 
-JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js display.js  machine.js  legacy.js global-utilities.js code_generator_pass.js type_generator_pass.js compiler.js type_manager.js
-TEST_SOURCES := run-tests.js.template initialize-tests.js display.js legacy.js global-utilities.js
+JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js display.js  machine.js  legacy.js global_utilities.js code_generator_pass.js type_generator_pass.js compiler.js type_manager.js
+TEST_SOURCES := run_tests.js.template initialize_tests.js display.js legacy.js global_utilities.js
 
 .PHONY: all
 all: test.html test.debug.html $(OUTPUT_JAR)
@@ -90,9 +90,9 @@ closure_compiler: $(CLOSURE_COMPILER_JAR)
 endif
 
 run-tests.html: $(TEST_RESOURCES) $(JAVA_BUILD_CLASSES) | $(DIST_DIR)
-	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --title "Pumpkin Spice Tests" --javascript $(TEST_BUILD_DIR)/run-tests.js --nocode "$(DIST_DIR)/run-tests.html"
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --title "Pumpkin Spice Tests" --javascript $(TEST_BUILD_DIR)/run_tests.js --nocode "$(DIST_DIR)/run-tests.html"
 
-run-tests.js: $(TEST_SOURCES) $(JAVA_TOOLS_CLASSES) | $(TEST_BUILD_DIR)
+run_tests.js: $(TEST_SOURCES) $(JAVA_TOOLS_CLASSES) | $(TEST_BUILD_DIR)
 	$(JAVA) -classpath "$(TOOLS_BUILD_DIR)" com.nicknassar.pumpkinspice.TemplateFiller --path "$(TEST_SOURCE_DIR)$(PATH_SEPARATOR)$(JAVASCRIPT_SOURCE_DIR)" $< "$(TEST_BUILD_DIR)/$@"
 
 com/nicknassar/pumpkinspice/Builder.class: com/nicknassar/pumpkinspice/Builder.java | $(PUMPKINSPICE2HTML_BUILD_DIR)
