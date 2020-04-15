@@ -3,7 +3,10 @@ function TestingCompilerPass() {
 
   function loggerWithName(name) {
     return function() {
-      callLog.push([name,arguments]);
+      var call = [name];
+      for (var i=0;i<arguments.length;i++)
+        call.push(arguments[i]);
+      callLog.push(call);
       return callLog.length-1;
     }
   }

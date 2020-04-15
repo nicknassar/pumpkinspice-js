@@ -49,8 +49,8 @@ DEBUG_RESOURCES := pumpkinspice.js index.html.template
 TEST_RESOURCES := run_tests.js index.html.template
 TEST_OUTPUT := run-tests.html
 
-JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js display.js  machine.js  legacy.js global_utilities.js code_generator_pass.js type_generator_pass.js compiler.js type_manager.js
-TEST_SOURCES := run_tests.js.template initialize_tests.js display.js legacy.js global_utilities.js
+JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js display.js  machine.js  legacy.js global_utilities.js code_generator_pass.js type_generator_pass.js parser.js type_manager.js
+TEST_SOURCES := run_tests.js.template initialize_tests.js parser_tests.js.template parser.js display.js legacy.js global_utilities.js
 
 .PHONY: all
 all: test.html test.debug.html $(OUTPUT_JAR)

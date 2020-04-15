@@ -25,7 +25,7 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
 {{type_manager.js}}
 {{type_generator_pass.js}}
 {{code_generator_pass.js}}
-{{compiler.js}}
+{{parser.js}}
 
   var globalDisplay = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
   var globalLogger = Logger(globalDisplay);
@@ -36,7 +36,8 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
   var handler1 = TypeGeneratorPass(globalTypeManager, globalLogger);
   var handler2 = CodeGeneratorPass(globalTypeManager, globalMachine, globalLogger);
 
-  var compiler = Compiler([handler1, handler2],globalLogger);
+  // parser + handlers = compiler
+  var compiler = Parser([handler1, handler2],globalLogger);
 
 
   if (!compiler.compile(programTextParam)) {

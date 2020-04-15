@@ -1,0 +1,96 @@
+function ParserTests(display) {
+  {{parser.js}}
+  {{testing_compiler_pass.js}}
+
+  var expectations = [
+    {
+      code: "PRINT \"Hello World!\"",
+      parsed: [
+        ["printString", "Hello World!", true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      code: "PRINT",
+      parsed: [
+        ["printString", "", true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      code: "PRINT \"",
+      parsed: [],
+      errors: [[1, "unterminated string"]]
+    }
+
+  ];
+
+  function compareNestedLists(listA, listB) {
+    if (listA.length != listB.length)
+      return false;
+    for (var i=0;i<listA.length;i++) {
+      if (listA[i].length != listB[i].length)
+        return false;
+      for (var j=0;j<listA[i].length;j++) {
+        if (listA[i][j] != listB[i][j])
+          return false;
+      }
+    }
+    return true;
+  }
+
+  function compareErrorLists(listA, listB) {
+    if (listA.length != listB.length)
+      return false;
+    // First line is line number of error
+    for (var i=0;i<listA.length;i++) {
+      if (listA[i][0] != listB[i][0])
+        return false;
+    }
+    return true;
+  }
+
+  function printParseMismatch(expectation, handlerLog) {
+    display.print("Parser gave unexpected results for the following code:\n");
+    display.print(expectation.code+"\n");
+    display.print("expected:\n")
+    display.print(expectation.parsed.join("\n")+"\n");
+    display.print("got:\n")
+    display.print(handlerLog.join("\n")+"\n\n");
+  }
+
+  function printErrorMismatch(expectation, errorLog) {
+    display.print("Parser gave unexpected errors for the following code:\n");
+    display.print(expectation.code+"\n");
+    display.print("expected:\n")
+    display.print(expectation.errors.join("\n")+"\n");
+    display.print("got:\n")
+    display.print(errorLog.join("\n")+"\n\n");
+  }
+
+  function checkResults(expectation, handlerLog, errorLog) {
+    if (!compareNestedLists(expectation.parsed, handlerLog)) {
+      printParseMismatch(expectation, handlerLog);
+    }
+    if (!compareErrorLists(expectation.errors, errorLog)) {
+      printErrorMismatch(expectation, errorLog);
+    }
+  }
+
+  function run() {
+    for (var i=0;i<expectations.length;i++) {
+      var expectation = expectations[i];
+      var logger = TestingLogger();
+      var handler = TestingCompilerPass();
+      var compiler = Parser([handler], logger);
+
+      // Prepend a newline so we can get the right line numbers
+      compiler.compile("\n"+expectation.code);
+      checkResults(expectation, handler.getLog(), logger.getLog());
+    }
+    display.sendUpdates();
+  }
+  return {run:run};
+}

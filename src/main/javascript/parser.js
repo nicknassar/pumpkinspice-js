@@ -1,4 +1,4 @@
-function Compiler(handlers,logger){
+function Parser(handlers,logger){
   var started = false;
   var finished = false;
 
@@ -191,10 +191,10 @@ function Compiler(handlers,logger){
   function parseLine(line,num,handler) {
     var tokens = tokenizeLine(line);
     if (!tokens) {
-      logger.error("Parse error. I am confused");
       return false;
     }
-    return parseLineWithHandler(handler,tokens,num);
+    parseLineWithHandler(handler,tokens,num);
+    return true;
   }
 
   function parseLineWithHandler(handler,tokens,num) {
@@ -349,11 +349,11 @@ function Compiler(handlers,logger){
           }
           tokens = tokens.slice(1,tokens.length);
           if (tokens.length === 0) {
-            return handler.printString("",newline,pause,num);
-          } else if (tokens.length === 1 && tokens.type === STRING)
-            return handler.printString(tokens[0].value,newline,pause,num);
+            return handler.printString("",newline,pause);
+          } else if (tokens.length === 1 && tokens[0].type === STRING)
+            return handler.printString(tokens[0].value,newline,pause);
           else
-            return handler.printExp(expression(tokens),newline,pause,num);
+            return handler.printExp(expression(tokens),newline,pause);
         } else if (tokens[0].value==='REM') {
           return handler.comment(tokens.slice(1,tokens.length));
         } else if (tokens[0].value==='CLS') {
@@ -803,7 +803,6 @@ function Compiler(handlers,logger){
     for (var n=0;n<lines.length;n++) {
       logger.set_line_number(n);
       if (!parseLine(lines[n],n,handler)) {
-        logger.error("Giving up trying to understand this program");
         logger.clear_line_number();
         return false;
       }
