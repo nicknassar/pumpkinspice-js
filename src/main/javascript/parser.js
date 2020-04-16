@@ -183,6 +183,7 @@ function Parser(handlers,logger){
           tokens.push({type:NOT,value:'!'});
         }
       } else {
+        logger.error("Unexpected character: "+line[pos]);
         return null;
       }
     }
@@ -354,8 +355,14 @@ function Parser(handlers,logger){
             return handler.printString("",newline,pause);
           } else if (tokens.length === 1 && tokens[0].type === STRING)
             return handler.printString(tokens[0].value,newline,pause);
-          else
-            return handler.printExp(expression(tokens),newline,pause);
+          else {
+            var printExp = expression(tokens);
+            if (printExp === null) {
+              return null;
+            } else {
+              return handler.printExp(printExp,newline,pause);
+            }
+          }
         } else if (tokens[0].value==='REM') {
           if (tokens.length>1)
             return handler.comment(tokens[1].value);
@@ -624,7 +631,7 @@ function Parser(handlers,logger){
           return handler.variableExpression(tokens[0].value);
         }
       } else {
-        // Something doesn't make sense
+        logger.error("Invalid expression");
         return null;
       }
       // Predefined functions
@@ -643,6 +650,7 @@ function Parser(handlers,logger){
       }
       // No closing paren
       if (depth >= tokens.length) {
+        logger.error("No closing paren for function "+tokens[0].value);
         return null;
       }
       var paramTypes;
@@ -747,9 +755,14 @@ function Parser(handlers,logger){
         pos++;
       }
       if (pos===tokens.length && tokens[pos-1].type!==CLOSEPAREN) {
+        logger.error("Mismatched parens");
         return null;
       }
-      var result = handler.parenExpression(parseExpressionWithHandler(tokens.slice(1,pos-1),handler));
+      var parenExp = parseExpressionWithHandler(tokens.slice(1,pos-1),handler);
+      if (parenExp === null) {
+        return null;
+      }
+      var result = handler.parenExpression(parenExp);
       // we're done - the whole thing was in parens
       // or what's in the parens is bad
       if (pos==tokens.length || result === null)

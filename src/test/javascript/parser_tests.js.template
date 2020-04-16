@@ -2,49 +2,204 @@ function ParserTests(display) {
   {{parser.js}}
   {{testing_compiler_pass.js}}
 
+  // List of code to parse, the expected calls into the handler,
+  // and the expected errors
+
+  // The testing compiler pass returns the number of
+  // an expression, so values that are from expressions
+  // refer to the order in which handler functions were called
   var expectations = [
     {
-      code: "PRINT \"Hello World!\"",
+      // Test simple print statements
+      description: "Simple PRINT statement",
+      code: "PRINT \"Hello World!\"\n" +
+            "PRINT\n" +
+            "PRINT \"No newline\";\n" +
+            "PRINT;\n" +
+            "PAUSE \"Press any key\"\n" +
+            "PAUSE\n" +
+            "PAUSE \"Press any key\";\n" +
+            "PAUSE;\n",
       parsed: [
         ["printString", "Hello World!", true, false],
-        ["finalize"]
-      ],
-      errors: []
-    },
-    {
-      code: "PRINT",
-      parsed: [
         ["printString", "", true, false],
+        ["printString", "No newline", false, false],
+        ["printString", "", false, false],
+        ["printString", "Press any key", true, true],
+        ["printString", "", true, true],
+        ["printString", "Press any key", false, true],
+        ["printString", "", false, true],
         ["finalize"]
       ],
       errors: []
     },
     {
-      code: "PRINT \"",
-      parsed: [["finalize"]],
-      errors: [[1, "unterminated string"]]
-    },
-    {
-      code: "REM this is a comment\n"+
-            "' comment 2\n"+
-            "REM\n"+
-            "'\n"+
-            "PRINT\n"+
-            "PRINT \"\n"+
-            "PRINT \"\"\"\n"+
-            "PRINT \"go\"",
+      description: "Comments",
+      code: "REM this is a comment\n" +
+            "' comment 2\n" +
+            "REM\n" +
+            "'\n",
       parsed: [
         ["comment","this is a comment"],
         ["comment","comment 2"],
         ["comment",""],
         ["comment",""],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Tokenizer Errors",
+      code: "PRINT\n" +
+            "PRINT \"\n" +
+            "PRINT \"\"\"\n" +
+            "% invalid line\n" +
+            "PRINT \"good\"",
+      parsed: [
         ["printString", "", true, false],
-        ["printString", "go", true, false],
+        ["printString", "good", true, false],
         ["finalize"]
       ],
       errors: [
-        [6, "unterminated string"],
-        [7, "unterminated string"]
+        [2, "unterminated string"],
+        [3, "unterminated string"],
+        [4, "unrecognized character"]
+      ]
+    },
+    {
+      description: "PRINT paren expression",
+      code: "PRINT (\"parens\")\n" +
+        "PRINT (\"parens\");\n" +
+        "PAUSE (\"parens\")\n" +
+        "PAUSE (\"parens\");\n",
+      parsed: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["printExp", 1, true, false],
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 3],
+        ["printExp", 4, false, false],
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 6],
+        ["printExp", 7, true, true],
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 9],
+        ["printExp", 10, false, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string concatenation expression",
+      code: "PRINT \"string\" + \"concatenation\"\n" +
+        "PRINT \"string\"+\"concatenation\";\n" +
+        "PAUSE \"string\" + \"concatenation\"\n" +
+        "PAUSE \"string\"+\"concatenation\";\n",
+      parsed: [
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, true, false],
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 4, 5],
+        ["printExp", 6, false, false],
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 8, 9],
+        ["printExp", 10, true, true],
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 12, 13],
+        ["printExp", 14, false, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string multi concatenation expression",
+      code: "PRINT \"multi\" + \"string\" + \"concatenation\"\n" ,
+      parsed: [
+        ["stringLiteralExpression", "multi"],
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 1, 2],
+        ["additionExpression", 0, 3],
+        ["printExp", 4, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string multi parents expression",
+      code: "PRINT ((\"parens\"))\n",
+      parsed: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["parenExpression", 1],
+        ["printExp", 2, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string parens concatenation expression",
+      code: "PRINT (\"string\" + \"concatenation\")\n" ,
+      parsed: [
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 0, 1],
+        ["parenExpression", 2],
+        ["printExp", 3, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string variable expression",
+      code: "PRINT text\n" ,
+      parsed: [
+        ["variableExpression", "TEXT"],
+        ["printExp", 0, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string variable expression concatenation",
+      code: "PRINT variable+\"literal\"\n" ,
+      parsed: [
+        ["variableExpression", "VARIABLE"],
+        ["stringLiteralExpression", "literal"],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string parens expression concatenation",
+      code: "PRINT (variable)\n" ,
+      parsed: [
+        ["variableExpression", "VARIABLE"],
+        ["parenExpression", 0],
+        ["printExp", 1, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string expression errors",
+      code: "PRINT >\n" +
+        "PRINT (>)\n" +
+        "PRINT (\"mismatch\"",
+      parsed: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid expression"],
+        [2, "Invalid expression"],
+        [3, "Invalid expression"]
       ]
     }
   ];
@@ -77,20 +232,32 @@ function ParserTests(display) {
   }
 
   function printParseMismatch(expectation, handlerLog) {
-    display.print("Parser gave unexpected results for the following code:\n");
-    display.print(expectation.code+"\n");
+    display.setColor(4);
+    display.print("Parser gave unexpected results for test "+expectation.description+":\n");
+    display.setColor(7);
+    display.print(expectation.code+"\n\n");
+    display.setColor(15);
     display.print("expected:\n")
+    display.setColor(7);
     display.print(expectation.parsed.join("\n")+"\n");
+    display.setColor(15);
     display.print("got:\n")
+    display.setColor(7);
     display.print(handlerLog.join("\n")+"\n\n");
   }
 
   function printErrorMismatch(expectation, errorLog) {
-    display.print("Parser gave unexpected errors for the following code:\n");
+    display.setColor(4);
+    display.print("Parser gave unexpected errors for test "+expectation.description+":\n");
+    display.setColor(7);
     display.print(expectation.code+"\n");
+    display.setColor(15);
     display.print("expected:\n")
+    display.setColor(7);
     display.print(expectation.errors.join("\n")+"\n");
+    display.setColor(15);
     display.print("got:\n")
+    display.setColor(7);
     display.print(errorLog.join("\n")+"\n\n");
   }
 
