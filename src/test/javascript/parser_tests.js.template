@@ -357,6 +357,34 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "Expression errors",
+      code: "A = ABS()\n" +
+        "A = ABS\n" +
+        "A = ABS(\n" +
+        "A = ABS)\n" +
+        "A = ABS 7\n" +
+        "A = RANDOM()\n" +
+        "A = RANDOM(,)\n" +
+        "A = RANDOM(100,)\n" +
+        "A = RANDOM(100)\n" +
+        "A = RANDOM(,100)\n",
+      parsed: [["finalize"]],
+      errors: [
+        [1, "Missing param"],
+        [2, "Missing param"],
+        [3, "Missing param"],
+        [4, "Missing param"],
+        [5, "Missing param"],
+        [6, "Missing first param"],
+        [6, "Missing second param"],
+        [7, "Missing first param"],
+        [7, "Missing second param"],
+        [8, "Missing second param"],
+        [9, "Missing second param"],
+        [10, "Missing first param"],
+      ]
     }
   ];
 

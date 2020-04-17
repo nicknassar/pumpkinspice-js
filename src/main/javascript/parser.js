@@ -200,6 +200,9 @@ function Parser(handlers,logger){
     }
   }
 
+  function isPredefinedFunction(identifier) {
+    return ['ABS','CINT','FIX','INT','LEFT$','LEN','RIGHT$','STR$','VAL','RANDOM'].indexOf(identifier)!=-1;
+  }
   function parseLineWithHandler(handler,tokens,num) {
     function boolExpression(tokens) {
       // Given tokens for a boolean expression, return
@@ -568,8 +571,12 @@ function Parser(handlers,logger){
 
         } else if (tokens.length>=3 && tokens[1].type===EQUALS &&
                    tokens[1].value==='=') {
-          return handler.letStatement(tokens[0].value,
-                                      expression(tokens.slice(2,tokens.length), handler));
+          var letExp = expression(tokens.slice(2,tokens.length), handler);
+          if (letExp === null) {
+            return false;
+          } else {
+            return handler.letStatement(tokens[0].value, letExp);
+          }
         } else {
           logger.error("I do not recognize "+tokens[0].value);
           return false;
@@ -603,6 +610,7 @@ function Parser(handlers,logger){
     }
 
     if (tokens.length === 0) {
+      logger.error("No expression found");
       return null;
     } else if (tokens.length === 1) {
       if (tokens[0].type===NUMERIC){
@@ -615,6 +623,9 @@ function Parser(handlers,logger){
       } else if (tokens[0].type===IDENTIFIER) {
         if (tokens[0].value==='PI') {
           return handler.piBuiltinExpression();
+        } if (isPredefinedFunction(tokens[0].value)) {
+          logger.error("Function "+tokens[0].value+" needs parameters enclosed in parentheses");
+          return null;
         } else {
           return handler.variableExpression(tokens[0].value);
         }
@@ -623,9 +634,12 @@ function Parser(handlers,logger){
         return null;
       }
       // Predefined functions
-      // XXX add isPredefinedFunction() instead of listing them all
-    } else if (tokens.length >= 3 && tokens[0].type===IDENTIFIER &&
-               tokens[1].type===OPENPAREN && (['ABS','CINT','FIX','INT','LEFT$','LEN','RIGHT$','STR$','VAL','RANDOM'].indexOf(tokens[0].value)!=-1)) {
+    } else if (tokens[0].type===IDENTIFIER &&isPredefinedFunction(tokens[0].value)) {
+      if (tokens.length < 3 || tokens[1].type!==OPENPAREN) {
+        logger.error("Function "+tokens[0].value+" expects parameters between parantheses");
+        return null;
+      }
+
       // Find the matching paren
       var i;
       var depth = 1;
@@ -637,54 +651,72 @@ function Parser(handlers,logger){
         }
       }
       // No closing paren
-      if (depth >= tokens.length) {
-        logger.error("No closing paren for function "+tokens[0].value);
+      if (depth > 0) {
+        logger.error("No closing parenthesis for function "+tokens[0].value);
         return null;
       }
-      var paramTypes;
-      var paramExp;
+      // No closing paren
+      if (depth < 0) {
+        logger.error("Too many closing parentheses for function "+tokens[0].value);
+        return null;
+      }
+
+      var head;
       if (['LEFT$','RIGHT$','RANDOM'].indexOf(tokens[0].value)!=-1) {
         // 2 params
         var j;
         var parenCount = 0;
-        for (j=1;j<i && tokens[j].type !== COMMA || parenCount !== 1;j++) {if (tokens[j].type===OPENPAREN) parenCount++;if (tokens[j].type===CLOSEPAREN) parenCount--;}
-        paramExp = [expression(tokens.slice(2,j), handler),
-                    expression(tokens.slice(j+1,i-1), handler)];
+        for (j=1;j<(i-1) && (tokens[j].type !== COMMA || parenCount !== 1);j++) {
+          if (tokens[j].type===OPENPAREN)
+            parenCount++;
+          if (tokens[j].type===CLOSEPAREN)
+            parenCount--;
+        }
+        var firstParam = tokens.slice(2,j);
+        var secondParam = tokens.slice(j+1,i-1);
+        if (firstParam.length == 0 || secondParam.length == 0) {
+          if (firstParam.length == 0)
+            logger.error("First parameter of "+tokens[0].value+" is missing");
+          if (secondParam.length == 0)
+            logger.error("Second parameter of "+tokens[0].value+" is missing");
+          return null;
+        }
+        firstParam = expression(firstParam, handler);
+        secondParam = expression(secondParam, handler);
+        if (tokens[0].value === 'LEFT$') {
+          head = handler.leftzBuiltinExpression(firstParam, secondParam);
+        } else if (tokens[0].value === 'RIGHT$') {
+          head = handler.rightzBuiltinExpression(firstParam, secondParam);
+        } else if (tokens[0].value === 'RANDOM') {
+          head = handler.randomBuiltinExpression(firstParam, secondParam);
+        }
       } else {
         // Single param
-        paramTypes = (['LEN','VAL'].indexOf(tokens[0].value)!=-1)?[STRING]:[NUMERIC];
-        paramExp = [expression(tokens.slice(2,i-1), handler)];
-      }
-      for (var p=0;p<paramExp.length;p++) {
-        if (paramExp[p]===null) {
+        var param = tokens.slice(2,i-1);
+        if (param.length == 0) {
+          logger.error("Parameter of "+tokens[0].value+" is missing");
           return null;
+        }
+        param = expression(param, handler);
+        if (tokens[0].value === 'ABS') {
+          head = handler.absBuiltinExpression(param);
+        } else if (tokens[0].value === 'CINT') {
+          head = handler.cintBuiltinExpression(param);
+        } else if (tokens[0].value === 'FIX') {
+          head = handler.fixBuiltinExpression(param);
+        } else if (tokens[0].value === 'INT') {
+          head = handler.intBuiltinExpression(param);
+        } else if (tokens[0].value === 'LEN') {
+          head = handler.lenBuiltinExpression(param);
+        } else if (tokens[0].value === 'STR$') {
+          head = handler.strzBuiltinExpression(param);
+        } else if (tokens[0].value === 'VAL') {
+          head = handler.valBuiltinExpression(param);
         }
       }
       // XXX Consider adding MID$()
       // MID$(x$,n[,m]) To return a string of m characters from x$ beginning with the nth character. n >= 1 - MID$(x$,1,n) is LEFT$(x$,n)
 
-      var head;
-      if (tokens[0].value === 'ABS') {
-        head = handler.absBuiltinExpression(paramExp[0]);
-      } else if (tokens[0].value === 'CINT') {
-        head = handler.cintBuiltinExpression(paramExp[0]);
-      } else if (tokens[0].value === 'FIX') {
-        head = handler.fixBuiltinExpression(paramExp[0]);
-      } else if (tokens[0].value === 'INT') {
-        head = handler.intBuiltinExpression(paramExp[0]);
-      } else if (tokens[0].value === 'LEN') {
-        head = handler.lenBuiltinExpression(paramExp[0]);
-      } else if (tokens[0].value === 'STR$') {
-        head = handler.strzBuiltinExpression(paramExp[0]);
-      } else if (tokens[0].value === 'VAL') {
-        head = handler.valBuiltinExpression(paramExp[0]);
-      } else if (tokens[0].value === 'LEFT$') {
-        head = handler.leftzBuiltinExpression(paramExp[0],paramExp[1]);
-      } else if (tokens[0].value === 'RIGHT$') {
-        head = handler.rightzBuiltinExpression(paramExp[0],paramExp[1]);
-      } else if (tokens[0].value === 'RANDOM') {
-        head = handler.randomBuiltinExpression(paramExp[0],paramExp[1]);
-      }
 
       // There is nothing following this function
       if (i == tokens.length) {
