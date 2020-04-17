@@ -157,9 +157,9 @@ function ParserTests(display) {
     },
     {
       description: "PRINT string variable expression",
-      code: "PRINT text\n" ,
+      code: "PRINT variable\n" ,
       parsed: [
-        ["variableExpression", "TEXT"],
+        ["variableExpression", "VARIABLE"],
         ["printExp", 0, true, false],
         ["finalize"]
       ],
@@ -178,7 +178,7 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string parens expression concatenation",
+      description: "PRINT string parens variable expression",
       code: "PRINT (variable)\n" ,
       parsed: [
         ["variableExpression", "VARIABLE"],
@@ -201,6 +201,22 @@ function ParserTests(display) {
         [2, "Invalid expression"],
         [3, "Invalid expression"]
       ]
+    },
+    {
+      description: "Assignment",
+      code: "A = B\n" +
+        "C = 7\n" +
+        "D = \"string\"\n",
+      parsed: [
+        ["variableExpression","B"],
+        ["letStatement", "A", 0],
+        ["numericLiteralExpression", 7],
+        ["letStatement", "C", 2],
+        ["stringLiteralExpression", "string"],
+        ["letStatement", "D", 4],
+        ["finalize"]
+      ],
+      errors: []
     }
   ];
 

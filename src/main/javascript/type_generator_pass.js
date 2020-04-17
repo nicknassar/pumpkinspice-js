@@ -183,7 +183,7 @@ function TypeGeneratorPass(typeManager, logger) {
 
     }
 
-    function letStatement(varExp,valueExp,num) {
+    function letStatement(varExp,valueExp) {
       if (varExp === null || valueExp === null) {
         logger.error("Type mismatch for assignment to "+varExp);
         return false;

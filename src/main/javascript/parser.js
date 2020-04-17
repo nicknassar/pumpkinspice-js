@@ -572,7 +572,7 @@ function Parser(handlers,logger){
         } else if (tokens.length>=3 && tokens[1].type===EQUALS &&
                    tokens[1].value==='=') {
           return handler.letStatement(tokens[0].value,
-                                      expression(tokens.slice(2,tokens.length)),num);
+                                      expression(tokens.slice(2,tokens.length)));
         } else {
           logger.error("I do not recognize "+tokens[0].value);
           return false;

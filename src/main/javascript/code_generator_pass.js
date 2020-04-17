@@ -903,7 +903,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
       return true;
     }
-    function letStatement(varname,exp,num) {
+    function letStatement(varname,exp) {
       if (!varname) {
         logger.error("Invalid expression assigned to "+varname);
         return false;
