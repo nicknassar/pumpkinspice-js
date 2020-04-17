@@ -306,6 +306,57 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      //'ABS','CINT','FIX','INT','LEFT$','LEN','RIGHT$','STR$','VAL','RANDOM'
+      description: "Assignment of built-in functions",
+      code: "A = ABS(100)\n" +
+        "A = CINT(100)\n" +
+        "A = FIX(100)\n" +
+        "A = INT(100)\n" +
+        "A = LEFT$(\"string\", 1)\n" +
+        "A = RIGHT$(\"string\", 1)\n" +
+        "A = LEN(\"string\")\n" +
+        "A = STR$(100)\n" +
+        "A = VAL(\"100\")\n" +
+        "A = RANDOM(100, 200)\n",
+      parsed: [
+        ["numericLiteralExpression", 100],
+        ["absBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["numericLiteralExpression", 100],
+        ["cintBuiltinExpression", 3],
+        ["letStatement", "A", 4],
+        ["numericLiteralExpression", 100],
+        ["fixBuiltinExpression", 6],
+        ["letStatement", "A", 7],
+        ["numericLiteralExpression", 100],
+        ["intBuiltinExpression", 9],
+        ["letStatement", "A", 10],
+        ["stringLiteralExpression", "string"],
+        ["numericLiteralExpression", 1],
+        ["leftzBuiltinExpression", 12, 13],
+        ["letStatement", "A", 14],
+        ["stringLiteralExpression", "string"],
+        ["numericLiteralExpression", 1],
+        ["rightzBuiltinExpression", 16, 17],
+        ["letStatement", "A", 18],
+        ["stringLiteralExpression", "string"],
+        ["lenBuiltinExpression", 20],
+        ["letStatement", "A", 21],
+        ["numericLiteralExpression", 100],
+        ["strzBuiltinExpression", 23],
+        ["letStatement", "A", 24],
+        ["stringLiteralExpression", "100"],
+        ["valBuiltinExpression", 26],
+        ["letStatement", "A", 27],
+        ["numericLiteralExpression", 100],
+        ["numericLiteralExpression", 200],
+        ["randomBuiltinExpression", 29, 30],
+        ["letStatement", "A", 31],
+        ["finalize"]
+      ],
+      errors: []
     }
   ];
 

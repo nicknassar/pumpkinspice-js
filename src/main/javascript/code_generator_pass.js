@@ -1053,21 +1053,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
         return null;
       }
 
-      function validateStringSubExpression(result) {
-        if (!result || result.resultType !== STRING_TYPE) {
-          return null;
-        } else {
-          return result;
-        }
-      }
-      function validateNumericSubExpression(result) {
-        if (!result || result.resultType !== NUMERIC_TYPE) {
-          return null;
-        } else {
-          return result;
-        }
-      }
-
       function cintBuiltinExpression(p) {
         return numericExpressionWithSubs('Math.ceil('+p.value+')',p.subs);
       }
@@ -1140,18 +1125,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
         return boolBinaryExpression('!==',exp1,exp2);
       }
       function callSubroutineExpression(name,argExps) {
-	// Check the types of the argument expressions
-	for (var i = 0; i < argExps.length ; i++) {
-	  if (typeManager.subArgHasStringType(name,i))
-	    argExps[i] = validateStringSubExpression(argExps[i]);
-	  else if (typeManager.subArgHasNumericType(name,i))
-	    argExps[i] = validateNumericSubExpression(argExps[i]);
-	  else if (!typeManager.subArgHasUndefinedType(name,i)) {
-	    logger.error("Invalid type for subroutine "+name+" argument "+i);
-	    argExps[i] = null;
-	  }
-	}
-
 	// subroutine results are saved in a temp variable
 	var temp = nextExpressionSubroutineName();
 	// Expressions have a list of subroutines the need to be called
@@ -1249,8 +1222,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
     randomBuiltinExpression: randomBuiltinExpression,
     piBuiltinExpression: piBuiltinExpression,
     variableExpression: variableExpression,
-    validateStringSubExpression: validateStringSubExpression,
-    validateNumericSubExpression: validateNumericSubExpression,
     cintBuiltinExpression: cintBuiltinExpression,
     intBuiltinExpression: intBuiltinExpression,
     fixBuiltinExpression: fixBuiltinExpression,

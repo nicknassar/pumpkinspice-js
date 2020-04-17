@@ -201,9 +201,6 @@ function Parser(handlers,logger){
   }
 
   function parseLineWithHandler(handler,tokens,num) {
-    function expression(tokens) {
-      return parseExpressionWithHandler(tokens,handler);
-    };
     function boolExpression(tokens) {
       // Given tokens for a boolean expression, return
       // bool expression
@@ -285,8 +282,8 @@ function Parser(handlers,logger){
         {
           endpos++;
         }
-        var exp1=expression(tokens.slice(0,pos));
-        var exp2=expression(tokens.slice(pos+1,endpos));
+        var exp1=expression(tokens.slice(0,pos), handler);
+        var exp2=expression(tokens.slice(pos+1,endpos), handler);
         if (!exp1 || !exp2)
           return null;
 	var opType = tokens[pos].type;
@@ -356,7 +353,7 @@ function Parser(handlers,logger){
           } else if (tokens.length === 1 && tokens[0].type === STRING)
             return handler.printString(tokens[0].value,newline,pause);
           else {
-            var printExp = expression(tokens);
+            var printExp = expression(tokens, handler);
             if (printExp === null) {
               return null;
             } else {
@@ -429,7 +426,7 @@ function Parser(handlers,logger){
 	      pos++;
 	    }
 
-            argExps.push(expression(tokens.slice(start,pos)));
+            argExps.push(expression(tokens.slice(start,pos), handler));
             pos++; // skip the comma
             start = pos;
           }
@@ -439,7 +436,7 @@ function Parser(handlers,logger){
           return handler.endSubroutine(num);
 
         } else if (tokens[0].value==='RETURN' && tokens.length >= 2) {
-          return handler.returnStatement(expression(tokens.slice(1,tokens.length)),num);
+          return handler.returnStatement(expression(tokens.slice(1,tokens.length), handler),num);
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
           return handler.endRandom(num);
@@ -460,7 +457,7 @@ function Parser(handlers,logger){
           return handler.askPromptColor(tokens[3].value,num);
 
         } else if (tokens[0].value==='ASK' && tokens.length >= 2) {
-          return handler.beginAsk(expression(tokens.slice(1,tokens.length)),num);
+          return handler.beginAsk(expression(tokens.slice(1,tokens.length), handler),num);
 
         } else if (tokens[0].value==='DEFAULT' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'NO') {
           return handler.askDefault(false,num);
@@ -478,7 +475,7 @@ function Parser(handlers,logger){
           return handler.endAsk(num);
 
         } else if (tokens[0].value==='BEGIN' && tokens.length > 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'MENU') {
-          return handler.beginMenu(expression(tokens.slice(2,tokens.length)),num);
+          return handler.beginMenu(expression(tokens.slice(2,tokens.length), handler),num);
 
         } else if (tokens[0].value==='MENU' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'COLOR' && tokens[2].type===NUMERIC) {
           return handler.menuColor(tokens[2].value,num);
@@ -503,9 +500,9 @@ function Parser(handlers,logger){
           return handler.endMenu(num);
 
         } else if (tokens[0].value==='CHOICE' && tokens.length > 2 && tokens[1].type === IDENTIFIER) {
-          return handler.menuChoice(tokens[1].value,expression(tokens.slice(2,tokens.length)),num);
+          return handler.menuChoice(tokens[1].value,expression(tokens.slice(2,tokens.length), handler),num);
         } else if (tokens[0].value==='CHOICE' && tokens.length > 2 && tokens[1].type === NUMERIC) {
-          return handler.menuChoice((tokens[1].value).toString(10),expression(tokens.slice(2,tokens.length)),num);
+          return handler.menuChoice((tokens[1].value).toString(10),expression(tokens.slice(2,tokens.length), handler),num);
 
         } else if (tokens[0].value==='WHILE') {
           var exp2end;
@@ -534,13 +531,13 @@ function Parser(handlers,logger){
           return handler.elseStatement(num);
 
         } else if (tokens[0].value==='COLOR') {
-          return handler.color(expression(tokens.slice(1,tokens.length)),num);
+          return handler.color(expression(tokens.slice(1,tokens.length), handler),num);
 
         } else if (tokens[0].value==='BGCOLOR') {
-          return handler.bgColor(expression(tokens.slice(1,tokens.length)),num);
+          return handler.bgColor(expression(tokens.slice(1,tokens.length), handler),num);
 
         } else if (tokens[0].value==='SLEEP') {
-          return handler.sleep(expression(tokens.slice(1,tokens.length)),num);
+          return handler.sleep(expression(tokens.slice(1,tokens.length), handler),num);
         } else if (tokens[0].value==='INPUT') {
           if (tokens.length !== 2 || tokens[1].type !== IDENTIFIER) {
             logger.error("Invalid INPUT");
@@ -549,7 +546,7 @@ function Parser(handlers,logger){
             return handler.input(tokens[1].value,num);
           }
         } else if (tokens[0].value==='PLAY') {
-          return handler.play(expression(tokens.slice(1,tokens.length)),num);
+          return handler.play(expression(tokens.slice(1,tokens.length), handler),num);
         } else if (tokens[0].value==='FOR') {
           if(!(tokens.length>=6 && tokens[2].type === EQUALS && tokens[2].value === '=' && tokens[1].type === IDENTIFIER)) {
             logger.error("Invalid FOR");
@@ -566,13 +563,13 @@ function Parser(handlers,logger){
             logger.error("Missing TO in FOR");
             return false;
           }
-          return handler.forStatement(tokens[1].value, expression(tokens.slice(3,pos)),
-                                      expression(tokens.slice(pos+1,tokens.length)),num);
+          return handler.forStatement(tokens[1].value, expression(tokens.slice(3,pos), handler),
+                                      expression(tokens.slice(pos+1,tokens.length), handler),num);
 
         } else if (tokens.length>=3 && tokens[1].type===EQUALS &&
                    tokens[1].value==='=') {
           return handler.letStatement(tokens[0].value,
-                                      expression(tokens.slice(2,tokens.length)));
+                                      expression(tokens.slice(2,tokens.length), handler));
         } else {
           logger.error("I do not recognize "+tokens[0].value);
           return false;
@@ -592,19 +589,7 @@ function Parser(handlers,logger){
     return true;
   }
 
-  function parseExpressionWithHandler(tokens,handler) {
-    function subExpression(tokens,type) {
-      var exp = parseExpressionWithHandler(tokens,handler);
-
-      // XXX Type related code does not belong here, phase out validate
-      //     code here, move it to type generator pass
-      if (type === NUMERIC)
-	return handler.validateNumericSubExpression(exp);
-      else if (type === STRING)
-	return handler.validateStringSubExpression(exp);
-      else
-	return exp;
-    };
+  function expression(tokens, handler) {
     function binaryExpression(expType,head,tail) {
       if (expType === PLUS) {
         return handler.additionExpression(head,tail);
@@ -660,19 +645,15 @@ function Parser(handlers,logger){
       var paramExp;
       if (['LEFT$','RIGHT$','RANDOM'].indexOf(tokens[0].value)!=-1) {
         // 2 params
-        if (tokens[0].value === 'RANDOM')
-          paramTypes = [NUMERIC,NUMERIC];
-        else
-          paramTypes = [STRING,NUMERIC];
         var j;
         var parenCount = 0;
         for (j=1;j<i && tokens[j].type !== COMMA || parenCount !== 1;j++) {if (tokens[j].type===OPENPAREN) parenCount++;if (tokens[j].type===CLOSEPAREN) parenCount--;}
-        paramExp = [subExpression(tokens.slice(2,j),paramTypes[0]),
-                    subExpression(tokens.slice(j+1,i-1),paramTypes[1])];
+        paramExp = [expression(tokens.slice(2,j), handler),
+                    expression(tokens.slice(j+1,i-1), handler)];
       } else {
         // Single param
         paramTypes = (['LEN','VAL'].indexOf(tokens[0].value)!=-1)?[STRING]:[NUMERIC];
-        paramExp = [subExpression(tokens.slice(2,i-1),paramTypes[0])];
+        paramExp = [expression(tokens.slice(2,i-1), handler)];
       }
       for (var p=0;p<paramExp.length;p++) {
         if (paramExp[p]===null) {
@@ -711,7 +692,7 @@ function Parser(handlers,logger){
         // There is a binary operator following this function
       } else if (tokens[i].type === PLUS ||tokens[i].type === MINUS ||
                  tokens[i].type === TIMES || tokens[i].type === DIV) {
-        var tail = parseExpressionWithHandler(tokens.slice(i+1),handler);
+        var tail = expression(tokens.slice(i+1),handler);
         if (tail === null) {
           return null;
         }
@@ -734,7 +715,7 @@ function Parser(handlers,logger){
 	    parendepth--;
           pos++;
 	}
-        argExps.push(parseExpressionWithHandler(tokens.slice(start,pos),handler));
+        argExps.push(expression(tokens.slice(start,pos),handler));
         pos++; // skip the comma
         start = pos;
       }
@@ -746,14 +727,14 @@ function Parser(handlers,logger){
         logger.error("Invalid numeric expression");
         return null
       }
-      return subExpression(tokens.slice(1,tokens.length),null);
+      return expression(tokens.slice(1,tokens.length), handler);
     } else if (tokens.length >= 2 && tokens[0].type===MINUS && tokens[1].type===NUMERIC) {
       // A numeric expression starting with minus
       if (tokens.length > 2) {
         logger.error("Invalid numeric expression");
         return null
       }
-      return subExpression([{type:NUMERIC,value:("-"+tokens[1].value)}].concat(tokens.slice(2,tokens.length)),null);
+      return expression([{type:NUMERIC,value:("-"+tokens[1].value)}].concat(tokens.slice(2,tokens.length)), handler);
     } else if (tokens[0].type===OPENPAREN) {
       var openparens=1;
       var pos = 1;
@@ -769,7 +750,7 @@ function Parser(handlers,logger){
         logger.error("Mismatched parens");
         return null;
       }
-      var parenExp = parseExpressionWithHandler(tokens.slice(1,pos-1),handler);
+      var parenExp = expression(tokens.slice(1,pos-1),handler);
       if (parenExp === null) {
         return null;
       }
@@ -782,13 +763,13 @@ function Parser(handlers,logger){
       // There's a binary operator after this
       if (tokens[pos].type === MINUS ||
           tokens[pos].type === TIMES || tokens[pos].type === DIV) {
-        var tail = subExpression(tokens.slice(pos+1,tokens.length), null);
+        var tail = expression(tokens.slice(pos+1,tokens.length), handler);
         if (tail === null)
           return null;
         else
           return binaryExpression(tokens[pos].type,result,tail);
       } else if (tokens[pos].type === PLUS) {
-        var tail = parseExpressionWithHandler(tokens.slice(pos+1,tokens.length),handler);
+        var tail = expression(tokens.slice(pos+1,tokens.length),handler);
         if (tail===null)
           return null;
         return binaryExpression(tokens[pos].type,
@@ -802,20 +783,20 @@ function Parser(handlers,logger){
     } else if (tokens[1].type === PLUS || tokens[1].type === MINUS ||
                tokens[1].type === TIMES || tokens[1].type === DIV) {
       if (tokens[1].type === PLUS) {
-        var head = parseExpressionWithHandler([tokens[0]],handler);
+        var head = expression([tokens[0]],handler);
         if (head===null)
           return null;
-        var tail = parseExpressionWithHandler(tokens.slice(2,tokens.length),handler);
+        var tail = expression(tokens.slice(2,tokens.length),handler);
         if (tail===null)
           return null;
         return binaryExpression(tokens[1].type,
                                         head,
                                         tail);
       } else {
-        var head = subExpression([tokens[0]],null);
+        var head = expression([tokens[0]], handler);
         if (head===null)
           return null;
-        var tail = subExpression(tokens.slice(2,tokens.length),null);
+        var tail = expression(tokens.slice(2,tokens.length), handler);
         if (tail===null)
           return null;
         return binaryExpression(tokens[1].type,head,tail);

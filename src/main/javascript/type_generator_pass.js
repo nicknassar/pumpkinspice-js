@@ -301,10 +301,38 @@ function TypeGeneratorPass(typeManager, logger) {
         return typeManager.callSubroutineExpression(name, argExps);
       }
 
-    var expressionHandler = {
-
-    };
-
+  function numericToNumericFunction(exp) {
+    if (validateNumericSubExpression(exp) !== null)
+      return typeManager.numericTypeIndicator();
+    else
+      return null;
+  }
+  function numericNumericToNumericFunction(exp1, exp2) {
+    if (validateNumericSubExpression(exp1) !== null &&
+        validateNumericSubExpression(exp2) !== null)
+      return typeManager.numericTypeIndicator();
+    else
+      return null;
+  }
+  function stringNumericToStringFunction(exp1, exp2) {
+    if (validateStringSubExpression(exp1) !== null &&
+        validateNumericSubExpression(exp2) !== null)
+      return typeManager.stringTypeIndicator();
+    else
+      return null;
+  }
+  function stringToNumericFunction(exp) {
+    if (validateStringSubExpression(exp) !== null)
+      return typeManager.numericTypeIndicator();
+    else
+      return null;
+  }
+  function numericToStringFunction(exp) {
+    if (validateNumericSubExpression(exp) !== null)
+      return typeManager.stringTypeIndicator();
+    else
+      return null;
+  }
 /***********************************************************************
   END Compiler Type Pass expression functions
 
@@ -365,20 +393,18 @@ function TypeGeneratorPass(typeManager, logger) {
     // Expressions
     numericLiteralExpression: typeManager.numericTypeIndicator,
     stringLiteralExpression: typeManager.stringTypeIndicator,
-    randomBuiltinExpression: typeManager.numericTypeIndicator,
+    randomBuiltinExpression: numericNumericToNumericFunction,
     piBuiltinExpression: typeManager.numericTypeIndicator,
     variableExpression: variableExpression,
-    validateNumericSubExpression: validateNumericSubExpression,
-    validateStringSubExpression: validateStringSubExpression,
-    cintBuiltinExpression: typeManager.numericTypeIndicator,
-    intBuiltinExpression: typeManager.numericTypeIndicator,
-    fixBuiltinExpression: typeManager.numericTypeIndicator,
-    absBuiltinExpression: typeManager.numericTypeIndicator,
-    strzBuiltinExpression: typeManager.stringTypeIndicator,
-    leftzBuiltinExpression: typeManager.stringTypeIndicator,
-    rightzBuiltinExpression: typeManager.stringTypeIndicator,
-    valBuiltinExpression: typeManager.numericTypeIndicator,
-    lenBuiltinExpression: typeManager.numericTypeIndicator,
+    cintBuiltinExpression: numericToNumericFunction,
+    intBuiltinExpression: numericToNumericFunction,
+    fixBuiltinExpression: numericToNumericFunction,
+    absBuiltinExpression: numericToNumericFunction,
+    strzBuiltinExpression: numericToStringFunction,
+    leftzBuiltinExpression: stringNumericToStringFunction,
+    rightzBuiltinExpression: stringNumericToStringFunction,
+    valBuiltinExpression: stringToNumericFunction,
+    lenBuiltinExpression: stringToNumericFunction,
     parenExpression: passthroughExpression,
     // XXX Bool expressions doesn't make sense. There is no boolean type
     //     They return the type of the expressions being compared
