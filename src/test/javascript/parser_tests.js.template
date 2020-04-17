@@ -217,6 +217,95 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "Assignment of binary expressions",
+      code: "A = 100+101\n" +
+        "A = 100-101\n" +
+        "A = 100*101\n" +
+        "A = 100/101\n",
+      parsed: [
+        ["numericLiteralExpression", 100],
+        ["numericLiteralExpression", 101],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["numericLiteralExpression", 100],
+        ["numericLiteralExpression", 101],
+        ["subtractionExpression", 4, 5],
+        ["letStatement", "A", 6],
+        ["numericLiteralExpression", 100],
+        ["numericLiteralExpression", 101],
+        ["multiplicationExpression", 8, 9],
+        ["letStatement", "A", 10],
+        ["numericLiteralExpression", 100],
+        ["numericLiteralExpression", 101],
+        ["divisionExpression", 12, 13],
+        ["letStatement", "A", 14],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal forms",
+      code: "A = +7\n" +
+        "A = -7\n" +
+        "A = .7\n" +
+        "A = +.7\n" +
+        "A = -.7\n" +
+        "A = 7.7\n" +
+        "A = -7.7\n" +
+        "A = +7.7\n",
+      parsed: [
+        ["numericLiteralExpression", 7],
+        ["letStatement", "A", 0],
+        ["numericLiteralExpression", -7],
+        ["letStatement", "A", 2],
+        ["numericLiteralExpression", 0.7],
+        ["letStatement", "A", 4],
+        ["numericLiteralExpression", 0.7],
+        ["letStatement", "A", 6],
+        ["numericLiteralExpression", -0.7],
+        ["letStatement", "A", 8],
+        ["numericLiteralExpression", 7.7],
+        ["letStatement", "A", 10],
+        ["numericLiteralExpression", -7.7],
+        ["letStatement", "A", 12],
+        ["numericLiteralExpression", 7.7],
+        ["letStatement", "A", 14],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of binary expressions after parens",
+      code: "A = (100)+101\n" +
+        "A = (100)-101\n" +
+        "A = (100)*101\n" +
+        "A = (100)/101\n",
+      parsed: [
+        ["numericLiteralExpression", 100],
+        ["parenExpression", 0],
+        ["numericLiteralExpression", 101],
+        ["additionExpression", 1, 2],
+        ["letStatement", "A", 3],
+        ["numericLiteralExpression", 100],
+        ["parenExpression", 5],
+        ["numericLiteralExpression", 101],
+        ["subtractionExpression", 6, 7],
+        ["letStatement", "A", 8],
+        ["numericLiteralExpression", 100],
+        ["parenExpression", 10],
+        ["numericLiteralExpression", 101],
+        ["multiplicationExpression", 11, 12],
+        ["letStatement", "A", 13],
+        ["numericLiteralExpression", 100],
+        ["parenExpression", 15],
+        ["numericLiteralExpression", 101],
+        ["divisionExpression", 16, 17],
+        ["letStatement", "A", 18],
+        ["finalize"]
+      ],
+      errors: []
     }
   ];
 

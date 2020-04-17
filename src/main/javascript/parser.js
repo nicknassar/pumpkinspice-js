@@ -595,12 +595,15 @@ function Parser(handlers,logger){
   function parseExpressionWithHandler(tokens,handler) {
     function subExpression(tokens,type) {
       var exp = parseExpressionWithHandler(tokens,handler);
+
+      // XXX Type related code does not belong here, phase out validate
+      //     code here, move it to type generator pass
       if (type === NUMERIC)
 	return handler.validateNumericSubExpression(exp);
       else if (type === STRING)
 	return handler.validateStringSubExpression(exp);
       else
-	return null;
+	return exp;
     };
     function binaryExpression(expType,head,tail) {
       if (expType === PLUS) {
@@ -739,10 +742,18 @@ function Parser(handlers,logger){
 
     } else if (tokens.length >= 2 && tokens[0].type===PLUS && tokens[1].type===NUMERIC) {
       // A numeric expression starting with plus
-      return subExpression(tokens.slice(1,tokens.length),NUMERIC);
+      if (tokens.length > 2) {
+        logger.error("Invalid numeric expression");
+        return null
+      }
+      return subExpression(tokens.slice(1,tokens.length),null);
     } else if (tokens.length >= 2 && tokens[0].type===MINUS && tokens[1].type===NUMERIC) {
       // A numeric expression starting with minus
-      return subExpression([{type:NUMERIC,value:("-"+tokens[1].value)}].concat(tokens.slice(2,tokens.length)),NUMERIC);
+      if (tokens.length > 2) {
+        logger.error("Invalid numeric expression");
+        return null
+      }
+      return subExpression([{type:NUMERIC,value:("-"+tokens[1].value)}].concat(tokens.slice(2,tokens.length)),null);
     } else if (tokens[0].type===OPENPAREN) {
       var openparens=1;
       var pos = 1;
@@ -771,7 +782,7 @@ function Parser(handlers,logger){
       // There's a binary operator after this
       if (tokens[pos].type === MINUS ||
           tokens[pos].type === TIMES || tokens[pos].type === DIV) {
-        var tail = subExpression(tokens.slice(pos+1,tokens.length),NUMERIC);
+        var tail = subExpression(tokens.slice(pos+1,tokens.length), null);
         if (tail === null)
           return null;
         else
@@ -801,10 +812,10 @@ function Parser(handlers,logger){
                                         head,
                                         tail);
       } else {
-        var head = subExpression([tokens[0]],NUMERIC);
+        var head = subExpression([tokens[0]],null);
         if (head===null)
           return null;
-        var tail = subExpression(tokens.slice(2,tokens.length),NUMERIC);
+        var tail = subExpression(tokens.slice(2,tokens.length),null);
         if (tail===null)
           return null;
         return binaryExpression(tokens[1].type,head,tail);
