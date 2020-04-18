@@ -409,6 +409,46 @@ function ParserTests(display) {
         [10, "Missing first param"],
         [11, "Invalid expression"]
       ]
+    },
+    {
+      description: "Subroutine basics",
+      code: "SUBROUTINE foo\n" +
+        "END SUBROUTINE\n" +
+        "SUBROUTINE Bar Biz\n" +
+        "END SUBROUTINE\n" +
+        "SUBROUTINE BOOZ GIN, rum\n" +
+        "END SUBROUTINE\n" +
+        "CALL Foo\n" +
+        "CALL BAR None\n" +
+        "CALL booz 12, \"boo\"\n"+
+        "A = CALL FOO\n" +
+        "A = CALL bar None\n" +
+        "A = CALL Booz 12, \"boo\"\n",
+      parsed: [
+        ["beginSubroutine", "FOO", []],
+        ["endSubroutine"],
+        ["beginSubroutine", "BAR", ["BIZ"]],
+        ["endSubroutine"],
+        ["beginSubroutine", "BOOZ", ["GIN", "RUM"]],
+        ["endSubroutine"],
+        ["callSubroutine", "FOO", []],
+        ["variableExpression", "NONE"],
+        ["callSubroutine", "BAR", [7]],
+        ["numericLiteralExpression", 12],
+        ["stringLiteralExpression", "boo"],
+        ["callSubroutine", "BOOZ", [9, 10]],
+        ["callSubroutineExpression", "FOO", []],
+        ["letStatement", "A", 12],
+        ["variableExpression", "NONE"],
+        ["callSubroutineExpression", "BAR", [14]],
+        ["letStatement", "A", 15],
+        ["numericLiteralExpression", 12],
+        ["stringLiteralExpression", "boo"],
+        ["callSubroutineExpression", "BOOZ", [17, 18]],
+        ["letStatement", "A", 19],
+        ["finalize"]
+      ],
+      errors: []
     }
   ];
 
@@ -419,7 +459,15 @@ function ParserTests(display) {
       if (listA[i].length != listB[i].length)
         return false;
       for (var j=0;j<listA[i].length;j++) {
-        if (listA[i][j] != listB[i][j])
+        // Handle list parameters - for subroutine args, etc.
+        if (listA[i][j] && listA[i][j].push !== undefined) {
+          if (!listB[i][j] || listB[i][j].length != listA[i][j].length)
+            return false;
+          for (var k=0;k<listA[i][j].length;k++) {
+            if (listA[i][j][k] != listB[i][j][k])
+              return false;
+          }
+        } else if (listA[i][j] != listB[i][j])
           return false;
       }
     }
@@ -439,6 +487,34 @@ function ParserTests(display) {
     return true;
   }
 
+  function stringifyExpectedItem(item) {
+    var elements = [];
+    for (var i = 0;i<item.length;i++) {
+      var element = item[i];
+      if (element === null) {
+        elements.push("null");
+      } else if (element === undefined) {
+        elements.push("undefined");
+      } else if (element.length !== undefined) { // string or array
+        if (element.push !== undefined) { // array
+          elements.push("["+stringifyExpectedItem(element)+"]");
+        } else { // string
+          elements.push("\""+element.replace("\"","\\\"")+"\"");
+        }
+      } else {
+        elements.push(element);
+      }
+    }
+    return elements.join(", ");
+  }
+  function stringifyExpectedList(expected) {
+    var lines = [];
+    for (var i=0;i<expected.length;i++) {
+      lines.push(stringifyExpectedItem(expected[i]));
+    }
+    return lines.join("\n");
+  }
+
   function printParseMismatch(expectation, handlerLog) {
     display.setColor(4);
     display.print("Parser gave unexpected results for test "+expectation.description+":\n");
@@ -447,11 +523,11 @@ function ParserTests(display) {
     display.setColor(15);
     display.print("expected:\n")
     display.setColor(7);
-    display.print(expectation.parsed.join("\n")+"\n");
+    display.print(stringifyExpectedList(expectation.parsed)+"\n");
     display.setColor(15);
     display.print("got:\n")
     display.setColor(7);
-    display.print(handlerLog.join("\n")+"\n\n");
+    display.print(stringifyExpectedList(handlerLog)+"\n\n");
   }
 
   function printErrorMismatch(expectation, errorLog) {
@@ -462,11 +538,11 @@ function ParserTests(display) {
     display.setColor(15);
     display.print("expected:\n")
     display.setColor(7);
-    display.print(expectation.errors.join("\n")+"\n");
+    display.print(stringifyExpectedList(expectation.errors)+"\n");
     display.setColor(15);
     display.print("got:\n")
     display.setColor(7);
-    display.print(errorLog.join("\n")+"\n\n");
+    display.print(stringifyExpectedList(errorLog)+"\n\n");
   }
 
   function checkResults(expectation, handlerLog, errorLog) {

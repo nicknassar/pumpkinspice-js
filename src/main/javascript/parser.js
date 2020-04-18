@@ -413,7 +413,7 @@ function Parser(handlers,logger){
               }
             }
           }
-          return handler.beginSubroutine(tokens[1].value,args,num);
+          return handler.beginSubroutine(tokens[1].value,args);
         } else if (tokens[0].value==='CALL' && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
 	  // XXX this is duplicated in the expression handler
           var argExps = [];
@@ -433,10 +433,10 @@ function Parser(handlers,logger){
             pos++; // skip the comma
             start = pos;
           }
-          return handler.callSubroutine(tokens[1].value,argExps,num);
+          return handler.callSubroutine(tokens[1].value,argExps);
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'SUBROUTINE') {
-          return handler.endSubroutine(num);
+          return handler.endSubroutine();
 
         } else if (tokens[0].value==='RETURN' && tokens.length >= 2) {
           return handler.returnStatement(expression(tokens.slice(1,tokens.length), handler),num);

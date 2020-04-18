@@ -52,7 +52,7 @@ function TypeGeneratorPass(typeManager, logger) {
       return true;
     }
 
-    function beginSubroutine(name, args, num) {
+    function beginSubroutine(name, args) {
       // XXX CHECK THAT VARIABLE HASN'T BEEN DEFINED
       // XXX WHEN VARS ARE DEFINED, CHECK THAT SUBROUTINE HASN'T BEEN DEFINED
       // If there's an existing subArgNames entry, this had already been defined!
@@ -76,11 +76,11 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function callSubroutine(name, argExps, num) {
+    function callSubroutine(name, argExps) {
       return typeManager.callSubroutineStatement(name, argExps);
     }
 
-    function endSubroutine(num) {
+    function endSubroutine() {
       currentSub = undefined;
       return true;
     }

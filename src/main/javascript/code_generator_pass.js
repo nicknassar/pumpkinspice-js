@@ -56,7 +56,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       };
 
       for (var i=0;i<exp.subs.length;i++) {
-        callSubroutine(exp.subs[i].name,exp.subs[i].args,0);
+        callSubroutine(exp.subs[i].name,exp.subs[i].args);
         // wrap in function tocreate new temp for each iteration
         (function(){
           var temp = exp.subs[i].temp;
@@ -165,7 +165,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function callSubroutine(sub, argExps, num) {
+    function callSubroutine(sub, argExps) {
       var argNames = typeManager.getSubArgNames(sub);
       var fArgs = [];
       for (var i=0;i<argExps.length;i++) {
@@ -298,7 +298,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function beginSubroutine(sub, args, num) {
+    function beginSubroutine(sub, args) {
       if (machine.isSubroutineDefined(sub)) {
         logger.error("SUBROUTINE "+sub+" ALREADY DEFINED");
       } else {
@@ -318,7 +318,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function endSubroutine(num) {
+    function endSubroutine() {
       if (!loopStack[loopStack.length-1] || loopStack[loopStack.length-1].type !== SUBROUTINE) {
         logger.error("UNEXPECTED END SUBROUTINE");
 	return false;
