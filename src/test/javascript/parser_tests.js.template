@@ -254,7 +254,10 @@ function ParserTests(display) {
         "A = -.7\n" +
         "A = 7.7\n" +
         "A = -7.7\n" +
-        "A = +7.7\n",
+        "A = +7.7\n" +
+        "A = +1 +1\n" +
+        "A = -1 +1\n" +
+        "A = (7)+1\n",
       parsed: [
         ["numericLiteralExpression", 7],
         ["letStatement", "A", 0],
@@ -272,6 +275,19 @@ function ParserTests(display) {
         ["letStatement", "A", 12],
         ["numericLiteralExpression", 7.7],
         ["letStatement", "A", 14],
+        ["numericLiteralExpression" ,1],
+        ["numericLiteralExpression", 1],
+        ["additionExpression", 16, 17],
+        ["letStatement", "A", 18],
+        ["numericLiteralExpression", -1],
+        ["numericLiteralExpression", 1],
+        ["additionExpression", 20, 21],
+        ["letStatement", "A", 22],
+        ["numericLiteralExpression", 7],
+        ["parenExpression", 24],
+        ["numericLiteralExpression", 1],
+        ["additionExpression", 25, 26],
+        ["letStatement", "A", 27],
         ["finalize"]
       ],
       errors: []
@@ -369,8 +385,15 @@ function ParserTests(display) {
         "A = RANDOM(,)\n" +
         "A = RANDOM(100,)\n" +
         "A = RANDOM(100)\n" +
-        "A = RANDOM(,100)\n",
-      parsed: [["finalize"]],
+        "A = RANDOM(,100)\n" +
+        "A = ABS(77)FROG",
+
+      parsed: [
+        // ABS(77)
+        ["numericLiteralExpression", 77],
+        ["absBuiltinExpression", 0],
+        ["finalize"]
+      ],
       errors: [
         [1, "Missing param"],
         [2, "Missing param"],
@@ -384,6 +407,7 @@ function ParserTests(display) {
         [8, "Missing second param"],
         [9, "Missing second param"],
         [10, "Missing first param"],
+        [11, "Invalid expression"]
       ]
     }
   ];

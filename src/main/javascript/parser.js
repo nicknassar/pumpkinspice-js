@@ -597,6 +597,19 @@ function Parser(handlers,logger){
   }
 
   function expression(tokens, handler) {
+    function continueExpression(head, tokens) {
+      if (tokens[0].type === PLUS ||tokens[0].type === MINUS ||
+                 tokens[0].type === TIMES || tokens[0].type === DIV) {
+        var tail = expression(tokens.slice(1),handler);
+        if (tail === null) {
+          return null;
+        }
+	return binaryExpression(tokens[0].type,head,tail);
+      } else {
+        logger.error("Invalid expression");
+        return null;
+      }
+    }
     function binaryExpression(expType,head,tail) {
       if (expType === PLUS) {
         return handler.additionExpression(head,tail);
@@ -722,16 +735,8 @@ function Parser(handlers,logger){
       if (i == tokens.length) {
         return head;
         // There is a binary operator following this function
-      } else if (tokens[i].type === PLUS ||tokens[i].type === MINUS ||
-                 tokens[i].type === TIMES || tokens[i].type === DIV) {
-        var tail = expression(tokens.slice(i+1),handler);
-        if (tail === null) {
-          return null;
-        }
-	return binaryExpression(tokens[i].type,head,tail);
       } else {
-        // Invalid expression
-        return null;
+        return continueExpression(head, tokens.slice(i));
       }
     } else if (tokens[0].value==='CALL' && tokens[0].type===IDENTIFIER && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
       // XXX this is duplicated in the statement handler
@@ -755,17 +760,13 @@ function Parser(handlers,logger){
 
     } else if (tokens.length >= 2 && tokens[0].type===PLUS && tokens[1].type===NUMERIC) {
       // A numeric expression starting with plus
+      var head = expression([tokens[1]], handler);
       if (tokens.length > 2) {
-        logger.error("Invalid numeric expression");
-        return null
+        return continueExpression(head, tokens.slice(2));
       }
-      return expression(tokens.slice(1,tokens.length), handler);
+      return head;
     } else if (tokens.length >= 2 && tokens[0].type===MINUS && tokens[1].type===NUMERIC) {
-      // A numeric expression starting with minus
-      if (tokens.length > 2) {
-        logger.error("Invalid numeric expression");
-        return null
-      }
+      // A numeric expression starting with minus - combine the minus into the number
       return expression([{type:NUMERIC,value:("-"+tokens[1].value)}].concat(tokens.slice(2,tokens.length)), handler);
     } else if (tokens[0].type===OPENPAREN) {
       var openparens=1;
@@ -792,51 +793,14 @@ function Parser(handlers,logger){
       if (pos==tokens.length || result === null)
         return result;
 
-      // There's a binary operator after this
-      if (tokens[pos].type === MINUS ||
-          tokens[pos].type === TIMES || tokens[pos].type === DIV) {
-        var tail = expression(tokens.slice(pos+1,tokens.length), handler);
-        if (tail === null)
-          return null;
-        else
-          return binaryExpression(tokens[pos].type,result,tail);
-      } else if (tokens[pos].type === PLUS) {
-        var tail = expression(tokens.slice(pos+1,tokens.length),handler);
-        if (tail===null)
-          return null;
-        return binaryExpression(tokens[pos].type,
-                                        result,
-                                        tail);
-      } else {
-        return null;
-      }
-
+      return continueExpression(result, tokens.slice(pos));
       // This is a + expression starting with an identifier
-    } else if (tokens[1].type === PLUS || tokens[1].type === MINUS ||
-               tokens[1].type === TIMES || tokens[1].type === DIV) {
-      if (tokens[1].type === PLUS) {
-        var head = expression([tokens[0]],handler);
-        if (head===null)
-          return null;
-        var tail = expression(tokens.slice(2,tokens.length),handler);
-        if (tail===null)
-          return null;
-        return binaryExpression(tokens[1].type,
-                                        head,
-                                        tail);
-      } else {
-        var head = expression([tokens[0]], handler);
-        if (head===null)
-          return null;
-        var tail = expression(tokens.slice(2,tokens.length), handler);
-        if (tail===null)
-          return null;
-        return binaryExpression(tokens[1].type,head,tail);
-
-      }
     } else {
-      // Something unrecognized
-      return null;
+      // Starts with identifier
+      var head = expression([tokens[0]],handler);
+      if (head === null)
+        return null;
+      return continueExpression(head, tokens.slice(1));
     }
   }
   function compileText(text, handler) {
