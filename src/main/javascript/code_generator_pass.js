@@ -1107,6 +1107,12 @@ function CodeGeneratorPass(typeManager, machine, logger){
         return boolExpressionWithSubs('!'+exp1.value,exp1.subs);
       }
       function boolEqualExpression(exp1,exp2) {
+        if (exp1 === null || exp2 === null)
+          return null;
+        if (exp1.resultType === STRING_TYPE) { // && exp2.resultType === STRING_TYPE
+          exp1.value = '('+exp1.value+').toUpperCase()';
+          exp2.value = '('+exp2.value+').toUpperCase()';
+        }
         return boolBinaryExpression('===',exp1,exp2);
       }
       function boolLessExpression(exp1,exp2) {
@@ -1122,6 +1128,12 @@ function CodeGeneratorPass(typeManager, machine, logger){
         return boolBinaryExpression('>=',exp1,exp2);
       }
       function boolNotEqualExpression(exp1,exp2) {
+        if (exp1 === null || exp2 === null)
+          return null;
+        if (exp1.resultType === STRING_TYPE) { // && exp2.resultType === STRING_TYPE
+          exp1.value = '('+exp1.value+').toUpperCase()';
+          exp2.value = '('+exp2.value+').toUpperCase()';
+        }
         return boolBinaryExpression('!==',exp1,exp2);
       }
       function callSubroutineExpression(name,argExps) {

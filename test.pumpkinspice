@@ -70,7 +70,7 @@ IF ABS(PI-3.14159) > DIFF THEN
   CALL ERROR "PI IS BROKEN!"
 END IF
 REM The chance of two matching is 1/(2^32)
-'   The chance of that 2^16 times is 
+'   The chance of that 2^16 times is
 '
 TESTR1 = 0
 TESTR2 = 0
@@ -394,6 +394,15 @@ IF TEST_LONG != TEST_LONG2 THEN
   CALL ERROR "ERROR HANDLING VERY LONG STRINGS!!!!"
 END IF
 
+IF "y" = "Y"
+ ' PASS
+ELSE
+  CALL ERROR "Case insensitive comparison failed"
+END IF
+
+IF "y" <> "Y"
+   CALL ERROR "Case insensitive comparison failed!"
+END IF
 
 REM Interactive test for subroutines within ASK prompts
 
