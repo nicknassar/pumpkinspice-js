@@ -516,6 +516,27 @@ function ParserTests(display) {
 	["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "numeric infix operator precedence",
+      code: "A = 88+66*77\n" +
+	"A = 66*77+88\n",
+      parsed: [
+	["numericLiteralExpression", "88"],
+	["numericLiteralExpression", "66"],
+	["numericLiteralExpression", "77"],
+	["multiplicationExpression", 1, 2],
+	["additionExpression", 0, 3],
+	["letStatement", "A", 4],
+	["numericLiteralExpression", "66"],
+	["numericLiteralExpression", "77"],
+	["numericLiteralExpression", "88"],
+	["multiplicationExpression", 6, 7],
+	["additionExpression", 8, 9],
+	["letStatement", "A", 10],
+	["finalize"]
+      ],
+      errors: []
     }
   ];
 
