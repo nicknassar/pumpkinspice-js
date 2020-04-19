@@ -290,16 +290,45 @@ function TypeGeneratorPass(typeManager, logger) {
         return exp;
       }
 
-      function binaryBoolExpression(exp1,exp2) {
-        // XXX This doesn't make sense. There is no boolean type
+      function notExpression(exp) {
+	if (!exp)
+	  return null;
+	if (!typeManager.isBoolType(exp)) {
+	  logger.error("Expected boolean expression after NOT");
+	  return null;
+	}
+        return exp;
+      }
+
+      function orExpression(exp1,exp2) {
         if (!exp1 || !exp2)
           return null;
-        return exp1;
+	if (!typeManager.isBoolType(exp1) || !typeManager.isBoolType(exp2)) {
+	  logger.error("Expected boolean type for OR expression");
+	  return null;
+	}
+        return exp1; // bool type
+      }
+
+      function andExpression(exp1,exp2) {
+        if (!exp1 || !exp2)
+          return null;
+	if (!typeManager.isBoolType(exp1) || !typeManager.isBoolType(exp2)) {
+	  logger.error("Expected boolean type for AND expression");
+	  return null;
+	}
+        return exp1; // bool type
       }
 
       function callSubroutineExpression(name,argExps) {
         return typeManager.callSubroutineExpression(name, argExps);
       }
+
+  function comparison(exp1, exp2) {
+    if (!typeManager.genTypesForExpressionPair(exp1, exp2))
+      return null;
+    return typeManager.boolTypeIndicator();
+  }
 
   function numericToNumericFunction(exp) {
     if (validateNumericSubExpression(exp) !== null)
@@ -406,18 +435,15 @@ function TypeGeneratorPass(typeManager, logger) {
     valBuiltinExpression: stringToNumericFunction,
     lenBuiltinExpression: stringToNumericFunction,
     parenExpression: passthroughExpression,
-    // XXX Bool expressions doesn't make sense. There is no boolean type
-    //     They return the type of the expressions being compared
-    boolParenExpression: passthroughExpression,
-    boolOrExpression: binaryBoolExpression,
-    boolAndExpression: binaryBoolExpression,
-    boolNotExpression: passthroughExpression,
-    boolEqualExpression: typeManager.genTypesForExpressionPair,
-    boolLessExpression: typeManager.genTypesForExpressionPair,
-    boolGreaterExpression: typeManager.genTypesForExpressionPair,
-    boolLessOrEqualExpression: typeManager.genTypesForExpressionPair,
-    boolGreaterOrEqualExpression: typeManager.genTypesForExpressionPair,
-    boolNotEqualExpression: typeManager.genTypesForExpressionPair,
+    boolOrExpression: orExpression,
+    boolAndExpression: andExpression,
+    boolNotExpression: notExpression,
+    boolEqualExpression: comparison,
+    boolLessExpression: comparison,
+    boolGreaterExpression: comparison,
+    boolLessOrEqualExpression: comparison,
+    boolGreaterOrEqualExpression: comparison,
+    boolNotEqualExpression: comparison,
     callSubroutineExpression: callSubroutineExpression,
     additionExpression: typeManager.genTypesForExpressionPair,
     subtractionExpression: numericExpression,

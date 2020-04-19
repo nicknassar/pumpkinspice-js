@@ -249,7 +249,7 @@ function Parser(handlers,logger){
             if (!result) {
               return null;
             }
-            var exp1 = handler.boolParenExpression(result);
+            var exp1 = handler.parenExpression(result);
             if (pos < tokens.length && tokens[pos].type === IDENTIFIER) {
               var exp2 = _boolExpression(tokens.slice(pos+1,tokens.length),handler);
               if (!exp2) {

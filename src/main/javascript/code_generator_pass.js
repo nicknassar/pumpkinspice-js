@@ -974,13 +974,10 @@ function CodeGeneratorPass(typeManager, machine, logger){
       // Returns an EXPRESSION token or null
       // XXX Fail if types are incorrect in every case
 
-      // expression types
-      var BOOLEXPRESSION={};
-      var EXPRESSION={};
-
       // expression result types
       var NUMERIC_TYPE={};
       var STRING_TYPE={};
+      var BOOL_TYPE={};
 
       // This is vastly simplified because we keep JavaScript semantics for
       // operator precendence.
@@ -990,7 +987,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       }
 
       function numericExpressionWithSubs(value, subs) {
-        return {type:EXPRESSION,value:value,resultType:NUMERIC_TYPE,subs:subs};
+        return {value:value,resultType:NUMERIC_TYPE,subs:subs};
       }
 
       function numericBinaryExpression(op,exp1,exp2) {
@@ -1006,10 +1003,10 @@ function CodeGeneratorPass(typeManager, machine, logger){
         return stringExpressionWithSubs(value,[]);
       }
       function stringExpressionWithSubs(value, subs) {
-        return {type:EXPRESSION,value:value,resultType:STRING_TYPE,subs:subs};
+        return {value:value,resultType:STRING_TYPE,subs:subs};
       }
       function boolExpressionWithSubs(value,subs) {
-        return {type:BOOLEXPRESSION,value:value,subs:subs};
+        return {value:value,resultType:BOOL_TYPE,subs:subs};
       }
       function boolBinaryExpression(op,exp1,exp2) {
         if (!exp1 || !exp2)
@@ -1087,13 +1084,10 @@ function CodeGeneratorPass(typeManager, machine, logger){
           return numericExpressionWithSubs('('+inner.value+')',inner.subs);
         else if (inner.resultType === STRING_TYPE)
           return stringExpressionWithSubs('('+inner.value+')',inner.subs);
+        else if (inner.resultType === BOOL_TYPE)
+          return boolExpressionWithSubs('('+inner.value+')', inner.subs);
         else
           return null;
-      }
-      function boolParenExpression(result) {
-        if (!result)
-          return null;
-        return boolExpressionWithSubs('('+result.value+')',result.subs);
       }
       function boolOrExpression(exp1,exp2) {
         return boolBinaryExpression('||',exp1,exp2);
@@ -1244,7 +1238,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
     valBuiltinExpression: valBuiltinExpression,
     lenBuiltinExpression: lenBuiltinExpression,
     parenExpression: parenExpression,
-    boolParenExpression: boolParenExpression,
     boolOrExpression: boolOrExpression,
     boolAndExpression: boolAndExpression,
     boolNotExpression: boolNotExpression,

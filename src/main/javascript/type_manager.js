@@ -13,6 +13,7 @@
       Possible return values:
       STRING_TYPE - this is a string
       NUMERIC_TYPE - this is a numeric type
+      BOOL_TYPE - this is a boolean -- only expressions can have boolean values - there are no boolean variables
       null - something is wrong
       Array - we haven't figured it out - this is a list of identifiers
 
@@ -20,11 +21,13 @@
 
     // Constants representing types
     var STRING_TYPE = {};
-    var NUMERIC_TYPE = {}
+    var NUMERIC_TYPE = {};
+    var BOOL_TYPE = {};
 
     var subArgNames = {};      // Map of subroutine to list of param names
 
-    var subArgCount = {}; // Map of subroutine to integer param count                                                     // Used when subs are called before declaration
+    var subArgCount = {}; // Map of subroutine to integer param count
+                          // Used when subs are called before declaration
 
 
     // Map of variable name to STRING_TYPE, NUMERIC_TYPE, or list of
@@ -165,10 +168,10 @@
         return null;
 
       // The first expression can be resolved
-      if (type1 === STRING_TYPE || type1 === NUMERIC_TYPE) {
+      if (type1 === STRING_TYPE || type1 === NUMERIC_TYPE || type1 === BOOL_TYPE) {
         if (type2 === type1) {
           return type1;
-        } else if (type2 !== STRING_TYPE && type2 !== NUMERIC_TYPE) {
+        } else if (type2 !== STRING_TYPE && type2 !== NUMERIC_TYPE && type2 !== BOOL_TYPE) {
           // Type 2 is a list of unknowns
           assignTypes(type2,type1);
           return type1;
@@ -181,7 +184,7 @@
       // The first expression could not be resolved
 
       // The second expression can be resolved
-      if (type2 === STRING_TYPE || type2 === NUMERIC_TYPE) {
+      if (type2 === STRING_TYPE || type2 === NUMERIC_TYPE || type2 === BOOL_TYPE) {
         assignTypes(type1,type2);
         return type2;
       }
@@ -210,6 +213,10 @@
       return type === NUMERIC_TYPE;
     }
 
+    function isBoolType(type) {
+      return type === BOOL_TYPE;
+    }
+
     function genTypesForStringExpression(exp) {
       return genTypesForExpressionPair(exp, STRING_TYPE);
     }
@@ -224,6 +231,10 @@
 
     function numericTypeIndicator() {
       return NUMERIC_TYPE;
+    }
+
+    function boolTypeIndicator() {
+      return BOOL_TYPE;
     }
 
     function globalVariableIndicator(name) {
@@ -423,6 +434,7 @@
 
       isNumericType: isNumericType,
       isStringType: isStringType,
+      isBoolType: isBoolType,
 
       addGlobalToAssignedType: addGlobalToUnassignedType,
       callSubroutineStatement: callSubroutineStatement,
@@ -432,6 +444,7 @@
       globalVariableIndicator: globalVariableIndicator,
       numericTypeIndicator: numericTypeIndicator,
       stringTypeIndicator: stringTypeIndicator,
+      boolTypeIndicator: boolTypeIndicator,
       setSubArgNames: setSubArgNames,
 
       // Type reading functions
