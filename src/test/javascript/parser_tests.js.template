@@ -449,6 +449,73 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "CALL expressions",
+      code: "PRINT CALL Foo\n" +
+	"A = CALL FOO+77\n" +
+	"A = CALL foo-88\n" +
+	"A = CALL foo(77)-88\n" +
+	"A = CALL foo(77)-88,bar\n" +
+	"A = CALL foo(77)-88,bar+99\n" +
+	"A = CALL foo(\"biz\"),boz\n" +
+        "PRINT CALL FOO bar, \"biz\", (baz)*2\n" +
+        "PRINT (CALL FOO \"a\"+\"b\")+\"c\"",
+      parsed: [
+	["callSubroutineExpression", "FOO", []],
+	["printExp", 0, true, false],
+	["numericLiteralExpression", "77"],
+	["callSubroutineExpression", "FOO", [2]],
+	["letStatement", "A", 3],
+	["numericLiteralExpression", "-88"],
+	["callSubroutineExpression", "FOO", [5]],
+	["letStatement", "A", 6],
+	["numericLiteralExpression", "77"],
+	["parenExpression", 8],
+	["numericLiteralExpression", "88"],
+	["subtractionExpression", 9, 10],
+	["callSubroutineExpression", "FOO", [11]],
+	["letStatement", "A", 12],
+	["numericLiteralExpression", "77"],
+	["parenExpression", 14],
+	["numericLiteralExpression", "88"],
+	["subtractionExpression", 15, 16],
+	["variableExpression", "BAR"],
+	["callSubroutineExpression", "FOO", [17, 18]],
+	["letStatement", "A", 19],
+	["numericLiteralExpression", "77"],
+	["parenExpression", 21],
+	["numericLiteralExpression", "88"],
+	["subtractionExpression", 22, 23],
+	["variableExpression", "BAR"],
+	["numericLiteralExpression", "99"],
+	["additionExpression", 25, 26],
+	["callSubroutineExpression", "FOO", [24, 27]],
+	["letStatement", "A", 28],
+	["stringLiteralExpression", "biz"],
+	["parenExpression", 30],
+	["variableExpression", "BOZ"],
+	["callSubroutineExpression", "FOO", [31, 32]],
+	["letStatement", "A", 33],
+	["variableExpression", "BAR"],
+	["stringLiteralExpression", "biz"],
+	["variableExpression", "BAZ"],
+	["parenExpression", 37],
+	["numericLiteralExpression", "2"],
+	["multiplicationExpression", 38, 39],
+	["callSubroutineExpression", "FOO", [35, 36, 40]],
+	["printExp", 41, true, false],
+	["stringLiteralExpression", "a"],
+	["stringLiteralExpression", "b"],
+	["additionExpression", 43, 44],
+	["callSubroutineExpression", "FOO", [45]],
+	["parenExpression", 46],
+	["stringLiteralExpression", "c"],
+	["additionExpression", 47, 48],
+	["printExp", 49, true, false],
+	["finalize"]
+      ],
+      errors: []
     }
   ];
 
