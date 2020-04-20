@@ -123,8 +123,8 @@ function ParserTests(display) {
         ["stringLiteralExpression", "multi"],
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
-        ["additionExpression", 1, 2],
-        ["additionExpression", 0, 3],
+        ["additionExpression", 0, 1],
+        ["additionExpression", 3, 2],
         ["printExp", 4, true, false],
         ["finalize"]
       ],
@@ -532,7 +532,7 @@ function ParserTests(display) {
 	["numericLiteralExpression", "77"],
 	["numericLiteralExpression", "88"],
 	["multiplicationExpression", 6, 7],
-	["additionExpression", 8, 9],
+	["additionExpression", 9, 8],
 	["letStatement", "A", 10],
 	["finalize"]
       ],

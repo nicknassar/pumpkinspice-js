@@ -203,6 +203,171 @@ function Parser(handlers,logger){
   function isPredefinedFunction(identifier) {
     return ['ABS','CINT','FIX','INT','LEFT$','LEN','RIGHT$','STR$','VAL','RANDOM'].indexOf(identifier)!=-1;
   }
+
+  // returns the expression up to the next infix operator, plus the remaining tokens
+  function nextSimpleExpression(tokens, handler) {
+    if (tokens.length === 0) {
+      logger.error("No expression found");
+      return [null, []];
+    } else if (tokens[0].type===NUMERIC){
+        return [handler.numericLiteralExpression(tokens[0].value), tokens.slice(1)];
+    } else if (tokens[0].type===STRING){
+      // silently truncate long strings
+      if (tokens[0].value.length>255)
+        tokens[0].value=tokens[0].value.slice(0,255);
+      return [handler.stringLiteralExpression(tokens[0].value), tokens.slice(1)];
+    } else if (tokens[0].type===IDENTIFIER) {
+      if (tokens[0].value==='PI') {
+        return [handler.piBuiltinExpression(), tokens.slice(1)];
+      } else if (isPredefinedFunction(tokens[0].value)) {
+	if (tokens.length < 3 || tokens[1].type!==OPENPAREN) {
+          logger.error("Function "+tokens[0].value+" expects parameters between parantheses");
+          return [null, []];
+	}
+	// Find the matching paren
+	var i;
+	var depth = 1;
+	for (i=2;i<tokens.length&&depth>0;i++) {
+          if (tokens[i].type===CLOSEPAREN)
+            depth--;
+          else if (tokens[i].type===OPENPAREN) {
+            depth++;
+          }
+	}
+	// No closing paren
+	if (depth > 0) {
+          logger.error("No closing parenthesis for function "+tokens[0].value);
+          return [null, []];
+	}
+	// No closing paren
+	if (depth < 0) {
+          logger.error("Too many closing parentheses for function "+tokens[0].value);
+          return [null, []];
+	}
+
+	var head;
+	if (['LEFT$','RIGHT$','RANDOM'].indexOf(tokens[0].value)!=-1) {
+          // 2 params
+          var j;
+          var parenCount = 0;
+          for (j=1;j<(i-1) && (tokens[j].type !== COMMA || parenCount !== 1);j++) {
+            if (tokens[j].type===OPENPAREN)
+              parenCount++;
+            if (tokens[j].type===CLOSEPAREN)
+              parenCount--;
+          }
+          var firstParam = tokens.slice(2,j);
+          var secondParam = tokens.slice(j+1,i-1);
+          if (firstParam.length == 0 || secondParam.length == 0) {
+            if (firstParam.length == 0)
+              logger.error("First parameter of "+tokens[0].value+" is missing");
+            if (secondParam.length == 0)
+              logger.error("Second parameter of "+tokens[0].value+" is missing");
+            return [null, []];
+          }
+          firstParam = expression(firstParam, handler);
+          secondParam = expression(secondParam, handler);
+          if (tokens[0].value === 'LEFT$') {
+            return [handler.leftzBuiltinExpression(firstParam, secondParam), tokens.slice(i)];
+          } else if (tokens[0].value === 'RIGHT$') {
+            return [handler.rightzBuiltinExpression(firstParam, secondParam), tokens.slice(i)];
+          } else if (tokens[0].value === 'RANDOM') {
+            return [handler.randomBuiltinExpression(firstParam, secondParam), tokens.slice(i)];
+          }
+	} else {
+          // Single param
+          var param = tokens.slice(2,i-1);
+          if (param.length == 0) {
+            logger.error("Parameter of "+tokens[0].value+" is missing");
+            return [null, []];
+          }
+          param = expression(param, handler);
+          if (tokens[0].value === 'ABS') {
+            return [handler.absBuiltinExpression(param), tokens.slice(i)];
+          } else if (tokens[0].value === 'CINT') {
+            return [handler.cintBuiltinExpression(param), tokens.slice(i)];
+          } else if (tokens[0].value === 'FIX') {
+            return [handler.fixBuiltinExpression(param), tokens.slice(i)];
+          } else if (tokens[0].value === 'INT') {
+            return [handler.intBuiltinExpression(param), tokens.slice(i)];
+          } else if (tokens[0].value === 'LEN') {
+            return [handler.lenBuiltinExpression(param), tokens.slice(i)];
+          } else if (tokens[0].value === 'STR$') {
+            return [handler.strzBuiltinExpression(param), tokens.slice(i)];
+          } else if (tokens[0].value === 'VAL') {
+            return [handler.valBuiltinExpression(param), tokens.slice(i)];
+          }
+	}
+      } else if (tokens[0].value==='CALL') {
+	if (tokens.length < 2 || tokens[1].type !== IDENTIFIER) {
+	  logger.error("CALL expression expects the name of a subroutine to call");
+	  return [null, []];
+	}
+	// XXX this is duplicated in the statement handler
+	var argExps = [];
+	var start = 2;
+	var pos = start;
+	var parendepth = 0;
+	while (pos < tokens.length) {
+          // XXX check for trailing comparison, AND, or OR operator
+          while (pos < tokens.length && (tokens[pos].type !== COMMA || parendepth > 0)) {
+	    if (tokens[pos].type === OPENPAREN)
+	      parendepth++;
+	    if (tokens[pos].type === CLOSEPAREN)
+	      parendepth--;
+            pos++;
+	  }
+          argExps.push(expression(tokens.slice(start,pos),handler));
+          pos++; // skip the comma
+          start = pos;
+	}
+	return [handler.callSubroutineExpression(tokens[1].value,argExps), tokens.slice(pos)];
+
+      } else {
+	return [handler.variableExpression(tokens[0].value), tokens.slice(1)];
+      }
+    } else if (tokens[0].type===PLUS) {
+      if (tokens.length < 2 || tokens[1].type !== NUMERIC) {
+	logger.error("Number expected after + in expression");
+	return [null, []];
+      }
+      // A numeric expression starting with plus
+      return [handler.numericLiteralExpression(tokens[1].value), tokens.slice(2)];
+    } else if (tokens[0].type===MINUS) {
+      if (tokens.length < 2 || tokens[1].type !== NUMERIC) {
+	logger.error("Number expected after - in expression");
+	return [null, []];
+      }
+      // A numeric expression starting with minus - combine the minus into the number
+      return [handler.numericLiteralExpression("-"+tokens[1].value), tokens.slice(2)];
+
+    } else if (tokens[0].type===OPENPAREN) {
+      var openparens=1;
+      var pos = 1;
+      while (pos<tokens.length && openparens>0) {
+        if (tokens[pos].type===OPENPAREN) {
+          openparens++;
+        } else if (tokens[pos].type===CLOSEPAREN) {
+          openparens--;
+        }
+        pos++;
+      }
+      if (pos===tokens.length && tokens[pos-1].type!==CLOSEPAREN) {
+        logger.error("Mismatched parens");
+        return [null, []];
+      }
+      var parenExp = expression(tokens.slice(1,pos-1),handler);
+      if (parenExp === null) {
+        return [null, []];
+      }
+      return [handler.parenExpression(parenExp), tokens.slice(pos)];
+      // This is a + expression starting with an identifier
+    } else {
+      logger.error("Unexpected token "+tokens[0].value+" in expression");
+      return [null, []];
+    }
+  }
+
   function parseLineWithHandler(handler,tokens,num) {
     function boolExpression(tokens) {
       // Given tokens for a boolean expression, return
@@ -596,6 +761,24 @@ function Parser(handlers,logger){
     return true;
   }
 
+  function isInfixOperator(token) {
+    // XXX comparison, AND, and OR
+    return (token.type === PLUS ||
+            token.type === MINUS ||
+            token.type === TIMES ||
+            token.type === DIV);
+  }
+  // return true iff infix operator tokenType1 has higher precedence
+  function hasHigherPrecedence(tokenType1, tokenType2) {
+    return ((tokenType1 === TIMES || tokenType1 === DIV) &&
+            (tokenType2 === PLUS || tokenType2 === MINUS));
+  }
+  // return true iff infix operator tokenType1 has lower precedence
+  function hasLowerPrecedence(tokenType1, tokenType2) {
+    return ((tokenType1 === PLUS || tokenType1 === MINUS) &&
+            (tokenType2 === TIMES || tokenType2 === DIV));
+  }
+
   function expression(tokens, handler) {
     function continueExpression(head, tokens) {
       if (tokens[0].type === PLUS ||tokens[0].type === MINUS ||
@@ -622,186 +805,45 @@ function Parser(handlers,logger){
       }
     }
 
-    if (tokens.length === 0) {
-      logger.error("No expression found");
+    var result = nextSimpleExpression(tokens, handler);
+    if (result[0] === null)
       return null;
-    } else if (tokens.length === 1) {
-      if (tokens[0].type===NUMERIC){
-        return handler.numericLiteralExpression(tokens[0].value);
-      } else if (tokens[0].type===STRING){
-        // silently truncate long strings
-        if (tokens[0].value.length>255)
-          tokens[0].value=tokens[0].value.slice(0,255);
-        return handler.stringLiteralExpression(tokens[0].value);
-      } else if (tokens[0].type===IDENTIFIER) {
-        if (tokens[0].value==='PI') {
-          return handler.piBuiltinExpression();
-        } if (isPredefinedFunction(tokens[0].value)) {
-          logger.error("Function "+tokens[0].value+" needs parameters enclosed in parentheses");
-          return null;
-        } else {
-          return handler.variableExpression(tokens[0].value);
-        }
-      } else {
-        logger.error("Invalid expression");
-        return null;
-      }
-      // Predefined functions
-    } else if (tokens[0].type===IDENTIFIER &&isPredefinedFunction(tokens[0].value)) {
-      if (tokens.length < 3 || tokens[1].type!==OPENPAREN) {
-        logger.error("Function "+tokens[0].value+" expects parameters between parantheses");
-        return null;
-      }
+    var expStack = [result[0]];
+    var operatorStack = [];
+    var remaining = result[1];
 
-      // Find the matching paren
-      var i;
-      var depth = 1;
-      for (i=2;i<tokens.length&&depth>0;i++) {
-        if (tokens[i].type===CLOSEPAREN)
-          depth--;
-        else if (tokens[i].type===OPENPAREN) {
-          depth++;
-        }
-      }
-      // No closing paren
-      if (depth > 0) {
-        logger.error("No closing parenthesis for function "+tokens[0].value);
+    while (remaining.length > 0) {
+      if (!isInfixOperator(remaining[0])) {
+        logger.error("Unexpected token "+remaining[0].value+" in expression");
         return null;
       }
-      // No closing paren
-      if (depth < 0) {
-        logger.error("Too many closing parentheses for function "+tokens[0].value);
+      operatorStack.push(remaining[0].type);
+      result = nextSimpleExpression(remaining.slice(1), handler);
+      if (result[0] === null)
         return null;
+      expStack.push(result[0]);
+      remaining = result[1];
+      while (operatorStack.length > 1 && !hasHigherPrecedence(operatorStack[operatorStack.length - 1],operatorStack[operatorStack.length - 2])) {
+        // The final infix operator has the same or lower precedence then the next-to-last
+        // Combine the previous two
+        var finalOp = operatorStack.pop();
+        var currentOp = operatorStack.pop();
+        var finalExp = expStack.pop();
+        var secondParam = expStack.pop();
+        var firstParam = expStack.pop();
+        expStack.push(binaryExpression(currentOp, firstParam, secondParam));
+        expStack.push(finalExp);
+        operatorStack.push(finalOp);
       }
-
-      var head;
-      if (['LEFT$','RIGHT$','RANDOM'].indexOf(tokens[0].value)!=-1) {
-        // 2 params
-        var j;
-        var parenCount = 0;
-        for (j=1;j<(i-1) && (tokens[j].type !== COMMA || parenCount !== 1);j++) {
-          if (tokens[j].type===OPENPAREN)
-            parenCount++;
-          if (tokens[j].type===CLOSEPAREN)
-            parenCount--;
-        }
-        var firstParam = tokens.slice(2,j);
-        var secondParam = tokens.slice(j+1,i-1);
-        if (firstParam.length == 0 || secondParam.length == 0) {
-          if (firstParam.length == 0)
-            logger.error("First parameter of "+tokens[0].value+" is missing");
-          if (secondParam.length == 0)
-            logger.error("Second parameter of "+tokens[0].value+" is missing");
-          return null;
-        }
-        firstParam = expression(firstParam, handler);
-        secondParam = expression(secondParam, handler);
-        if (tokens[0].value === 'LEFT$') {
-          head = handler.leftzBuiltinExpression(firstParam, secondParam);
-        } else if (tokens[0].value === 'RIGHT$') {
-          head = handler.rightzBuiltinExpression(firstParam, secondParam);
-        } else if (tokens[0].value === 'RANDOM') {
-          head = handler.randomBuiltinExpression(firstParam, secondParam);
-        }
-      } else {
-        // Single param
-        var param = tokens.slice(2,i-1);
-        if (param.length == 0) {
-          logger.error("Parameter of "+tokens[0].value+" is missing");
-          return null;
-        }
-        param = expression(param, handler);
-        if (tokens[0].value === 'ABS') {
-          head = handler.absBuiltinExpression(param);
-        } else if (tokens[0].value === 'CINT') {
-          head = handler.cintBuiltinExpression(param);
-        } else if (tokens[0].value === 'FIX') {
-          head = handler.fixBuiltinExpression(param);
-        } else if (tokens[0].value === 'INT') {
-          head = handler.intBuiltinExpression(param);
-        } else if (tokens[0].value === 'LEN') {
-          head = handler.lenBuiltinExpression(param);
-        } else if (tokens[0].value === 'STR$') {
-          head = handler.strzBuiltinExpression(param);
-        } else if (tokens[0].value === 'VAL') {
-          head = handler.valBuiltinExpression(param);
-        }
-      }
-      // XXX Consider adding MID$()
-      // MID$(x$,n[,m]) To return a string of m characters from x$ beginning with the nth character. n >= 1 - MID$(x$,1,n) is LEFT$(x$,n)
-
-
-      // There is nothing following this function
-      if (i == tokens.length) {
-        return head;
-        // There is a binary operator following this function
-      } else {
-        return continueExpression(head, tokens.slice(i));
-      }
-    } else if (tokens[0].value==='CALL' && tokens[0].type===IDENTIFIER && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
-      // XXX this is duplicated in the statement handler
-      var argExps = [];
-      var start = 2;
-      var pos = start;
-      var parendepth = 0;
-      while (pos < tokens.length) {
-        while (pos < tokens.length && (tokens[pos].type !== COMMA || parendepth > 0)) {
-	  if (tokens[pos].type === OPENPAREN)
-	    parendepth++;
-	  if (tokens[pos].type === CLOSEPAREN)
-	    parendepth--;
-          pos++;
-	}
-        argExps.push(expression(tokens.slice(start,pos),handler));
-        pos++; // skip the comma
-        start = pos;
-      }
-      return handler.callSubroutineExpression(tokens[1].value,argExps);
-
-    } else if (tokens.length >= 2 && tokens[0].type===PLUS && tokens[1].type===NUMERIC) {
-      // A numeric expression starting with plus
-      var head = expression([tokens[1]], handler);
-      if (tokens.length > 2) {
-        return continueExpression(head, tokens.slice(2));
-      }
-      return head;
-    } else if (tokens.length >= 2 && tokens[0].type===MINUS && tokens[1].type===NUMERIC) {
-      // A numeric expression starting with minus - combine the minus into the number
-      return expression([{type:NUMERIC,value:("-"+tokens[1].value)}].concat(tokens.slice(2,tokens.length)), handler);
-    } else if (tokens[0].type===OPENPAREN) {
-      var openparens=1;
-      var pos = 1;
-      while (pos<tokens.length && openparens>0) {
-        if (tokens[pos].type===OPENPAREN) {
-          openparens++;
-        } else if (tokens[pos].type===CLOSEPAREN) {
-          openparens--;
-        }
-        pos++;
-      }
-      if (pos===tokens.length && tokens[pos-1].type!==CLOSEPAREN) {
-        logger.error("Mismatched parens");
-        return null;
-      }
-      var parenExp = expression(tokens.slice(1,pos-1),handler);
-      if (parenExp === null) {
-        return null;
-      }
-      var result = handler.parenExpression(parenExp);
-      // we're done - the whole thing was in parens
-      // or what's in the parens is bad
-      if (pos==tokens.length || result === null)
-        return result;
-
-      return continueExpression(result, tokens.slice(pos));
-      // This is a + expression starting with an identifier
-    } else {
-      // Starts with identifier
-      var head = expression([tokens[0]],handler);
-      if (head === null)
-        return null;
-      return continueExpression(head, tokens.slice(1));
     }
+    while (operatorStack.length > 0) {
+      // Combine the expressions
+      var op = operatorStack.pop();
+      var secondParam = expStack.pop();
+      var firstParam = expStack.pop();
+      expStack.push(binaryExpression(op, firstParam, secondParam));
+    }
+    return expStack[0];
   }
   function compileText(text, handler) {
     var success = true;
