@@ -629,6 +629,143 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "Boolean comparison operator precedence",
+      code: "IF 7*8 > 7+8 THEN\n" +
+        "END IF\n" +
+        "IF SIX+42 > 7*EIGHTYEIGHT THEN\n" +
+        "END IF\n" +
+        "IF 6+7*8 > 7*8+9 THEN\n" +
+        "END IF\n" +
+        "IF A+B+\"C\" = \"a\"+\"A\"+\"a\" THEN\n" +
+        "END IF\n",
+      parsed: [
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["multiplicationExpression", 0, 1],
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["additionExpression", 3, 4],
+        ["boolGreaterExpression", 2, 5],
+        ["ifStatement", 6],
+        ["endIf"],
+        ["variableExpression", "SIX"],
+        ["numericLiteralExpression", "42"],
+        ["additionExpression", 9, 10],
+        ["numericLiteralExpression", "7"],
+        ["variableExpression", "EIGHTYEIGHT"],
+        ["multiplicationExpression", 12, 13],
+        ["boolGreaterExpression", 11, 14],
+        ["ifStatement", 15],
+        ["endIf"],
+        ["numericLiteralExpression", "6"],
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["multiplicationExpression", 19, 20],
+        ["additionExpression", 18, 21],
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["multiplicationExpression", 23, 24],
+        ["numericLiteralExpression", "9"],
+        ["additionExpression", 25, 26],
+        ["boolGreaterExpression", 22, 27],
+        ["ifStatement", 28],
+        ["endIf"],
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["additionExpression", 31, 32],
+        ["stringLiteralExpression", "C"],
+        ["additionExpression", 33, 34],
+        ["stringLiteralExpression", "a"],
+        ["stringLiteralExpression", "A"],
+        ["additionExpression", 36, 37],
+        ["stringLiteralExpression", "a"],
+        ["additionExpression", 38, 39],
+        ["boolEqualExpression", 35, 40],
+        ["ifStatement", 41],
+        ["endIf"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean AND and OR operator precedence",
+      code: "If 66 > 77 OR 88 > 99 THEN\n" +
+        "END IF\n"+
+        "If 66 > 77 AND 88 > 99 THEN\n" +
+        "END IF\n"+
+        "If 66+77 > 66-77 OR 88*99 > 88/99 THEN\n" +
+        "END IF\n"+
+        "If A < B OR C >= D AND E >= F\n" +
+        "END IF\n" +
+        "If A <= B AND C != D OR E == F\n" +
+        "END IF\n",
+      parsed: [
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["boolGreaterExpression", 0, 1],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["boolGreaterExpression", 3, 4],
+        ["boolOrExpression", 2, 5],
+        ["ifStatement", 6],
+        ["endIf"],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["boolGreaterExpression", 9, 10],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["boolGreaterExpression", 12, 13],
+        ["boolAndExpression", 11, 14],
+        ["ifStatement", 15],
+        ["endIf"],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["additionExpression", 18, 19],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["subtractionExpression", 21, 22],
+        ["boolGreaterExpression", 20, 23],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["multiplicationExpression", 25, 26],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["divisionExpression", 28, 29],
+        ["boolGreaterExpression", 27, 30],
+        ["boolOrExpression", 24, 31],
+        ["ifStatement", 32],
+        ["endIf"],
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolLessExpression", 35, 36],
+        ["variableExpression", "C"],
+        ["variableExpression", "D"],
+        ["boolGreaterOrEqualExpression", 38, 39],
+        ["variableExpression", "E"],
+        ["variableExpression", "F"],
+        ["boolGreaterOrEqualExpression", 41, 42],
+        ["boolAndExpression", 40, 43],
+        ["boolOrExpression", 37, 44],
+        ["ifStatement", 45],
+        ["endIf"],
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolLessOrEqualExpression", 48, 49],
+        ["variableExpression", "C"],
+        ["variableExpression", "D"],
+        ["boolNotEqualExpression", 51, 52],
+        ["boolAndExpression", 50, 53],
+        ["variableExpression", "E"],
+        ["variableExpression", "F"],
+        ["boolEqualExpression", 55, 56],
+        ["boolOrExpression", 54, 57],
+        ["ifStatement", 58],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
     }
   ];
 
