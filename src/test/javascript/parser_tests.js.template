@@ -122,9 +122,9 @@ function ParserTests(display) {
       parsed: [
         ["stringLiteralExpression", "multi"],
         ["stringLiteralExpression", "string"],
-        ["stringLiteralExpression", "concatenation"],
         ["additionExpression", 0, 1],
-        ["additionExpression", 3, 2],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 2, 3],
         ["printExp", 4, true, false],
         ["finalize"]
       ],
@@ -520,7 +520,9 @@ function ParserTests(display) {
     {
       description: "numeric infix operator precedence",
       code: "A = 88+66*77\n" +
-	"A = 66*77+88\n",
+	"A = 66*77+88\n" +
+        "A = 88-66/77\n" +
+        "A = 44-55+66/77*88-99+33\n",
       parsed: [
 	["numericLiteralExpression", "88"],
 	["numericLiteralExpression", "66"],
@@ -530,10 +532,30 @@ function ParserTests(display) {
 	["letStatement", "A", 4],
 	["numericLiteralExpression", "66"],
 	["numericLiteralExpression", "77"],
-	["numericLiteralExpression", "88"],
 	["multiplicationExpression", 6, 7],
-	["additionExpression", 9, 8],
+        ["numericLiteralExpression", "88"],
+	["additionExpression", 8, 9],
 	["letStatement", "A", 10],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["divisionExpression", 13, 14],
+        ["subtractionExpression", 12, 15],
+        ["letStatement", "A", 16],
+        ["numericLiteralExpression", "44"],
+        ["numericLiteralExpression", "55"],
+        ["subtractionExpression", 18, 19],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["divisionExpression", 21, 22],
+        ["numericLiteralExpression", "88"],
+        ["multiplicationExpression", 23, 24],
+        ["additionExpression", 20, 25],
+        ["numericLiteralExpression", "99"],
+        ["subtractionExpression", 26, 27],
+        ["numericLiteralExpression", "33"],
+        ["additionExpression", 28, 29],
+        ["letStatement", "A", 30],
 	["finalize"]
       ],
       errors: []

@@ -452,8 +452,9 @@ function Parser(handlers,logger){
         }
         var exp1=expression(tokens.slice(0,pos), handler);
         var exp2=expression(tokens.slice(pos+1,endpos), handler);
-        if (!exp1 || !exp2)
+        if (exp1 === null || exp2 === null) {
           return null;
+        }
 	var opType = tokens[pos].type;
 	if (opType === EQUALS) {
 	  exp1 =  handler.boolEqualExpression(exp1,exp2);
@@ -817,24 +818,24 @@ function Parser(handlers,logger){
         logger.error("Unexpected token "+remaining[0].value+" in expression");
         return null;
       }
-      operatorStack.push(remaining[0].type);
+      var finalOp = remaining[0].type;
+      while (operatorStack.length > 0 && !hasHigherPrecedence(finalOp, operatorStack[operatorStack.length - 1])) {
+        // The final infix operator has the same or lower precedence then the next-to-last
+        // Combine the previous two simple expressions
+        var currentOp = operatorStack.pop();
+        var secondParam = expStack.pop();
+        var firstParam = expStack.pop();
+        var newExp = binaryExpression(currentOp, firstParam, secondParam);
+        if (newExp === null)
+          return null;
+        expStack.push(newExp);
+      }
+      operatorStack.push(finalOp);
       result = nextSimpleExpression(remaining.slice(1), handler);
       if (result[0] === null)
         return null;
       expStack.push(result[0]);
       remaining = result[1];
-      while (operatorStack.length > 1 && !hasHigherPrecedence(operatorStack[operatorStack.length - 1],operatorStack[operatorStack.length - 2])) {
-        // The final infix operator has the same or lower precedence then the next-to-last
-        // Combine the previous two
-        var finalOp = operatorStack.pop();
-        var currentOp = operatorStack.pop();
-        var finalExp = expStack.pop();
-        var secondParam = expStack.pop();
-        var firstParam = expStack.pop();
-        expStack.push(binaryExpression(currentOp, firstParam, secondParam));
-        expStack.push(finalExp);
-        operatorStack.push(finalOp);
-      }
     }
     while (operatorStack.length > 0) {
       // Combine the expressions
