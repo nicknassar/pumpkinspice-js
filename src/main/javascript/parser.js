@@ -18,13 +18,14 @@ function Parser(handlers,logger){
   var GREATEROREQUAL={};
   var GREATER={};
   var LESSOREQUAL={};
+  var AND={};
+  var OR={};
   var LESS={};
   var PLUS={};
   var MINUS={};
   var TIMES={};
   var DIV={};
   var NOT={};
-
 
   function tokenizeLine(line) {
     var minlow='a'.charCodeAt(0);
@@ -102,7 +103,17 @@ function Parser(handlers,logger){
           i += line[pos];
           pos++;
         }
-        tokens.push({type:IDENTIFIER,value:i.toUpperCase()});
+        i = i.toUpperCase();
+        // Keyword operators
+        if (i == "AND") {
+          tokens.push({type:AND,value:i});
+        } else if (i == "OR") {
+          tokens.push({type:OR,value:i});
+        } else if (i == "NOT") {
+          tokens.push({type:NOT,value:i});
+        } else {
+          tokens.push({type:IDENTIFIER,value:i});
+        }
       } else if (validNumericChar(line[pos])) {
         var seenDot = false;
         var n = "";
@@ -207,10 +218,17 @@ function Parser(handlers,logger){
   // returns the expression up to the next infix operator, plus the remaining tokens
   function nextSimpleExpression(tokens, handler) {
     if (tokens.length === 0) {
-      logger.error("No expression found");
+      logger.error("Expected expression");
       return [null, []];
     } else if (tokens[0].type===NUMERIC){
         return [handler.numericLiteralExpression(tokens[0].value), tokens.slice(1)];
+    } else if (tokens[0].type===NOT){
+      var next = nextSimpleExpression(tokens.slice(1), handler);
+      var nextExp = next[0];
+      var remainder = next[1];
+      if (next === null)
+        return null;
+      return [handler.boolNotExpression(nextExp), remainder];
     } else if (tokens[0].type===STRING){
       // silently truncate long strings
       if (tokens[0].value.length>255)
@@ -308,17 +326,29 @@ function Parser(handlers,logger){
 	var start = 2;
 	var pos = start;
 	var parendepth = 0;
-	while (pos < tokens.length) {
+	while (pos < tokens.length &&
+               !isBooleanOperator(tokens[pos])) {
           // XXX check for trailing comparison, AND, or OR operator
-          while (pos < tokens.length && (tokens[pos].type !== COMMA || parendepth > 0)) {
+          while (pos < tokens.length && (tokens[pos].type !== COMMA || parendepth > 0) &&
+                 !isBooleanOperator(tokens[pos])) {
 	    if (tokens[pos].type === OPENPAREN)
 	      parendepth++;
 	    if (tokens[pos].type === CLOSEPAREN)
 	      parendepth--;
             pos++;
 	  }
-          argExps.push(expression(tokens.slice(start,pos),handler));
-          pos++; // skip the comma
+          var tempExp = expression(tokens.slice(start,pos),handler);
+          if (tempExp === null) {
+            return [null, []];
+          }
+          if (tempExp === undefined) {
+            // XXX this shouldn't happen
+            logger.error("Undefined expression");
+            return [null, []];
+          }
+          argExps.push(tempExp);
+          if (pos < tokens.length && !isBooleanOperator(tokens[pos]))
+            pos++; // skip the comma
           start = pos;
 	}
 	return [handler.callSubroutineExpression(tokens[1].value,argExps), tokens.slice(pos)];
@@ -369,141 +399,9 @@ function Parser(handlers,logger){
   }
 
   function parseLineWithHandler(handler,tokens,num) {
-    function boolExpression(tokens) {
-      // Given tokens for a boolean expression, return
-      // bool expression
-
-      function _boolExpression(tokens, handler) {
-        // Generate a bool expression from tokens
-
-        // The smallest possible bool expression is
-        // three tokens: literal operator literal
-        if (tokens.length < 3)
-          return null;
-        if (tokens[0].type === IDENTIFIER && tokens[0].value === 'NOT') {
-          var result = _boolExpression(tokens.slice(1,tokens.length),handler);
-          if (!result) {
-            return null;
-          }
-          return handler.boolNotExpression(result);
-        } else if (tokens[0].type === OPENPAREN) {
-          var openparens=1;
-          var pos = 1;
-          var isBoolParen = false;
-          while (pos<tokens.length && openparens>0) {
-            if (tokens[pos].type===OPENPAREN) {
-              openparens++;
-            } else if (tokens[pos].type===CLOSEPAREN) {
-              openparens--;
-            } else if (tokens[pos].type === EQUALS ||
-                       tokens[pos].type === NOTEQUAL ||
-                       tokens[pos].type === LESS ||
-                       tokens[pos].type === GREATER ||
-                       tokens[pos].type === LESSOREQUAL ||
-                       tokens[pos].type === GREATEROREQUAL) {
-              isBoolParen = true;
-            }
-            pos++;
-          }
-
-          if (pos===tokens.length && tokens[pos-1].type!==CLOSEPAREN) {
-            return null;
-          }
-          if (isBoolParen){
-            var result = _boolExpression(tokens.slice(1,pos-1),handler);
-            if (!result) {
-              return null;
-            }
-            var exp1 = handler.parenExpression(result);
-            if (pos < tokens.length && tokens[pos].type === IDENTIFIER) {
-              var exp2 = _boolExpression(tokens.slice(pos+1,tokens.length),handler);
-              if (!exp2) {
-                return null
-              }
-              if (tokens[pos].value === 'AND') {
-                return handler.boolAndExpression(exp1,exp2);
-              } else if (tokens[pos].value === 'OR') {
-                return handler.boolOrExpression(exp1,exp2);
-              }
-            }
-            return exp1;
-          }
-          // fall through if this isn't a bool paren expression
-        }
-        var pos = 0;
-        var endpos;
-        while (pos<tokens.length && tokens[pos].type !== EQUALS &&
-               tokens[pos].type !== NOTEQUAL &&
-               tokens[pos].type !== LESS &&
-               tokens[pos].type !== GREATER &&
-               tokens[pos].type !== LESSOREQUAL &&
-               tokens[pos].type !== GREATEROREQUAL) {
-          pos++;
-        }
-        if (pos === tokens.length) {
-          logger.error("No comparison operator");
-          return null;
-        }
-        endpos = pos+1;
-        while (endpos<tokens.length && !(tokens[endpos].type === IDENTIFIER &&
-                                         (tokens[endpos].value === "AND" || tokens[endpos].value === "OR")))
-        {
-          endpos++;
-        }
-        var exp1=expression(tokens.slice(0,pos), handler);
-        var exp2=expression(tokens.slice(pos+1,endpos), handler);
-        if (exp1 === null || exp2 === null) {
-          return null;
-        }
-	var opType = tokens[pos].type;
-	if (opType === EQUALS) {
-	  exp1 =  handler.boolEqualExpression(exp1,exp2);
-	} else if (opType === LESS) {
-	  exp1 =  handler.boolLessExpression(exp1,exp2);
-	} else if (opType === GREATER) {
-	  exp1 =  handler.boolGreaterExpression(exp1,exp2);
-	} else if (opType === GREATEROREQUAL) {
-	  exp1 =  handler.boolGreaterOrEqualExpression(exp1,exp2);
-	} else if (opType === LESSOREQUAL) {
-	  exp1 =  handler.boolLessOrEqualExpression(exp1,exp2);
-	} else if (opType === NOTEQUAL) {
-	  exp1 =  handler.boolNotEqualExpression(exp1,exp2);
-	} else {
-	  logger.error("Invalid comparison type for boolean");
-          exp1 = null;
-	}
-
-        // Handle a binary operator
-        if (endpos !== tokens.length) {
-          if (tokens[endpos].value !== "AND" && tokens[endpos].value !== "OR") {
-            return null;
-          }
-
-          exp2 = boolExpression(tokens.slice(endpos+1,tokens.length));
-          if (!exp2)
-            return null;
-          else {
-            if (tokens[endpos].value === "AND")
-              return handler.boolAndExpression(exp1,exp2);
-            else // OR
-              return handler.boolOrExpression(exp1,exp2);
-          }
-        } else {
-          return exp1;
-        }
-      }
-
-      var result = _boolExpression(tokens, handler);
-      if (!result)
-        return null;
-      else
-        return result;
-
-    }
-
     if (!started && tokens.length>0) {
       started = true;
-      if (tokens.length>=4 && tokens[0].type===LESS && tokens[1].type===NOT && tokens[2].type===MINUS && tokens[3].type===MINUS ) {
+      if (tokens.length>=4 && tokens[0].type===LESS && tokens[1].value==="!" && tokens[2].type===MINUS && tokens[3].type===MINUS ) {
         tokens = tokens.slice(4);
       }
     }
@@ -550,8 +448,8 @@ function Parser(handlers,logger){
           else
             exp2end = tokens.length;
 
-          var boolExp = boolExpression(tokens.slice(1,exp2end));
-          if (!boolExp) {
+          var boolExp = expression(tokens.slice(1,exp2end), handler);
+          if (boolExp == null) {
             logger.error("Invalid IF");
             return false;
           }
@@ -655,8 +553,8 @@ function Parser(handlers,logger){
         } else if (tokens[0].value==='MENU' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHOICE' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type===NUMERIC) {
           return handler.menuChoiceColor(tokens[3].value,num);
         } else if (tokens[0].value==='HIDE' && tokens.length >= 5 && tokens[1].type === IDENTIFIER && tokens[1].value === 'IF' ) {
-          var boolExp = boolExpression(tokens.slice(2,tokens.length));
-          if (!boolExp) {
+          var boolExp = expression(tokens.slice(2,tokens.length), handler);
+          if (boolExp === null) {
             logger.error("Invalid HIDE IF");
             return false;
           }
@@ -680,8 +578,8 @@ function Parser(handlers,logger){
             exp2end = tokens.length-1;
           else
             exp2end = tokens.length;
-          var boolExp = boolExpression(tokens.slice(1,exp2end));
-          if (!boolExp) {
+          var boolExp = expression(tokens.slice(1,exp2end), handler);
+          if (boolExp === null) {
             logger.error("Invalid WHILE");
             return false;
           }
@@ -762,38 +660,55 @@ function Parser(handlers,logger){
     return true;
   }
 
+  function isBooleanOperator(token) {
+    return (token.type === EQUALS ||
+            token.type === NOTEQUAL ||
+            token.type === GREATEROREQUAL ||
+            token.type === GREATER ||
+            token.type === LESSOREQUAL ||
+            token.type === LESS ||
+            token.type === AND ||
+            token.type === OR ||
+            token.type === NOT);
+  }
   function isInfixOperator(token) {
-    // XXX comparison, AND, and OR
     return (token.type === PLUS ||
             token.type === MINUS ||
             token.type === TIMES ||
-            token.type === DIV);
+            token.type === DIV ||
+            token.type === EQUALS ||
+            token.type === NOTEQUAL ||
+            token.type === GREATEROREQUAL ||
+            token.type === GREATER ||
+            token.type === LESSOREQUAL ||
+            token.type === LESS ||
+            token.type === AND ||
+            token.type === OR);
   }
+    // Lower numers are higher priority
+  function infixOperatorPrecedence(operator) {
+    if (operator === TIMES || operator === DIV) {
+      return 1;
+    } else if (operator === PLUS || operator === MINUS) {
+      return 2;
+    } else if (operator === EQUALS || operator === NOTEQUAL ||
+               operator === GREATER || operator === GREATEROREQUAL ||
+               operator === LESS || operator === LESSOREQUAL) {
+      return 3;
+    } else if (operator === AND) {
+      return 4;
+    } else if (operator === OR) {
+      return 5;
+    }
+  }
+
+
   // return true iff infix operator tokenType1 has higher precedence
   function hasHigherPrecedence(tokenType1, tokenType2) {
-    return ((tokenType1 === TIMES || tokenType1 === DIV) &&
-            (tokenType2 === PLUS || tokenType2 === MINUS));
-  }
-  // return true iff infix operator tokenType1 has lower precedence
-  function hasLowerPrecedence(tokenType1, tokenType2) {
-    return ((tokenType1 === PLUS || tokenType1 === MINUS) &&
-            (tokenType2 === TIMES || tokenType2 === DIV));
+    return infixOperatorPrecedence(tokenType1) < infixOperatorPrecedence(tokenType2);
   }
 
   function expression(tokens, handler) {
-    function continueExpression(head, tokens) {
-      if (tokens[0].type === PLUS ||tokens[0].type === MINUS ||
-                 tokens[0].type === TIMES || tokens[0].type === DIV) {
-        var tail = expression(tokens.slice(1),handler);
-        if (tail === null) {
-          return null;
-        }
-	return binaryExpression(tokens[0].type,head,tail);
-      } else {
-        logger.error("Invalid expression");
-        return null;
-      }
-    }
     function binaryExpression(expType,head,tail) {
       if (expType === PLUS) {
         return handler.additionExpression(head,tail);
@@ -803,6 +718,25 @@ function Parser(handlers,logger){
         return handler.multiplicationExpression(head,tail);
       } else if (expType === DIV) {
         return handler.divisionExpression(head,tail);
+      } else if (expType === NOTEQUAL) {
+        return handler.boolNotEqualExpression(head,tail);
+      } else if (expType === EQUALS) {
+        return handler.boolEqualExpression(head,tail);
+      } else if (expType === GREATER) {
+        return handler.boolGreaterExpression(head,tail);
+      } else if (expType === GREATEROREQUAL) {
+        return handler.boolGreaterOrEqualExpression(head,tail);
+      } else if (expType === LESS) {
+        return handler.boolLessExpression(head,tail);
+      } else if (expType === LESSOREQUAL) {
+        return handler.boolLessOrEqualExpression(head,tail);
+      } else if (expType === AND) {
+        return handler.boolAndExpression(head,tail);
+      } else if (expType === OR) {
+        return handler.boolOrExpression(head,tail);
+      } else {
+        logger.error("Unexpected expression type?!");
+        return null;
       }
     }
 

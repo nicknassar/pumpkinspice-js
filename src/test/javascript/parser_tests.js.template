@@ -460,7 +460,9 @@ function ParserTests(display) {
 	"A = CALL foo(77)-88,bar+99\n" +
 	"A = CALL foo(\"biz\"),boz\n" +
         "PRINT CALL FOO bar, \"biz\", (baz)*2\n" +
-        "PRINT (CALL FOO \"a\"+\"b\")+\"c\"",
+        "PRINT (CALL FOO \"a\"+\"b\")+\"c\"\n"+
+        "IF CALL PLUSONE (CALL PLUSONE 1) != CALL PLUSONE 2 THEN\n"+
+        "END IF\n",
       parsed: [
 	["callSubroutineExpression", "FOO", []],
 	["printExp", 0, true, false],
@@ -513,6 +515,15 @@ function ParserTests(display) {
 	["stringLiteralExpression", "c"],
 	["additionExpression", 47, 48],
 	["printExp", 49, true, false],
+        ["numericLiteralExpression", "1"],
+        ["callSubroutineExpression", "PLUSONE", [51]],
+        ["parenExpression", 52],
+        ["callSubroutineExpression", "PLUSONE", [53]],
+        ["numericLiteralExpression", "2"],
+        ["callSubroutineExpression", "PLUSONE", [55]],
+        ["boolNotEqualExpression", 54, 56],
+        ["ifStatement", 57],
+        ["endIf"],
 	["finalize"]
       ],
       errors: []
@@ -762,6 +773,78 @@ function ParserTests(display) {
         ["boolEqualExpression", 55, 56],
         ["boolOrExpression", 54, 57],
         ["ifStatement", 58],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bool expressions with NOT",
+      code: "IF NOT (77=88)\n" +
+        "END IF\n" +
+        "IF NOT (A=77 OR B=88)\n" +
+        "END IF\n" +
+        "IF NOT (A=77) OR B=88\n" +
+        "END IF\n" +
+        "IF A=77 OR NOT(B=88)\n" +
+        "END IF\n"+
+        "IF NOT (A=77) OR B=88 AND C=99\n" +
+        "END IF\n",
+      parsed: [
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 0, 1],
+        ["parenExpression", 2],
+        ["boolNotExpression", 3],
+        ["ifStatement", 4],
+        ["endIf"],
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 7, 8],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 10, 11],
+        ["boolOrExpression", 9, 12],
+        ["parenExpression", 13],
+        ["boolNotExpression", 14],
+        ["ifStatement", 15],
+        ["endIf"],
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 18, 19],
+        ["parenExpression", 20],
+        ["boolNotExpression", 21],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 23, 24],
+        ["boolOrExpression", 22, 25],
+        ["ifStatement", 26],
+        ["endIf"],
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 29, 30],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 32, 33],
+        ["parenExpression", 34],
+        ["boolNotExpression", 35],
+        ["boolOrExpression", 31, 36],
+        ["ifStatement", 37],
+        ["endIf"],
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 40, 41],
+        ["parenExpression", 42],
+        ["boolNotExpression", 43],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 45, 46],
+        ["variableExpression", "C"],
+        ["numericLiteralExpression", "99"],
+        ["boolEqualExpression", 48, 49],
+        ["boolAndExpression", 47, 50],
+        ["boolOrExpression", 44, 51],
+        ["ifStatement", 52],
         ["endIf"],
         ["finalize"]
       ],
