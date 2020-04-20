@@ -36,7 +36,7 @@ function TypeGeneratorPass(typeManager, logger) {
       return result;
     }
 
-    function ifStatement(boolExp,num){
+    function ifStatement(boolExp){
       if (boolExp === null) {
         logger.error("Invalid comparison for IF");
         return false;

@@ -555,7 +555,7 @@ function Parser(handlers,logger){
             logger.error("Invalid IF");
             return false;
           }
-          return handler.ifStatement(boolExp, num);
+          return handler.ifStatement(boolExp);
 
 	} else if (tokens[0].value==='WAIT' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[2].type === IDENTIFIER && tokens[1].value==='FOR' && tokens[2].value==='MUSIC') {
 	  return handler.waitForMusic();
@@ -689,7 +689,7 @@ function Parser(handlers,logger){
 
         } else if (tokens[0].value==='END' && tokens.length===2 &&
                    tokens[1].type===IDENTIFIER && tokens[1].value==='IF') {
-          return handler.endIf(num);
+          return handler.endIf();
 
         } else if ((tokens[0].value==='WEND' && tokens.length===1) ||
                    (tokens[0].value==='END' && tokens.length===2 &&

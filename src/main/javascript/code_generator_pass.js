@@ -188,7 +188,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function ifStatement(boolExp,num){
+    function ifStatement(boolExp){
       if (!boolExp) {
         logger.error("Invalid IF");
         return false;
@@ -202,7 +202,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function endIf(num) {
+    function endIf() {
       var obj = loopStack.pop();
       if ((!obj) || obj.type !== IF) {
         logger.error("ERROR: END IF WITHOUT MATCHING IF");

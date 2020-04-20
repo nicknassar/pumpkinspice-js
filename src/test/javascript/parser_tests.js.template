@@ -559,6 +559,76 @@ function ParserTests(display) {
 	["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "Simple IF statement",
+      code: "IF 77 = 88\n" +
+        "PRINT\n" +
+        "END IF\n" +
+        "IF \"a\" == Seven\n" +
+        "PRINT\n" +
+        "END IF\n" +
+        "IF Q > 88 THEN\n" +
+        "PRINT\n" +
+        "END IF\n" +
+        "IF 77 < Z\n" +
+        "PRINT\n" +
+        "END IF\n" +
+        "IF 77 >= 88\n" +
+        "PRINT\n" +
+        "END IF\n" +
+        "IF 77 <= 88\n" +
+        "PRINT\n" +
+        "END IF\n" +
+        "IF 77 <> 88\n" +
+        "PRINT\n" +
+        "END IF\n",
+      parsed: [
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["stringLiteralExpression", "a"],
+        ["variableExpression", "SEVEN"],
+        ["boolEqualExpression", 6, 7],
+        ["ifStatement", 8],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["variableExpression", "Q"],
+        ["numericLiteralExpression", "88"],
+        ["boolGreaterExpression", 12, 13],
+        ["ifStatement", 14],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["numericLiteralExpression", "77"],
+        ["variableExpression", "Z"],
+        ["boolLessExpression", 18, 19],
+        ["ifStatement", 20],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolGreaterOrEqualExpression", 24, 25],
+        ["ifStatement", 26],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolLessOrEqualExpression", 30, 31],
+        ["ifStatement", 32],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolNotEqualExpression", 36, 37],
+        ["ifStatement", 38],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
     }
   ];
 
