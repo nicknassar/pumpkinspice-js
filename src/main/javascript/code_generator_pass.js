@@ -231,7 +231,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function elseStatement(num) {
+    function elseStatement() {
       var obj = loopStack[loopStack.length-1];
       if ((!obj) || obj.type !== IF) {
         logger.error("ERROR: ELSE WITHOUT MATCHING IF");
@@ -242,7 +242,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function endWhile(num) {
+    function endWhile() {
       var obj = loopStack.pop();
       if ((!obj) || obj.type !== WHILE) {
         logger.error("ERROR: WEND IF WITHOUT MATCHING WHILE");
@@ -262,7 +262,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function whileStatement(exp,num){
+    function whileStatement(exp){
       if (!exp) {
         logger.error("Invalid WHILE");
         return false;

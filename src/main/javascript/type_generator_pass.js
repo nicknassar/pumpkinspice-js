@@ -44,7 +44,7 @@ function TypeGeneratorPass(typeManager, logger) {
       return true;
     }
 
-    function whileStatement(exp,num){
+    function whileStatement(exp){
       if (exp === null) {
         logger.error("Type mismath for WHILE");
         return false;

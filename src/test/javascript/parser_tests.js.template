@@ -590,8 +590,12 @@ function ParserTests(display) {
         "END IF\n" +
         "IF 77 <= 88\n" +
         "PRINT\n" +
+        "ELSE\n" +
+        "PRINT\n" +
         "END IF\n" +
         "IF 77 <> 88\n" +
+        "PRINT\n" +
+        "ELSE\n" +
         "PRINT\n" +
         "END IF\n",
       parsed: [
@@ -630,11 +634,15 @@ function ParserTests(display) {
         ["boolLessOrEqualExpression", 30, 31],
         ["ifStatement", 32],
         ["printString", "", true, false],
+        ["elseStatement"],
+        ["printString", "", true, false],
         ["endIf"],
         ["numericLiteralExpression", "77"],
         ["numericLiteralExpression", "88"],
-        ["boolNotEqualExpression", 36, 37],
-        ["ifStatement", 38],
+        ["boolNotEqualExpression", 38, 39],
+        ["ifStatement", 40],
+        ["printString", "", true, false],
+        ["elseStatement"],
         ["printString", "", true, false],
         ["endIf"],
         ["finalize"]
@@ -845,6 +853,27 @@ function ParserTests(display) {
         ["ifStatement", 50],
         ["endIf"],
         ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "WHILE statement",
+      code: "WHILE A = A DO\n" +
+        "WEND\n" +
+        "WHILE A < 10\n" +
+        "END WHILE\n",
+      parsed: [
+        ["variableExpression", "A"],
+        ["variableExpression", "A"],
+        ["boolEqualExpression", 0, 1],
+        ["whileStatement", 2],
+        ["endWhile"],
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "10"],
+        ["boolLessExpression", 5, 6],
+        ["whileStatement", 7],
+        ["endWhile"],
+        ["finalize"],
       ],
       errors: []
     }

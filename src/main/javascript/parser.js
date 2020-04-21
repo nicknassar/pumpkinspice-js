@@ -576,7 +576,7 @@ function Parser(handlers,logger){
             logger.error("Invalid WHILE");
             return false;
           }
-          return handler.whileStatement(boolExp, num);
+          return handler.whileStatement(boolExp);
 
         } else if (tokens[0].value==='END' && tokens.length===2 &&
                    tokens[1].type===IDENTIFIER && tokens[1].value==='IF') {
@@ -585,10 +585,10 @@ function Parser(handlers,logger){
         } else if ((tokens[0].value==='WEND' && tokens.length===1) ||
                    (tokens[0].value==='END' && tokens.length===2 &&
                     tokens[1].value==='WHILE')) {
-          return handler.endWhile(num);
+          return handler.endWhile();
 
         } else if (tokens[0].value==='ELSE' && tokens.length===1) {
-          return handler.elseStatement(num);
+          return handler.elseStatement();
 
         } else if (tokens[0].value==='COLOR') {
           return handler.color(expression(tokens.slice(1,tokens.length), handler),num);
