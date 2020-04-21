@@ -222,13 +222,6 @@ function Parser(handlers,logger){
       return [null, []];
     } else if (tokens[0].type===NUMERIC){
         return [handler.numericLiteralExpression(tokens[0].value), tokens.slice(1)];
-    } else if (tokens[0].type===NOT){
-      var next = nextSimpleExpression(tokens.slice(1), handler);
-      var nextExp = next[0];
-      var remainder = next[1];
-      if (next === null)
-        return null;
-      return [handler.boolNotExpression(nextExp), remainder];
     } else if (tokens[0].type===STRING){
       // silently truncate long strings
       if (tokens[0].value.length>255)
@@ -671,6 +664,7 @@ function Parser(handlers,logger){
             token.type === OR ||
             token.type === NOT);
   }
+
   function isInfixOperator(token) {
     return (token.type === PLUS ||
             token.type === MINUS ||
@@ -685,8 +679,13 @@ function Parser(handlers,logger){
             token.type === AND ||
             token.type === OR);
   }
-    // Lower numers are higher priority
-  function infixOperatorPrecedence(operator) {
+  function isUnaryOperator(token) {
+    return (token.type === NOT);
+  }
+
+  // Lower numers are higher priority
+  // takes in a token type
+  function operatorPrecedence(operator) {
     if (operator === TIMES || operator === DIV) {
       return 1;
     } else if (operator === PLUS || operator === MINUS) {
@@ -695,21 +694,24 @@ function Parser(handlers,logger){
                operator === GREATER || operator === GREATEROREQUAL ||
                operator === LESS || operator === LESSOREQUAL) {
       return 3;
-    } else if (operator === AND) {
+    } else if (operator === NOT) {
       return 4;
-    } else if (operator === OR) {
+    } else if (operator === AND) {
       return 5;
+    } else if (operator === OR) {
+      return 6;
     }
   }
 
 
   // return true iff infix operator tokenType1 has higher precedence
   function hasHigherPrecedence(tokenType1, tokenType2) {
-    return infixOperatorPrecedence(tokenType1) < infixOperatorPrecedence(tokenType2);
+    return operatorPrecedence(tokenType1.type) < operatorPrecedence(tokenType2.type);
   }
 
   function expression(tokens, handler) {
-    function binaryExpression(expType,head,tail) {
+    function binaryExpression(opToken,head,tail) {
+      var expType = opToken.type;
       if (expType === PLUS) {
         return handler.additionExpression(head,tail);
       } else if (expType === MINUS) {
@@ -740,32 +742,65 @@ function Parser(handlers,logger){
       }
     }
 
-    var result = nextSimpleExpression(tokens, handler);
+    function unaryExpression(opToken, param) {
+      if (opToken.type === NOT) {
+        return handler.boolNotExpression(param);
+      } else {
+        logger.error("Unexpected expression type?");
+        return null;
+      }
+    }
+
+    var remaining = tokens;
+    var operatorStack = [];
+    var expStack = [];
+
+    if (remaining.length === 0) {
+      logger.error("Expected expression");
+      return null;
+    } else if (isUnaryOperator(remaining[0])) {
+      operatorStack.push(remaining[0]);
+      remaining = remaining.slice(1);
+    }
+
+    var result = nextSimpleExpression(remaining, handler);
     if (result[0] === null)
       return null;
-    var expStack = [result[0]];
-    var operatorStack = [];
-    var remaining = result[1];
+    expStack.push(result[0]);
+    remaining = result[1];
 
     while (remaining.length > 0) {
-      if (!isInfixOperator(remaining[0])) {
+      if (!(isInfixOperator(remaining[0]) || isUnaryOperator(remaining[0]))) {
         logger.error("Unexpected token "+remaining[0].value+" in expression");
         return null;
       }
-      var finalOp = remaining[0].type;
+      var finalOp = remaining[0];
       while (operatorStack.length > 0 && !hasHigherPrecedence(finalOp, operatorStack[operatorStack.length - 1])) {
         // The final infix operator has the same or lower precedence then the next-to-last
         // Combine the previous two simple expressions
         var currentOp = operatorStack.pop();
-        var secondParam = expStack.pop();
-        var firstParam = expStack.pop();
-        var newExp = binaryExpression(currentOp, firstParam, secondParam);
-        if (newExp === null)
-          return null;
-        expStack.push(newExp);
+        if (isUnaryOperator(currentOp)) {
+          var param = expStack.pop();
+          var newExp = unaryExpression(currentOp, param);
+          if (newExp === null)
+            return null;
+          expStack.push(newExp);
+        } else { // isBinaryOperator
+          var secondParam = expStack.pop();
+          var firstParam = expStack.pop();
+          var newExp = binaryExpression(currentOp, firstParam, secondParam);
+          if (newExp === null)
+            return null;
+          expStack.push(newExp);
+        }
       }
       operatorStack.push(finalOp);
-      result = nextSimpleExpression(remaining.slice(1), handler);
+      var startOfNextSimpleExp = 1;
+      while (remaining.length > startOfNextSimpleExp && isUnaryOperator(remaining[startOfNextSimpleExp])) {
+        operatorStack.push(remaining[startOfNextSimpleExp]);
+        startOfNextSimpleExp++;
+      }
+      result = nextSimpleExpression(remaining.slice(startOfNextSimpleExp), handler);
       if (result[0] === null)
         return null;
       expStack.push(result[0]);
@@ -773,10 +808,21 @@ function Parser(handlers,logger){
     }
     while (operatorStack.length > 0) {
       // Combine the expressions
-      var op = operatorStack.pop();
-      var secondParam = expStack.pop();
-      var firstParam = expStack.pop();
-      expStack.push(binaryExpression(op, firstParam, secondParam));
+      var currentOp = operatorStack.pop();
+      if (isUnaryOperator(currentOp)) {
+        var param = expStack.pop();
+          var newExp = unaryExpression(currentOp, param);
+          if (newExp === null)
+            return null;
+          expStack.push(newExp);
+      } else { // isBinaryOperator
+        var secondParam = expStack.pop();
+        var firstParam = expStack.pop();
+        var newExp = binaryExpression(currentOp, firstParam, secondParam);
+        if (newExp === null)
+          return null;
+        expStack.push(newExp);
+      }
     }
     return expStack[0];
   }
