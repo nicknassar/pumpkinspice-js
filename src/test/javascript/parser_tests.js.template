@@ -335,7 +335,8 @@ function ParserTests(display) {
         "A = LEN(\"string\")\n" +
         "A = STR$(100)\n" +
         "A = VAL(\"100\")\n" +
-        "A = RANDOM(100, 200)\n",
+        "A = RANDOM(100, 200)\n" +
+        "A = PI\n",
       parsed: [
         ["numericLiteralExpression", 100],
         ["absBuiltinExpression", 0],
@@ -370,6 +371,8 @@ function ParserTests(display) {
         ["numericLiteralExpression", 200],
         ["randomBuiltinExpression", 29, 30],
         ["letStatement", "A", 31],
+        ["piBuiltinExpression"],
+        ["letStatement", "A", 33],
         ["finalize"]
       ],
       errors: []
@@ -876,7 +879,80 @@ function ParserTests(display) {
         ["finalize"],
       ],
       errors: []
-    }
+    },
+    {
+      description: "RANDOM statement",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE 33.3\n" +
+        "PRINT\n" +
+        "WITH CHANCE 66.7\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      parsed: [
+        ["beginRandom"],
+        ["withChance", "33.3"],
+        ["printString", "", true, false],
+        ["withChance", "66.7"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "RANDOM statement with even chance",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      parsed: [
+        ["beginRandom"],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [],
+    },
+    // XXX missing tests
+    // returnStatement
+
+    // waitForMusic
+
+    // beginAsk
+    // askColor
+    // askBGColor
+    // askPromptColor
+    // onNo
+    // onYes
+    // askDefault
+    // endAsk
+
+    // beginMenu
+    // menuColor
+    // menuBGColor
+    // menuChoiceColor
+    // menuPromptColor
+    // menuChoice
+    // menuHideIf
+    // endMenu
+
+    // color
+    // bgColor
+    // clear
+
+    // sleep
+
+    // input
+    // play
+    // forStatement
+    // next
+
+
   ];
 
   function compareNestedLists(listA, listB) {

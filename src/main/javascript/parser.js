@@ -451,7 +451,7 @@ function Parser(handlers,logger){
 	} else if (tokens[0].value==='WAIT' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[2].type === IDENTIFIER && tokens[1].value==='FOR' && tokens[2].value==='MUSIC') {
 	  return handler.waitForMusic();
         } else if (tokens[0].value==='BEGIN' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
-          return handler.beginRandom(num);
+          return handler.beginRandom();
 
         } else if (tokens[0].value==='SUBROUTINE' && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
           var args = [];
@@ -499,13 +499,13 @@ function Parser(handlers,logger){
           return handler.returnStatement(expression(tokens.slice(1,tokens.length), handler),num);
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
-          return handler.endRandom(num);
+          return handler.endRandom();
 
         } else if (tokens[0].value==='WITH' && tokens.length == 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHANCE' && tokens[2].type === NUMERIC) {
-          return handler.withChance(tokens[2].value,num);
+          return handler.withChance(tokens[2].value);
 
         } else if (tokens[0].value==='WITH' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHANCE') {
-          return handler.withEvenChance(num);
+          return handler.withEvenChance();
 
         } else if (tokens[0].value==='ASK' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'COLOR' && tokens[2].type === NUMERIC) {
           return handler.askColor(tokens[2].value,num);

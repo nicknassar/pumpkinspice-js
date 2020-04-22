@@ -279,7 +279,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function beginRandom(num) {
+    function beginRandom() {
       loopStack.push({type:RANDOM,
                       events:[],
                       loc:nextInstruction()});
@@ -351,7 +351,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function endRandom(num) {
+    function endRandom() {
       var obj = loopStack.pop();
       if ((!obj) || obj.type !== RANDOM) {
         logger.error("ERROR: END RANDOM WITHOUT MATCHING BEGIN RANDOM");
@@ -403,7 +403,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function withChance(percent, num) {
+    function withChance(percent) {
       var obj = loopStack[loopStack.length-1];
       if ((!obj) || obj.type !== RANDOM) {
         logger.error("ERROR: WITH CHANCE WITHOUT MATCHING BEGIN RANDOM");
@@ -433,8 +433,8 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function withEvenChance(num) {
-      return withChance(undefined,num);
+    function withEvenChance() {
+      return withChance(undefined);
     }
 
     function beginAsk(prompt,num) {
