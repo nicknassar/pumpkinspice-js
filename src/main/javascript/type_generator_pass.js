@@ -81,12 +81,21 @@ function TypeGeneratorPass(typeManager, logger) {
     }
 
     function endSubroutine() {
+      if (!typeManager.subHasReturnType(currentSub)) {
+        if (typeManager.returnStatement(currentSub, typeManager.voidTypeIndicator()) === null) {
+          return false;
+        }
+      }
       currentSub = undefined;
       return true;
     }
 
-    function returnStatement(exp, num) {
+    function returnStatement(exp) {
       return typeManager.returnStatement(currentSub, exp);
+    }
+
+    function voidReturnStatement() {
+      return typeManager.returnStatement(currentSub, typeManager.voidTypeIndicator());
     }
 
     function beginAsk(promptExp,num) {
@@ -389,6 +398,7 @@ function TypeGeneratorPass(typeManager, logger) {
     callSubroutine: callSubroutine,
     endSubroutine: endSubroutine,
     returnStatement: returnStatement,
+    voidReturnStatement: voidReturnStatement,
     endRandom: trueFunc,
     withChance: trueFunc,
     withEvenChance: trueFunc,

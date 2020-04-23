@@ -404,6 +404,21 @@ IF "y" <> "Y"
    CALL ERROR "Case insensitive comparison failed!"
 END IF
 
+XXX = 0
+SUBROUTINE BARE_RETURN
+  IF 1 + 1 = 2
+    RETURN
+  END IF
+  XXX = 1
+END SUBROUTINE
+CALL BARE_RETURN
+IF XXX <> 0
+  CALL ERROR "RETURN statement fail"
+END IF
+' Check that
+' XXX = CALL BARE_RETURN
+' Generates an error
+
 REM Interactive test for subroutines within ASK prompts
 
 REM TEST_PROMPT = "First prompt!"

@@ -29,6 +29,7 @@ function TestingCompilerPass() {
     callSubroutine: loggerWithName("callSubroutine"),
     endSubroutine: loggerWithName("endSubroutine"),
     returnStatement: loggerWithName("returnStatement"),
+    voidReturnStatement: loggerWithName("voidReturnStatement"),
     endRandom: loggerWithName("endRandom"),
     withChance: loggerWithName("withChance"),
     withEvenChance: loggerWithName("withEvenChance"),

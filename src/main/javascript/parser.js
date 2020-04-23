@@ -495,8 +495,11 @@ function Parser(handlers,logger){
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'SUBROUTINE') {
           return handler.endSubroutine();
 
+        } else if (tokens[0].value==='RETURN' && tokens.length === 1) {
+          return handler.voidReturnStatement();
+
         } else if (tokens[0].value==='RETURN' && tokens.length >= 2) {
-          return handler.returnStatement(expression(tokens.slice(1,tokens.length), handler),num);
+          return handler.returnStatement(expression(tokens.slice(1,tokens.length), handler));
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
           return handler.endRandom();

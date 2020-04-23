@@ -329,7 +329,24 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function returnStatement(exp,num) {
+    function voidReturnStatement() {
+      // Make sure there's a subroutine somewhere
+      for (var i=loopStack.length-1;i>=0;i--) {
+        if (loopStack[i].type === SUBROUTINE) {
+          break;
+        }
+      }
+      if (i===-1) {
+        logger.error("UNEXPECTED RETURN OUTSIDE OF SUB");
+        return false;
+      }
+      pushInstruction(function() {
+        machine.returnFromSub(function() { return undefined; });
+      });
+      return true;
+    }
+
+    function returnStatement(exp) {
       // XXX Keep track of returns - if there's at least one
       // return or the sub is used in an expression, all code
       // paths in the sub should have returns
@@ -1143,6 +1160,11 @@ function CodeGeneratorPass(typeManager, machine, logger){
           return stringExpressionWithSubs(t,subs);
         else if (typeManager.subHasNumericReturnType(name))
           return numericExpressionWithSubs(t,subs);
+        else if (typeManager.subHasVoidReturnType(name)) {
+          logger.error("Calling subroutine "+name+" which does not return either text or a number");
+          return null;
+        }
+
       }
       function additionExpression(a,b) {
 	if (a.resultType === STRING_TYPE && b.resultType === STRING_TYPE) {
@@ -1192,6 +1214,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
     callSubroutine: callSubroutine,
     endSubroutine: endSubroutine,
     returnStatement: returnStatement,
+    voidReturnStatement: voidReturnStatement,
     endRandom: endRandom,
     withChance: withChance,
     withEvenChance: withEvenChance,

@@ -14,6 +14,7 @@
       STRING_TYPE - this is a string
       NUMERIC_TYPE - this is a numeric type
       BOOL_TYPE - this is a boolean -- only expressions can have boolean values - there are no boolean variables
+      VOID_TYPE - this is returned by a subroutine with no return value
       null - something is wrong
       Array - we haven't figured it out - this is a list of identifiers
 
@@ -23,6 +24,7 @@
     var STRING_TYPE = {};
     var NUMERIC_TYPE = {};
     var BOOL_TYPE = {};
+    var VOID_TYPE = {};
 
     var subArgNames = {};      // Map of subroutine to list of param names
 
@@ -168,10 +170,10 @@
         return null;
 
       // The first expression can be resolved
-      if (type1 === STRING_TYPE || type1 === NUMERIC_TYPE || type1 === BOOL_TYPE) {
+      if (type1 === STRING_TYPE || type1 === NUMERIC_TYPE || type1 === BOOL_TYPE || type1 === VOID_TYPE) {
         if (type2 === type1) {
           return type1;
-        } else if (type2 !== STRING_TYPE && type2 !== NUMERIC_TYPE && type2 !== BOOL_TYPE) {
+        } else if (type2 !== STRING_TYPE && type2 !== NUMERIC_TYPE && type2 !== BOOL_TYPE && type2 !== VOID_TYPE) {
           // Type 2 is a list of unknowns
           assignTypes(type2,type1);
           return type1;
@@ -184,7 +186,7 @@
       // The first expression could not be resolved
 
       // The second expression can be resolved
-      if (type2 === STRING_TYPE || type2 === NUMERIC_TYPE || type2 === BOOL_TYPE) {
+      if (type2 === STRING_TYPE || type2 === NUMERIC_TYPE || type2 === BOOL_TYPE || type2 === VOID_TYPE) {
         assignTypes(type1,type2);
         return type2;
       }
@@ -217,12 +219,20 @@
       return type === BOOL_TYPE;
     }
 
+    function isVoidType(type) {
+      return type === BOOL_TYPE;
+    }
+
     function genTypesForStringExpression(exp) {
       return genTypesForExpressionPair(exp, STRING_TYPE);
     }
 
     function genTypesForNumericExpression(exp) {
       return genTypesForExpressionPair(exp, NUMERIC_TYPE);
+    }
+
+    function voidTypeIndicator() {
+      return VOID_TYPE;
     }
 
     function stringTypeIndicator() {
@@ -310,8 +320,11 @@
       return varTypes[returnValueName(sub)] === NUMERIC_TYPE;
     }
 
-    function subHasUndefinedReturnType(sub) {
-      return varTypes[returnValueName(sub)] === undefined;
+    function subHasVoidReturnType(sub) {
+      return varTypes[returnValueName(sub)] === VOID_TYPE;
+    }
+    function subHasReturnType(sub) {
+      return varTypes[returnValueName(sub)] !== undefined;
     }
 
     function callSubroutineStatement(name, argExps) {
@@ -358,7 +371,7 @@
       var retValName=returnValueName(sub);
       if (varTypes[retValName]) {
         var result = genTypesForExpressionPair(exp,varTypes[retValName]);
-        if (!result) {
+        if (result === null) {
           logger.error("TYPE MISMATCH IN RETURN");
           return false;
         } else {
@@ -435,6 +448,7 @@
       isNumericType: isNumericType,
       isStringType: isStringType,
       isBoolType: isBoolType,
+      isVoidType: isVoidType,
 
       addGlobalToAssignedType: addGlobalToUnassignedType,
       callSubroutineStatement: callSubroutineStatement,
@@ -445,6 +459,7 @@
       numericTypeIndicator: numericTypeIndicator,
       stringTypeIndicator: stringTypeIndicator,
       boolTypeIndicator: boolTypeIndicator,
+      voidTypeIndicator: voidTypeIndicator,
       setSubArgNames: setSubArgNames,
 
       // Type reading functions
@@ -461,9 +476,10 @@
       subArgHasStringType: subArgHasStringType,
       subArgHasNumericType: subArgHasNumericType,
       subArgHasUndefinedType: subArgHasUndefinedType,
+      subHasReturnType: subHasReturnType,
       subHasStringReturnType: subHasStringReturnType,
       subHasNumericReturnType: subHasNumericReturnType,
-      subHasUndefinedReturnType: subHasUndefinedReturnType,
+      subHasVoidReturnType: subHasVoidReturnType,
       validate: validate,
 
       getVarsObject: getVarsObject,

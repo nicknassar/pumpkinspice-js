@@ -794,6 +794,77 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "Subroutine with empty return",
+      code: "SUBROUTINE BOO BAA, bee\n" +
+        "RETURN\n" +
+        "END SUBROUTINE\n",
+      parsed: [
+        ["beginSubroutine", "BOO", ["BAA", "BEE"]],
+        ["voidReturnStatement"],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with variable return",
+      code: "SUBROUTINE FOO\n" +
+        "RETURN BAR\n" +
+        "END SUBROUTINE\n",
+      parsed: [
+        ["beginSubroutine", "FOO", []],
+        ["variableExpression", "BAR"],
+        ["returnStatement", 1],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with string return",
+      code: "SUBROUTINE FOO\n" +
+        "RETURN \"BAR\"\n" +
+        "END SUBROUTINE\n",
+      parsed: [
+        ["beginSubroutine", "FOO", []],
+        ["stringLiteralExpression", "BAR"],
+        ["returnStatement", 1],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with numeric return",
+      code: "SUBROUTINE BOO BAA, bee\n" +
+        "RETURN 7\n" +
+        "END SUBROUTINE\n",
+      parsed: [
+        ["beginSubroutine", "BOO", ["BAA", "BEE"]],
+        ["numericLiteralExpression","7"],
+        ["returnStatement", 1],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with numeric expression return",
+      code: "SUBROUTINE BOO BAA, bee\n" +
+        "RETURN 7+BAR\n" +
+        "END SUBROUTINE\n",
+      parsed: [
+        ["beginSubroutine", "BOO", ["BAA", "BEE"]],
+        ["numericLiteralExpression","7"],
+        ["variableExpression","BAR"],
+        ["additionExpression", 1, 2],
+        ["returnStatement", 3],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
       description: "CALL statement 1",
       code: "CALL Foo\n",
       parsed: [
