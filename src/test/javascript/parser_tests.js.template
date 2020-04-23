@@ -819,7 +819,7 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "Expression errors",
+      description: "Builtin Expression errors",
       code: "A = ABS()\n" +
         "A = ABS\n" +
         "A = ABS(\n" +
@@ -852,6 +852,24 @@ function ParserTests(display) {
         [9, "Missing second param"],
         [10, "Missing first param"],
         [11, "Invalid expression"]
+      ]
+    },
+    {
+      description: "Numeric expression errors",
+      code: "A = +\n" +
+        "A = +\"a\"\n" +
+        "A = -\n" +
+        "A = -\"a\"\n" +
+        "42\n",
+      parsed: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Number expected"],
+        [2, "Number expected"],
+        [3, "Number expected"],
+        [4, "Number expected"],
+        [5, "Number not expected"]
       ]
     },
     {
