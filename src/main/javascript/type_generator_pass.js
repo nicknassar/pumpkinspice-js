@@ -24,11 +24,11 @@ function TypeGeneratorPass(typeManager, logger) {
       return true;
     }
 
-    function printString(value,newline,pause,num) {
+    function printString(value,newline,pause) {
       return (value !== null && value !== undefined);
     }
 
-    function printExp(exp,newline,pause,num) {
+    function printExp(exp,newline,pause) {
       var result = typeManager.genTypesForStringExpression(exp);
       if (!result) {
         logger.error("Type mismatch for PRINT. I need text");
@@ -98,7 +98,7 @@ function TypeGeneratorPass(typeManager, logger) {
       return typeManager.returnStatement(currentSub, typeManager.voidTypeIndicator());
     }
 
-    function beginAsk(promptExp,num) {
+    function beginAsk(promptExp) {
       var result = typeManager.genTypesForStringExpression(promptExp);
       if (result === null) {
         logger.error("Type mismatch for ASK");
@@ -108,7 +108,7 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function beginMenu(promptExp,num) {
+    function beginMenu(promptExp) {
       var result = typeManager.genTypesForStringExpression(promptExp);
       if (result === null) {
         logger.error("Type mismatch for BEGIN MENU");
@@ -118,7 +118,7 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function menuChoice(charExp,textExp,num) {
+    function menuChoice(charExp,textExp) {
       var result = typeManager.genTypesForStringExpression(textExp);
       if (result === null) {
         logger.error("Type mismatch for MENU CHOICE");
@@ -128,7 +128,7 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function menuHideIf(boolExp,num) {
+    function menuHideIf(boolExp) {
       if (boolExp === null) {
         logger.error("Type mismatch for HIDE IF");
         return false;
@@ -137,7 +137,7 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function color(valueExp,num) {
+    function color(valueExp) {
       var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
         logger.error("Type mismatch for COLOR");
@@ -147,7 +147,7 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function bgColor(valueExp,num) {
+    function bgColor(valueExp) {
       var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
         logger.error("Type mismatch for BGCOLOR");
@@ -157,7 +157,7 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function sleep(valueExp,num) {
+    function sleep(valueExp) {
       var result = typeManager.genTypesForNumericExpression(valueExp);
       if (result === null) {
         logger.error("Type mismatch for SLEEP");
@@ -167,11 +167,11 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function input(valueExp,num) {
+    function input(valueExp) {
       return typeManager.assignGlobalStringType(valueExp);
     }
 
-    function play(valueExp,num) {
+    function play(valueExp) {
       var result = typeManager.genTypesForStringExpression(valueExp);
       if (result === null) {
 	logger.error("Type mismatch for PLAY");
@@ -181,7 +181,7 @@ function TypeGeneratorPass(typeManager, logger) {
       }
     }
 
-    function forStatement(varExp,startExp,endExp,num) {
+    function forStatement(varExp,startExp,endExp) {
       if (!typeManager.assignGlobalNumericType(varExp) ||
           typeManager.genTypesForNumericExpression(startExp)===null ||
           typeManager.genTypesForNumericExpression(endExp)===null) {

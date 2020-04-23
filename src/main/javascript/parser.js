@@ -206,7 +206,7 @@ function Parser(handlers,logger){
     if (!tokens) {
       return false;
     } else {
-      parseLineWithHandler(handler,tokens,num);
+      parseLineWithHandler(handler,tokens);
       return true;
     }
   }
@@ -391,7 +391,7 @@ function Parser(handlers,logger){
     }
   }
 
-  function parseLineWithHandler(handler,tokens,num) {
+  function parseLineWithHandler(handler,tokens) {
     if (!started && tokens.length>0) {
       started = true;
       if (tokens.length>=4 && tokens[0].type===LESS && tokens[1].value==="!" && tokens[2].type===MINUS && tokens[3].type===MINUS ) {
@@ -426,12 +426,12 @@ function Parser(handlers,logger){
           else
             return handler.comment("");
         } else if (tokens[0].value==='CLS') {
-          return handler.clear(num);
+          return handler.clear();
         } else if (tokens[0].value==='NEXT') {
-          if (tokens.length !== 2) {
+          if (tokens.length !== 2 || tokens[1].type !== IDENTIFIER) {
             return false;
           } else {
-            return handler.next([tokens[1]],num);
+            return handler.next(tokens[1].value);
           }
         } else if (tokens[0].value==='IF') {
           var exp2end;
@@ -511,61 +511,61 @@ function Parser(handlers,logger){
           return handler.withEvenChance();
 
         } else if (tokens[0].value==='ASK' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'COLOR' && tokens[2].type === NUMERIC) {
-          return handler.askColor(tokens[2].value,num);
+          return handler.askColor(tokens[2].value);
 
         } else if (tokens[0].value==='ASK' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'BGCOLOR' && tokens[2].type === NUMERIC) {
-          return handler.askBGColor(tokens[2].value,num);
+          return handler.askBGColor(tokens[2].value);
 
         } else if (tokens[0].value==='ASK' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'PROMPT' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type === NUMERIC) {
-          return handler.askPromptColor(tokens[3].value,num);
+          return handler.askPromptColor(tokens[3].value);
 
         } else if (tokens[0].value==='ASK' && tokens.length >= 2) {
-          return handler.beginAsk(expression(tokens.slice(1,tokens.length), handler),num);
+          return handler.beginAsk(expression(tokens.slice(1,tokens.length), handler));
 
         } else if (tokens[0].value==='DEFAULT' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'NO') {
-          return handler.askDefault(false,num);
+          return handler.askDefault(false);
 
         } else if (tokens[0].value==='DEFAULT' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'YES') {
-          return handler.askDefault(true,num);
+          return handler.askDefault(true);
 
         } else if (tokens[0].value==='ON' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'NO') {
-          return handler.onNo(num);
+          return handler.onNo();
 
         } else if (tokens[0].value==='ON' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'YES') {
-          return handler.onYes(num);
+          return handler.onYes();
 
         } else if (tokens[0].value==='END' && tokens.length === 2 && tokens[1].value==='ASK') {
-          return handler.endAsk(num);
+          return handler.endAsk();
 
         } else if (tokens[0].value==='BEGIN' && tokens.length > 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'MENU') {
-          return handler.beginMenu(expression(tokens.slice(2,tokens.length), handler),num);
+          return handler.beginMenu(expression(tokens.slice(2,tokens.length), handler));
 
         } else if (tokens[0].value==='MENU' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'COLOR' && tokens[2].type===NUMERIC) {
-          return handler.menuColor(tokens[2].value,num);
+          return handler.menuColor(tokens[2].value);
 
         } else if (tokens[0].value==='MENU' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'BGCOLOR' && tokens[2].type===NUMERIC) {
-          return handler.menuBGColor(tokens[2].value,num);
+          return handler.menuBGColor(tokens[2].value);
 
         } else if (tokens[0].value==='MENU' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHOICE' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type===NUMERIC) {
-          return handler.menuChoiceColor(tokens[3].value,num);
+          return handler.menuChoiceColor(tokens[3].value);
         } else if (tokens[0].value==='HIDE' && tokens.length >= 5 && tokens[1].type === IDENTIFIER && tokens[1].value === 'IF' ) {
           var boolExp = expression(tokens.slice(2,tokens.length), handler);
           if (boolExp === null) {
             logger.error("Invalid HIDE IF");
             return false;
           }
-          return handler.menuHideIf(boolExp, num);
+          return handler.menuHideIf(boolExp);
 
         } else if (tokens[0].value==='MENU' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'PROMPT' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type===NUMERIC) {
-          return handler.menuPromptColor(tokens[3].value,num);
+          return handler.menuPromptColor(tokens[3].value);
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'MENU') {
-          return handler.endMenu(num);
+          return handler.endMenu();
 
         } else if (tokens[0].value==='CHOICE' && tokens.length > 2 && tokens[1].type === IDENTIFIER) {
-          return handler.menuChoice(tokens[1].value,expression(tokens.slice(2,tokens.length), handler),num);
+          return handler.menuChoice(tokens[1].value,expression(tokens.slice(2,tokens.length), handler));
         } else if (tokens[0].value==='CHOICE' && tokens.length > 2 && tokens[1].type === NUMERIC) {
-          return handler.menuChoice((tokens[1].value).toString(10),expression(tokens.slice(2,tokens.length), handler),num);
+          return handler.menuChoice((tokens[1].value).toString(10),expression(tokens.slice(2,tokens.length), handler));
 
         } else if (tokens[0].value==='WHILE') {
           var exp2end;
@@ -594,22 +594,22 @@ function Parser(handlers,logger){
           return handler.elseStatement();
 
         } else if (tokens[0].value==='COLOR') {
-          return handler.color(expression(tokens.slice(1,tokens.length), handler),num);
+          return handler.color(expression(tokens.slice(1,tokens.length), handler));
 
         } else if (tokens[0].value==='BGCOLOR') {
-          return handler.bgColor(expression(tokens.slice(1,tokens.length), handler),num);
+          return handler.bgColor(expression(tokens.slice(1,tokens.length), handler));
 
         } else if (tokens[0].value==='SLEEP') {
-          return handler.sleep(expression(tokens.slice(1,tokens.length), handler),num);
+          return handler.sleep(expression(tokens.slice(1,tokens.length), handler));
         } else if (tokens[0].value==='INPUT') {
           if (tokens.length !== 2 || tokens[1].type !== IDENTIFIER) {
             logger.error("Invalid INPUT");
             return false;
           } else {
-            return handler.input(tokens[1].value,num);
+            return handler.input(tokens[1].value);
           }
         } else if (tokens[0].value==='PLAY') {
-          return handler.play(expression(tokens.slice(1,tokens.length), handler),num);
+          return handler.play(expression(tokens.slice(1,tokens.length), handler));
         } else if (tokens[0].value==='FOR') {
           if(!(tokens.length>=6 && tokens[2].type === EQUALS && tokens[2].value === '=' && tokens[1].type === IDENTIFIER)) {
             logger.error("Invalid FOR");
@@ -627,7 +627,7 @@ function Parser(handlers,logger){
             return false;
           }
           return handler.forStatement(tokens[1].value, expression(tokens.slice(3,pos), handler),
-                                      expression(tokens.slice(pos+1,tokens.length), handler),num);
+                                      expression(tokens.slice(pos+1,tokens.length), handler));
 
         } else if (tokens.length>=3 && tokens[1].type===EQUALS &&
                    tokens[1].value==='=') {

@@ -112,7 +112,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
   BEGIN Code Gen functions
 ***********************************************************************/
 
-    function printString(text,newline,pause,num) {
+    function printString(text,newline,pause) {
       if (text === null || text.length === 0) {
         // bare naked print
         if (newline)
@@ -141,7 +141,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function printExp(exp,newline,pause,num) {
+    function printExp(exp,newline,pause) {
       if (newline) {
         exp.value = exp.value+"+\"\\n\"";
       }
@@ -454,7 +454,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return withChance(undefined);
     }
 
-    function beginAsk(prompt,num) {
+    function beginAsk(prompt) {
       if (!prompt) {
         logger.error("Invalid ASK statement");
         return false;
@@ -475,7 +475,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function askColor(color,num) {
+    function askColor(color) {
       var c = intToColor(color);
       if (c === null) {
         logger.error("INVALID ASK COLOR");
@@ -493,7 +493,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function askBGColor(color,num) {
+    function askBGColor(color) {
       var c = intToColor(color);
       if (c === null) {
         logger.error("INVALID ASK BGCOLOR");
@@ -511,7 +511,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function askPromptColor(color,num) {
+    function askPromptColor(color) {
       var c = intToColor(color);
       if (c === null) {
         logger.error("INVALID ASK PROMPT COLOR");
@@ -529,7 +529,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function onNo(num) {
+    function onNo() {
       var ask = loopStack[loopStack.length-1];
       if (ask && ask.type === ASK) {
         ask.noLoc = nextInstruction();
@@ -541,7 +541,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function onYes(num) {
+    function onYes() {
       var ask = loopStack[loopStack.length-1];
       if (ask && ask.type === ASK) {
         if (loopStack[loopStack.length-1].loc !== nextInstruction()-2) {
@@ -555,7 +555,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function askDefault(value,num) {
+    function askDefault(value) {
       if (value !== true && value !== false) {
         logger.error("INVALID ASK DEFAULT");
         return false;
@@ -572,7 +572,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function endAsk(num) {
+    function endAsk() {
       var ask = loopStack.pop();
       if (ask && ask.type === ASK) {
         var noLoc = nextInstruction();
@@ -621,7 +621,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function beginMenu(prompt,num) {
+    function beginMenu(prompt) {
       if (!prompt) {
         logger.error("Invalid MENU statement");
         return false;
@@ -640,7 +640,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function menuColor(color,num) {
+    function menuColor(color) {
       var c = intToColor(color);
       if (c === null) {
         logger.error("INVALID MENU COLOR");
@@ -658,7 +658,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function menuBGColor(color,num) {
+    function menuBGColor(color) {
       var c = intToColor(color);
       if (c === null) {
         logger.error("INVALID MENU BGCOLOR");
@@ -676,7 +676,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function menuChoiceColor(color,num) {
+    function menuChoiceColor(color) {
       var c = intToColor(color);
       if (c === null) {
         logger.error("INVALID MENU CHOICE COLOR");
@@ -694,7 +694,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function menuPromptColor(color,num) {
+    function menuPromptColor(color) {
       var c = intToColor(color);
       if (c === null) {
         logger.error("INVALID MENU PROMPT COLOR");
@@ -712,7 +712,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function endMenu(num) {
+    function endMenu() {
       /* Subroutine expressions are tricky for menus.
 
          Subroutine expressions require adding instructions to
@@ -799,7 +799,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function menuChoice(key,exp1,num) {
+    function menuChoice(key,exp1) {
       if (loopStack[loopStack.length-1] && loopStack[loopStack.length-1].type === MENU) {
         if (loopStack[loopStack.length-1].choices.length > 0)
           pushInstruction(null); // Replace with goto end
@@ -813,7 +813,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function menuHideIf(boolExp,num) {
+    function menuHideIf(boolExp) {
       if (!boolExp) {
         logger.error("Invalid HIDE IF");
         return false;
@@ -841,7 +841,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     }
 
-    function color(exp,num) {
+    function color(exp) {
       var color = expressionToFunction(exp);
       pushInstruction(function(){
         machine.setColor(color());
@@ -850,7 +850,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function bgColor(c,num) {
+    function bgColor(c) {
       var color = expressionToFunction(c);
       pushInstruction(function(){
         machine.setBGColor(color());
@@ -859,7 +859,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function sleep(duration,num) {
+    function sleep(duration) {
       if (!duration) {
         logger.error("Invalid SLEEP");
         return false;
@@ -872,7 +872,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function input(varname,num) {
+    function input(varname) {
       if (typeManager.globalHasUndefinedType(varname)) {
         logger.error(varname+" undefined in INPUT");
         return;
@@ -885,7 +885,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function play(abc,num) {
+    function play(abc) {
       if (!abc) {
 	logger.error("Invalid PLAY");
 	return false;
@@ -898,7 +898,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function forStatement(varname,first,last,num) {
+    function forStatement(varname,first,last) {
       if (!first || !last) {
         logger.error("what the FOR");
         return false;
@@ -937,11 +937,11 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function comment(tokens, num) {
+    function comment(tokens) {
       return true;
     }
 
-    function clear(num) {
+    function clear() {
       pushInstruction(function(){
         machine.clear();
         machine.advance();
@@ -951,8 +951,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
 
-    function next(varExp,num) {
-      var varname = varExp[0].value;
+    function next(varname) {
       var obj = loopStack.pop();
       if ((!obj) || obj.type !== FOR || varname != obj.varname) {
         logger.error("ERROR: NEXT WITHOUT MATCHING FOR");

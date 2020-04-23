@@ -319,6 +319,100 @@ function ParserTests(display) {
       ]
     },
     {
+      description: "COLOR statement",
+      code: "COLOR 7\n",
+      parsed: [
+        ["numericLiteralExpression", "7"],
+        ["color", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "COLOR statement with expression",
+      code: "COLOR X+7\n",
+      parsed: [
+        ["variableExpression", "X"],
+        ["numericLiteralExpression", "7"],
+        ["additionExpression", 0, 1],
+        ["color", 2],
+        ["finalize"]
+      ],
+      errors: [
+      ]
+    },
+    {
+      description: "BGCOLOR statement",
+      code: "BGCOLOR 7\n",
+      parsed: [
+        ["numericLiteralExpression", "7"],
+        ["bgColor", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "BGCOLOR statement with expression",
+      code: "BGCOLOR X+7\n",
+      parsed: [
+        ["variableExpression", "X"],
+        ["numericLiteralExpression", "7"],
+        ["additionExpression", 0, 1],
+        ["bgColor", 2],
+        ["finalize"]
+      ],
+      errors: [
+      ]
+    },
+    {
+      description: "CLEAR statement",
+      code: "CLS\n",
+      parsed: [
+        ["clear"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "INPUT statement",
+      code: "INPUT Q\n",
+      parsed: [
+        ["input", "Q"],
+        ["finalize"]
+      ],
+      errors:[]
+    },
+    {
+      description: "INPUT statement with string param",
+      code: "INPUT Q+\"Q\"\n",
+      parsed: [
+        ["finalize"]
+      ],
+      errors:[
+        [1, "Invalid INPUT statement"]
+      ]
+    },
+    {
+      description: "PLAY statement",
+      code: "PLAY \"ABC\"\n",
+      parsed: [
+        ["stringLiteralExpression", "ABC"],
+        ["play", 0],
+        ["finalize"]
+      ],
+      errors:[]
+    },
+    {
+      description: "SLEEP statement",
+      code: "SLEEP 7\n",
+      parsed: [
+        ["numericLiteralExpression", "7"],
+        ["sleep", 0],
+        ["finalize"]
+      ],
+      errors:[]
+    },
+    {
       description: "Assignment from variable",
       code: "A = B\n",
       parsed: [
@@ -1567,6 +1661,36 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "FOR statement",
+      code: "FOR N = 100 to 101\n" +
+        "PRINT\n" +
+        "NEXT N",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["forStatement", "N", 0, 1],
+        ["printString", "", true, false],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "FOR statement with CALL expressions",
+      code: "FOR N = CALL start to CALL end\n" +
+        "PRINT\n" +
+        "NEXT N",
+      parsed: [
+        ["callSubroutineExpression", "START", []],
+        ["callSubroutineExpression", "END", []],
+        ["forStatement", "N", 0, 1],
+        ["printString", "", true, false],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
       description: "RANDOM statement",
       code: "BEGIN RANDOM\n" +
         "WITH CHANCE 33.3\n" +
@@ -1604,41 +1728,158 @@ function ParserTests(display) {
       ],
       errors: [],
     },
-    // XXX missing tests
-    // returnStatement
-
-    // waitForMusic
-
-    // beginAsk
-    // askColor
-    // askBGColor
-    // askPromptColor
-    // onNo
-    // onYes
-    // askDefault
-    // endAsk
-
-    // beginMenu
-    // menuColor
-    // menuBGColor
-    // menuChoiceColor
-    // menuPromptColor
-    // menuChoice
-    // menuHideIf
-    // endMenu
-
-    // color
-    // bgColor
-    // clear
-
-    // sleep
-
-    // input
-    // play
-    // forStatement
-    // next
-
-
+    {
+      description: "WAIT FOR MUSIC",
+      code: "WAIT FOR MUSIC\n",
+      parsed: [
+        ["waitForMusic"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "simple ASK",
+      code: "ASK \"Will you?\"\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      parsed: [
+        ["stringLiteralExpression", "Will you?"],
+        ["beginAsk", 0],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK with default and string expression",
+      code: "ASK \"Are you \"+ NAME +\"?\"\n" +
+        "DEFAULT YES\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      parsed: [
+        ["stringLiteralExpression", "Are you "],
+        ["variableExpression", "NAME"],
+        ["additionExpression", 0, 1],
+        ["stringLiteralExpression", "?"],
+        ["additionExpression", 2, 3],
+        ["beginAsk", 4],
+        ["askDefault", true],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK with all the customizations",
+      code: "ASK \"Won't you?\"\n" +
+        "DEFAULT NO\n" +
+        "ASK COLOR 7\n" +
+        "ASK BGCOLOR 0\n" +
+        "ASK PROMPT COLOR 4\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      parsed: [
+        ["stringLiteralExpression", "Won't you?"],
+        ["beginAsk", 0],
+        ["askDefault", false],
+        ["askColor", "7"],
+        ["askBGColor", "0"],
+        ["askPromptColor", "4"],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "basic MENU",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "CHOICE A \"Last thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      parsed: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "A", 8],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "MENU with all the options",
+      code: "BEGIN MENU \"Prompt\"+A\n" +
+        "MENU COLOR 7\n" +
+        "MENU BGCOLOR 0\n" +
+        "MENU CHOICE COLOR 7\n" +
+        "MENU PROMPT COLOR 7\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "HIDE IF X == 2\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "CHOICE A \"Last thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      parsed: [
+        ["stringLiteralExpression", "Prompt"],
+        ["variableExpression", "A"],
+        ["additionExpression", 0, 1],
+        ["beginMenu", 2],
+        ["menuColor", "7"],
+        ["menuBGColor", "0"],
+        ["menuChoiceColor", "7"],
+        ["menuPromptColor", "7"],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 8],
+        ["variableExpression", "X"],
+        ["numericLiteralExpression", "2"],
+        ["boolEqualExpression", 10, 11],
+        ["menuHideIf", 12],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 15],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "A", 18],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: []
+    }
   ];
 
   function compareNestedLists(listA, listB) {
