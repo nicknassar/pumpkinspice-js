@@ -6,43 +6,117 @@ function ParserTests(display) {
   // and the expected errors
 
   // The testing compiler pass returns the number of
-  // an expression, so values that are from expressions
+  // an expression. The values that are from expressions
   // refer to the order in which handler functions were called
   var expectations = [
     {
-      // Test simple print statements
-      description: "Simple PRINT statement",
-      code: "PRINT \"Hello World!\"\n" +
-            "PRINT\n" +
-            "PRINT \"No newline\";\n" +
-            "PRINT;\n" +
-            "PAUSE \"Press any key\"\n" +
-            "PAUSE\n" +
-            "PAUSE \"Press any key\";\n" +
-            "PAUSE;\n",
+      description: "Hello World",
+      code: "PRINT \"Hello World!\"\n",
       parsed: [
         ["printString", "Hello World!", true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bare PRINT",
+      code: "PRINT\n",
+      parsed: [
         ["printString", "", true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT No newline",
+      code: "PRINT \"No newline\";\n",
+      parsed: [
         ["printString", "No newline", false, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PRINT No Op",
+      code: "PRINT;\n",
+      parsed: [
         ["printString", "", false, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PAUSE statement",
+      code: "PAUSE \"Press any key\"\n",
+      parsed: [
         ["printString", "Press any key", true, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PAUSE newline",
+      code: "PAUSE\n",
+      parsed: [
         ["printString", "", true, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PAUSE no newline",
+      code: "PAUSE \"Press any key\";\n",
+      parsed: [
         ["printString", "Press any key", false, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PAUSE print nothing",
+      code: "PAUSE;\n",
+      parsed: [
         ["printString", "", false, true],
         ["finalize"]
       ],
       errors: []
     },
     {
-      description: "Comments",
-      code: "REM this is a comment\n" +
-            "' comment 2\n" +
-            "REM\n" +
-            "'\n",
+      description: "REM Comment",
+      code: "REM this is a comment\n",
       parsed: [
         ["comment","this is a comment"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Apostrophe comment",
+      code: "' comment 2\n",
+      parsed: [
         ["comment","comment 2"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Empty REM comment",
+      code: "REM\n",
+      parsed: [
         ["comment",""],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Empty Apostrophe comment",
+      code: "'\n",
+      parsed: [
         ["comment",""],
         ["finalize"]
       ],
@@ -67,51 +141,93 @@ function ParserTests(display) {
       ]
     },
     {
-      description: "PRINT paren expression",
-      code: "PRINT (\"parens\")\n" +
-        "PRINT (\"parens\");\n" +
-        "PAUSE (\"parens\")\n" +
-        "PAUSE (\"parens\");\n",
+      description: "PRINT paren expression 1",
+      code: "PRINT (\"parens\")\n",
       parsed: [
         ["stringLiteralExpression", "parens"],
         ["parenExpression", 0],
         ["printExp", 1, true, false],
-        ["stringLiteralExpression", "parens"],
-        ["parenExpression", 3],
-        ["printExp", 4, false, false],
-        ["stringLiteralExpression", "parens"],
-        ["parenExpression", 6],
-        ["printExp", 7, true, true],
-        ["stringLiteralExpression", "parens"],
-        ["parenExpression", 9],
-        ["printExp", 10, false, true],
         ["finalize"]
       ],
       errors: []
     },
     {
-      description: "PRINT string concatenation expression",
-      code: "PRINT \"string\" + \"concatenation\"\n" +
-        "PRINT \"string\"+\"concatenation\";\n" +
-        "PAUSE \"string\" + \"concatenation\"\n" +
-        "PAUSE \"string\"+\"concatenation\";\n",
+      description: "PRINT paren expression 2",
+      code: "PRINT (\"parens\");\n",
+      parsed: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["printExp", 1, false, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PAUSE paren expression 1",
+      code: "PAUSE (\"parens\")\n",
+      parsed: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["printExp", 1, true, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PAUSE paren expression 2",
+      code: "PAUSE (\"parens\");\n",
+      parsed: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["printExp", 1, false, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string concatenation expression 1",
+      code: "PRINT \"string\" + \"concatenation\"\n",
       parsed: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
         ["additionExpression", 0, 1],
         ["printExp", 2, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string concatenation expression 2",
+      code: "PRINT \"string\"+\"concatenation\";\n",
+      parsed: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
-        ["additionExpression", 4, 5],
-        ["printExp", 6, false, false],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, false, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PAUSE string concatenation expression 1",
+      code: "PAUSE \"string\" + \"concatenation\"\n",
+      parsed: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
-        ["additionExpression", 8, 9],
-        ["printExp", 10, true, true],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, true, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PAUSE string concatenation expression 2",
+      code: "PAUSE \"string\"+\"concatenation\";\n",
+      parsed: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
-        ["additionExpression", 12, 13],
-        ["printExp", 14, false, true],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, false, true],
         ["finalize"]
       ],
       errors: []
@@ -203,176 +319,407 @@ function ParserTests(display) {
       ]
     },
     {
-      description: "Assignment",
-      code: "A = B\n" +
-        "C = 7\n" +
-        "D = \"string\"\n",
+      description: "Assignment from variable",
+      code: "A = B\n",
       parsed: [
         ["variableExpression","B"],
         ["letStatement", "A", 0],
-        ["numericLiteralExpression", 7],
-        ["letStatement", "C", 2],
-        ["stringLiteralExpression", "string"],
-        ["letStatement", "D", 4],
         ["finalize"]
       ],
       errors: []
     },
     {
-      description: "Assignment of binary expressions",
-      code: "A = 100+101\n" +
-        "A = 100-101\n" +
-        "A = 100*101\n" +
-        "A = 100/101\n",
+      description: "Assignment from numeric literal",
+      code: "C = 7\n",
       parsed: [
-        ["numericLiteralExpression", 100],
-        ["numericLiteralExpression", 101],
+        ["numericLiteralExpression", "7"],
+        ["letStatement", "C", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from string literal",
+      code: "D = \"string\"\n",
+      parsed: [
+        ["stringLiteralExpression", "string"],
+        ["letStatement", "D", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of numeric addition expression",
+      code: "A = 100+101\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
         ["additionExpression", 0, 1],
         ["letStatement", "A", 2],
-        ["numericLiteralExpression", 100],
-        ["numericLiteralExpression", 101],
-        ["subtractionExpression", 4, 5],
-        ["letStatement", "A", 6],
-        ["numericLiteralExpression", 100],
-        ["numericLiteralExpression", 101],
-        ["multiplicationExpression", 8, 9],
-        ["letStatement", "A", 10],
-        ["numericLiteralExpression", 100],
-        ["numericLiteralExpression", 101],
-        ["divisionExpression", 12, 13],
-        ["letStatement", "A", 14],
         ["finalize"]
       ],
       errors: []
     },
     {
-      description: "Numeric literal forms",
-      code: "A = +7\n" +
-        "A = -7\n" +
-        "A = .7\n" +
-        "A = +.7\n" +
-        "A = -.7\n" +
-        "A = 7.7\n" +
-        "A = -7.7\n" +
-        "A = +7.7\n" +
-        "A = +1 +1\n" +
-        "A = -1 +1\n" +
-        "A = (7)+1\n",
+      description: "Assignment of subtraction expression",
+      code: "A = 100-101\n",
       parsed: [
-        ["numericLiteralExpression", 7],
-        ["letStatement", "A", 0],
-        ["numericLiteralExpression", -7],
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["subtractionExpression", 0, 1],
         ["letStatement", "A", 2],
-        ["numericLiteralExpression", 0.7],
-        ["letStatement", "A", 4],
-        ["numericLiteralExpression", 0.7],
-        ["letStatement", "A", 6],
-        ["numericLiteralExpression", -0.7],
-        ["letStatement", "A", 8],
-        ["numericLiteralExpression", 7.7],
-        ["letStatement", "A", 10],
-        ["numericLiteralExpression", -7.7],
-        ["letStatement", "A", 12],
-        ["numericLiteralExpression", 7.7],
-        ["letStatement", "A", 14],
-        ["numericLiteralExpression" ,1],
-        ["numericLiteralExpression", 1],
-        ["additionExpression", 16, 17],
-        ["letStatement", "A", 18],
-        ["numericLiteralExpression", -1],
-        ["numericLiteralExpression", 1],
-        ["additionExpression", 20, 21],
-        ["letStatement", "A", 22],
-        ["numericLiteralExpression", 7],
-        ["parenExpression", 24],
-        ["numericLiteralExpression", 1],
-        ["additionExpression", 25, 26],
-        ["letStatement", "A", 27],
         ["finalize"]
       ],
       errors: []
     },
     {
-      description: "Assignment of binary expressions after parens",
-      code: "A = (100)+101\n" +
-        "A = (100)-101\n" +
-        "A = (100)*101\n" +
-        "A = (100)/101\n",
+      description: "Assignment of numeric expression",
+      code: "A = 100*101\n",
       parsed: [
-        ["numericLiteralExpression", 100],
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["multiplicationExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of division expression",
+      code: "A = 100/101\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["divisionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal integer preceeded by plus",
+      code: "A = +7\n",
+      parsed: [
+        ["numericLiteralExpression", "7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal integer preceeded by minus",
+      code: "A = -7\n",
+      parsed: [
+        ["numericLiteralExpression", "-7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal starting with decimal point",
+      code: "A = .7\n",
+      parsed: [
+        ["numericLiteralExpression", ".7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal starting with plus decimal point",
+      code: "A = +.7\n",
+      parsed: [
+        ["numericLiteralExpression", ".7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal starting with minus decimal point",
+      code: "A = -.7\n",
+      parsed: [
+        ["numericLiteralExpression", "-.7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal with decimal",
+      code: "A = 7.7\n",
+      parsed: [
+        ["numericLiteralExpression", "7.7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal with decimal preceeded by minus",
+      code: "A = -7.7\n",
+      parsed: [
+        ["numericLiteralExpression", "-7.7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal with decimal preceeded by plus",
+      code: "A = +7.7\n",
+      parsed: [
+        ["numericLiteralExpression", "7.7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal addition preceeded by plus",
+      code: "A = +1 +1\n",
+      parsed: [
+        ["numericLiteralExpression", "1"],
+        ["numericLiteralExpression", "1"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal addition preceeded by minus",
+      code: "A = -1 +1\n",
+      parsed: [
+        ["numericLiteralExpression", "-1"],
+        ["numericLiteralExpression", "1"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+
+      description: "Numeric literal addition with parens on first",
+      code: "A = (7)+1\n",
+      parsed: [
+        ["numericLiteralExpression", "7"],
         ["parenExpression", 0],
-        ["numericLiteralExpression", 101],
+        ["numericLiteralExpression", "1"],
         ["additionExpression", 1, 2],
         ["letStatement", "A", 3],
-        ["numericLiteralExpression", 100],
-        ["parenExpression", 5],
-        ["numericLiteralExpression", 101],
-        ["subtractionExpression", 6, 7],
-        ["letStatement", "A", 8],
-        ["numericLiteralExpression", 100],
-        ["parenExpression", 10],
-        ["numericLiteralExpression", 101],
-        ["multiplicationExpression", 11, 12],
-        ["letStatement", "A", 13],
-        ["numericLiteralExpression", 100],
-        ["parenExpression", 15],
-        ["numericLiteralExpression", 101],
-        ["divisionExpression", 16, 17],
-        ["letStatement", "A", 18],
         ["finalize"]
       ],
       errors: []
     },
     {
-      //'ABS','CINT','FIX','INT','LEFT$','LEN','RIGHT$','STR$','VAL','RANDOM'
-      description: "Assignment of built-in functions",
-      code: "A = ABS(100)\n" +
-        "A = CINT(100)\n" +
-        "A = FIX(100)\n" +
-        "A = INT(100)\n" +
-        "A = LEFT$(\"string\", 1)\n" +
-        "A = RIGHT$(\"string\", 1)\n" +
-        "A = LEN(\"string\")\n" +
-        "A = STR$(100)\n" +
-        "A = VAL(\"100\")\n" +
-        "A = RANDOM(100, 200)\n" +
-        "A = PI\n",
+      description: "Numeric literal addition double plus",
+      code: "A = +1++1\n",
       parsed: [
-        ["numericLiteralExpression", 100],
+        ["numericLiteralExpression", "1"],
+        ["numericLiteralExpression", "1"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal subtraction double minus",
+      code: "A = -1--1\n",
+      parsed: [
+        ["numericLiteralExpression", "-1"],
+        ["numericLiteralExpression", "-1"],
+        ["subtractionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal subtraction with plus",
+      code: "A = -1-+1\n",
+      parsed: [
+        ["numericLiteralExpression", "-1"],
+        ["numericLiteralExpression", "1"],
+        ["subtractionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal addition with minus",
+      code: "A = +1+-1\n",
+      parsed: [
+        ["numericLiteralExpression", "1"],
+        ["numericLiteralExpression", "-1"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of subtraction after parens",
+      code: "A = (100)-101\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["parenExpression", 0],
+        ["numericLiteralExpression", "101"],
+        ["subtractionExpression", 1, 2],
+        ["letStatement", "A", 3],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of multiplication expression after parens",
+      code: "A = (100)*101\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["parenExpression", 0],
+        ["numericLiteralExpression", "101"],
+        ["multiplicationExpression", 1, 2],
+        ["letStatement", "A", 3],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of division expression after parens",
+      code: "A = (100)/101\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["parenExpression", 0],
+        ["numericLiteralExpression", "101"],
+        ["divisionExpression", 1, 2],
+        ["letStatement", "A", 3],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment ABS",
+      code: "A = ABS(100)\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
         ["absBuiltinExpression", 0],
         ["letStatement", "A", 1],
-        ["numericLiteralExpression", 100],
-        ["cintBuiltinExpression", 3],
-        ["letStatement", "A", 4],
-        ["numericLiteralExpression", 100],
-        ["fixBuiltinExpression", 6],
-        ["letStatement", "A", 7],
-        ["numericLiteralExpression", 100],
-        ["intBuiltinExpression", 9],
-        ["letStatement", "A", 10],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of CINT",
+      code: "A = CINT(100)\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["cintBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of FIX",
+      code: "A = FIX(100)\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["fixBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of INT",
+      code: "A = INT(100)\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["intBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of LEFT$",
+      code: "A = LEFT$(\"string\", 100)\n",
+      parsed: [
         ["stringLiteralExpression", "string"],
-        ["numericLiteralExpression", 1],
-        ["leftzBuiltinExpression", 12, 13],
-        ["letStatement", "A", 14],
+        ["numericLiteralExpression", "100"],
+        ["leftzBuiltinExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of RIGHT$",
+      code: "A = RIGHT$(\"string\", 100)\n",
+      parsed: [
         ["stringLiteralExpression", "string"],
-        ["numericLiteralExpression", 1],
-        ["rightzBuiltinExpression", 16, 17],
-        ["letStatement", "A", 18],
+        ["numericLiteralExpression", "100"],
+        ["rightzBuiltinExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of LEN",
+      code: "A = LEN(\"string\")\n",
+      parsed: [
         ["stringLiteralExpression", "string"],
-        ["lenBuiltinExpression", 20],
-        ["letStatement", "A", 21],
-        ["numericLiteralExpression", 100],
-        ["strzBuiltinExpression", 23],
-        ["letStatement", "A", 24],
+        ["lenBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of STR$",
+      code: "A = STR$(100)\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["strzBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of VAL",
+      code: "A = VAL(\"100\")\n",
+      parsed: [
         ["stringLiteralExpression", "100"],
-        ["valBuiltinExpression", 26],
-        ["letStatement", "A", 27],
-        ["numericLiteralExpression", 100],
-        ["numericLiteralExpression", 200],
-        ["randomBuiltinExpression", 29, 30],
-        ["letStatement", "A", 31],
+        ["valBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of RANDOM",
+      code: "A = RANDOM(100, 200)\n",
+      parsed: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "200"],
+        ["randomBuiltinExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of PI",
+      code: "A = PI\n",
+      parsed: [
         ["piBuiltinExpression"],
-        ["letStatement", "A", 33],
+        ["letStatement", "A", 0],
         ["finalize"]
       ],
       errors: []
@@ -393,7 +740,7 @@ function ParserTests(display) {
 
       parsed: [
         // ABS(77)
-        ["numericLiteralExpression", 77],
+        ["numericLiteralExpression", "77"],
         ["absBuiltinExpression", 0],
         ["finalize"]
       ],
@@ -414,129 +761,245 @@ function ParserTests(display) {
       ]
     },
     {
-      description: "Subroutine basics",
+      description: "Subroutine 1",
       code: "SUBROUTINE foo\n" +
-        "END SUBROUTINE\n" +
-        "SUBROUTINE Bar Biz\n" +
-        "END SUBROUTINE\n" +
-        "SUBROUTINE BOOZ GIN, rum\n" +
-        "END SUBROUTINE\n" +
-        "CALL Foo\n" +
-        "CALL BAR None\n" +
-        "CALL booz 12, \"boo\"\n"+
-        "A = CALL FOO\n" +
-        "A = CALL bar None\n" +
-        "A = CALL Booz 12, \"boo\"\n",
+        "END SUBROUTINE\n",
       parsed: [
         ["beginSubroutine", "FOO", []],
         ["endSubroutine"],
-        ["beginSubroutine", "BAR", ["BIZ"]],
-        ["endSubroutine"],
-        ["beginSubroutine", "BOOZ", ["GIN", "RUM"]],
-        ["endSubroutine"],
-        ["callSubroutine", "FOO", []],
-        ["variableExpression", "NONE"],
-        ["callSubroutine", "BAR", [7]],
-        ["numericLiteralExpression", 12],
-        ["stringLiteralExpression", "boo"],
-        ["callSubroutine", "BOOZ", [9, 10]],
-        ["callSubroutineExpression", "FOO", []],
-        ["letStatement", "A", 12],
-        ["variableExpression", "NONE"],
-        ["callSubroutineExpression", "BAR", [14]],
-        ["letStatement", "A", 15],
-        ["numericLiteralExpression", 12],
-        ["stringLiteralExpression", "boo"],
-        ["callSubroutineExpression", "BOOZ", [17, 18]],
-        ["letStatement", "A", 19],
         ["finalize"]
       ],
       errors: []
     },
     {
-      description: "CALL expressions",
-      code: "PRINT CALL Foo\n" +
-	"A = CALL FOO+77\n" +
-	"A = CALL foo-88\n" +
-	"A = CALL foo(77)-88\n" +
-	"A = CALL foo(77)-88,bar\n" +
-	"A = CALL foo(77)-88,bar+99\n" +
-	"A = CALL foo(\"biz\"),boz\n" +
-        "PRINT CALL FOO bar, \"biz\", (baz)*2\n" +
-        "PRINT (CALL FOO \"a\"+\"b\")+\"c\"\n"+
-        "IF CALL PLUSONE (CALL PLUSONE 1) != CALL PLUSONE 2 THEN\n"+
-        "END IF\n",
+      description: "Subroutine 2",
+      code: "SUBROUTINE Bar Biz\n" +
+        "END SUBROUTINE\n",
+      parsed: [
+        ["beginSubroutine", "BAR", ["BIZ"]],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine 3",
+      code: "SUBROUTINE BOO BAA, bee\n" +
+        "END SUBROUTINE\n",
+      parsed: [
+        ["beginSubroutine", "BOO", ["BAA", "BEE"]],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL statement 1",
+      code: "CALL Foo\n",
+      parsed: [
+        ["callSubroutine", "FOO", []],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL statement 2",
+      code: "CALL BAR None\n",
+      parsed: [
+        ["variableExpression", "NONE"],
+        ["callSubroutine", "BAR", [0]],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL statement 3",
+      code: "CALL boo 12, \"boo\"\n",
+      parsed: [
+        ["numericLiteralExpression", "12"],
+        ["stringLiteralExpression", "boo"],
+        ["callSubroutine", "BOO", [0, 1]],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression 1",
+      code: "A = CALL Foo\n",
+      parsed: [
+        ["callSubroutineExpression", "FOO", []],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression 2",
+      code: "A = CALL bar None\n",
+      parsed: [
+        ["variableExpression", "NONE"],
+        ["callSubroutineExpression", "BAR", [0]],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression 3",
+      code: "A = CALL Boo 12, \"boo\"\n",
+      parsed: [
+        ["numericLiteralExpression", "12"],
+        ["stringLiteralExpression", "boo"],
+        ["callSubroutineExpression", "BOO", [0, 1]],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT CALL expression",
+      code: "PRINT CALL Foo\n",
       parsed: [
 	["callSubroutineExpression", "FOO", []],
 	["printExp", 0, true, false],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assign CALL with numeric arg",
+      code: "A = CALL FOO+77\n",
+      parsed: [
 	["numericLiteralExpression", "77"],
-	["callSubroutineExpression", "FOO", [2]],
-	["letStatement", "A", 3],
+	["callSubroutineExpression", "FOO", [0]],
+	["letStatement", "A", 1],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assign CALL with negative arg",
+      code: "A = CALL foo-88\n",
+      parsed: [
 	["numericLiteralExpression", "-88"],
-	["callSubroutineExpression", "FOO", [5]],
-	["letStatement", "A", 6],
+	["callSubroutineExpression", "FOO", [0]],
+	["letStatement", "A", 1],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assign subtraction of CALL expression",
+      code: "A = CALL foo(77)-88\n",
+      parsed: [
 	["numericLiteralExpression", "77"],
-	["parenExpression", 8],
+	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
-	["subtractionExpression", 9, 10],
-	["callSubroutineExpression", "FOO", [11]],
-	["letStatement", "A", 12],
+	["subtractionExpression", 1, 2],
+	["callSubroutineExpression", "FOO", [3]],
+        ["letStatement", "A", 4],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of subtraction of CALL expression, two args",
+      code: "A = CALL foo(77)-88,bar\n",
+      parsed: [
 	["numericLiteralExpression", "77"],
-	["parenExpression", 14],
+	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
-	["subtractionExpression", 15, 16],
+	["subtractionExpression", 1, 2],
 	["variableExpression", "BAR"],
-	["callSubroutineExpression", "FOO", [17, 18]],
-	["letStatement", "A", 19],
+	["callSubroutineExpression", "FOO", [3, 4]],
+	["letStatement", "A", 5],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expressions with two complex args",
+      code: "A = CALL foo(77)-88,bar+99\n",
+      parsed: [
 	["numericLiteralExpression", "77"],
-	["parenExpression", 21],
+	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
-	["subtractionExpression", 22, 23],
+	["subtractionExpression", 1, 2],
 	["variableExpression", "BAR"],
 	["numericLiteralExpression", "99"],
-	["additionExpression", 25, 26],
-	["callSubroutineExpression", "FOO", [24, 27]],
-	["letStatement", "A", 28],
+	["additionExpression", 4, 5],
+	["callSubroutineExpression", "FOO", [3, 6]],
+	["letStatement", "A", 7],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression string param variable param",
+      code: "A = CALL foo(\"biz\"),boz\n",
+      parsed: [
 	["stringLiteralExpression", "biz"],
-	["parenExpression", 30],
+	["parenExpression", 0],
 	["variableExpression", "BOZ"],
-	["callSubroutineExpression", "FOO", [31, 32]],
-	["letStatement", "A", 33],
+	["callSubroutineExpression", "FOO", [1, 2]],
+	["letStatement", "A", 3],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression with three params",
+      code: "PRINT CALL FOO bar, \"biz\", (baz)*2\n",
+      parsed: [
 	["variableExpression", "BAR"],
 	["stringLiteralExpression", "biz"],
 	["variableExpression", "BAZ"],
-	["parenExpression", 37],
+	["parenExpression", 2],
 	["numericLiteralExpression", "2"],
-	["multiplicationExpression", 38, 39],
-	["callSubroutineExpression", "FOO", [35, 36, 40]],
-	["printExp", 41, true, false],
+	["multiplicationExpression", 3, 4],
+	["callSubroutineExpression", "FOO", [0, 1, 5]],
+	["printExp", 6, true, false],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression in parens, followed by addition",
+      code: "PRINT (CALL FOO \"a\"+\"b\")+\"c\"\n",
+      parsed: [
 	["stringLiteralExpression", "a"],
 	["stringLiteralExpression", "b"],
-	["additionExpression", 43, 44],
-	["callSubroutineExpression", "FOO", [45]],
-	["parenExpression", 46],
+	["additionExpression", 0, 1],
+	["callSubroutineExpression", "FOO", [2]],
+	["parenExpression", 3],
 	["stringLiteralExpression", "c"],
-	["additionExpression", 47, 48],
-	["printExp", 49, true, false],
+	["additionExpression", 4, 5],
+	["printExp", 6, true, false],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Nested CALL expressions",
+      code: "IF CALL PLUSONE (CALL PLUSONE 1) != CALL PLUSONE 2 THEN\n"+
+        "END IF\n",
+      parsed: [
         ["numericLiteralExpression", "1"],
-        ["callSubroutineExpression", "PLUSONE", [51]],
-        ["parenExpression", 52],
-        ["callSubroutineExpression", "PLUSONE", [53]],
+        ["callSubroutineExpression", "PLUSONE", [0]],
+        ["parenExpression", 1],
+        ["callSubroutineExpression", "PLUSONE", [2]],
         ["numericLiteralExpression", "2"],
-        ["callSubroutineExpression", "PLUSONE", [55]],
-        ["boolNotEqualExpression", 54, 56],
-        ["ifStatement", 57],
+        ["callSubroutineExpression", "PLUSONE", [4]],
+        ["boolNotEqualExpression", 3, 5],
+        ["ifStatement", 6],
         ["endIf"],
 	["finalize"]
       ],
       errors: []
     },
     {
-      description: "numeric infix operator precedence",
-      code: "A = 88+66*77\n" +
-	"A = 66*77+88\n" +
-        "A = 88-66/77\n" +
-        "A = 44-55+66/77*88-99+33\n",
+      description: "numeric infix operator precedence add, multiply",
+      code: "A = 88+66*77\n",
       parsed: [
 	["numericLiteralExpression", "88"],
 	["numericLiteralExpression", "66"],
@@ -544,61 +1007,63 @@ function ParserTests(display) {
 	["multiplicationExpression", 1, 2],
 	["additionExpression", 0, 3],
 	["letStatement", "A", 4],
-	["numericLiteralExpression", "66"],
-	["numericLiteralExpression", "77"],
-	["multiplicationExpression", 6, 7],
-        ["numericLiteralExpression", "88"],
-	["additionExpression", 8, 9],
-	["letStatement", "A", 10],
-        ["numericLiteralExpression", "88"],
-        ["numericLiteralExpression", "66"],
-        ["numericLiteralExpression", "77"],
-        ["divisionExpression", 13, 14],
-        ["subtractionExpression", 12, 15],
-        ["letStatement", "A", 16],
-        ["numericLiteralExpression", "44"],
-        ["numericLiteralExpression", "55"],
-        ["subtractionExpression", 18, 19],
-        ["numericLiteralExpression", "66"],
-        ["numericLiteralExpression", "77"],
-        ["divisionExpression", 21, 22],
-        ["numericLiteralExpression", "88"],
-        ["multiplicationExpression", 23, 24],
-        ["additionExpression", 20, 25],
-        ["numericLiteralExpression", "99"],
-        ["subtractionExpression", 26, 27],
-        ["numericLiteralExpression", "33"],
-        ["additionExpression", 28, 29],
-        ["letStatement", "A", 30],
 	["finalize"]
       ],
       errors: []
     },
     {
-      description: "Simple IF statement",
+      description: "numeric infix operator precedence multiply, add",
+      code: "A = 66*77+88\n",
+      parsed: [
+	["numericLiteralExpression", "66"],
+	["numericLiteralExpression", "77"],
+	["multiplicationExpression", 0, 1],
+        ["numericLiteralExpression", "88"],
+	["additionExpression", 2, 3],
+	["letStatement", "A", 4],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "numeric infix operator precedence subtract, divide",
+      code: "A = 88-66/77\n",
+      parsed: [
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["divisionExpression", 1, 2],
+        ["subtractionExpression", 0, 3],
+        ["letStatement", "A", 4],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "numeric infix operator precedence - complex",
+      code: "A = 44-55+66/77*88-99+33\n",
+      parsed: [
+        ["numericLiteralExpression", "44"],
+        ["numericLiteralExpression", "55"],
+        ["subtractionExpression", 0, 1],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["divisionExpression", 3, 4],
+        ["numericLiteralExpression", "88"],
+        ["multiplicationExpression", 5, 6],
+        ["additionExpression", 2, 7],
+        ["numericLiteralExpression", "99"],
+        ["subtractionExpression", 8, 9],
+        ["numericLiteralExpression", "33"],
+        ["additionExpression", 10, 11],
+        ["letStatement", "A", 12],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Simple numeric IF statement",
       code: "IF 77 = 88\n" +
-        "PRINT\n" +
-        "END IF\n" +
-        "IF \"a\" == Seven\n" +
-        "PRINT\n" +
-        "END IF\n" +
-        "IF Q > 88 THEN\n" +
-        "PRINT\n" +
-        "END IF\n" +
-        "IF 77 < Z\n" +
-        "PRINT\n" +
-        "END IF\n" +
-        "IF 77 >= 88\n" +
-        "PRINT\n" +
-        "END IF\n" +
-        "IF 77 <= 88\n" +
-        "PRINT\n" +
-        "ELSE\n" +
-        "PRINT\n" +
-        "END IF\n" +
-        "IF 77 <> 88\n" +
-        "PRINT\n" +
-        "ELSE\n" +
         "PRINT\n" +
         "END IF\n",
       parsed: [
@@ -608,42 +1073,86 @@ function ParserTests(display) {
         ["ifStatement", 2],
         ["printString", "", true, false],
         ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Simple string IF statement",
+      code: "IF \"a\" == Seven\n" +
+        "PRINT\n" +
+        "END IF\n",
+      parsed: [
         ["stringLiteralExpression", "a"],
         ["variableExpression", "SEVEN"],
-        ["boolEqualExpression", 6, 7],
-        ["ifStatement", 8],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
         ["printString", "", true, false],
         ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF statement - greater than",
+      code: "IF Q > 88 THEN\n" +
+        "PRINT\n" +
+        "END IF\n",
+      parsed: [
         ["variableExpression", "Q"],
         ["numericLiteralExpression", "88"],
-        ["boolGreaterExpression", 12, 13],
-        ["ifStatement", 14],
+        ["boolGreaterExpression", 0, 1],
+        ["ifStatement", 2],
         ["printString", "", true, false],
         ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF statement less than",
+      code: "IF 77 < Z\n" +
+        "PRINT\n" +
+        "END IF\n",
+      parsed: [
         ["numericLiteralExpression", "77"],
         ["variableExpression", "Z"],
-        ["boolLessExpression", 18, 19],
-        ["ifStatement", 20],
+        ["boolLessExpression", 0, 1],
+        ["ifStatement", 2],
         ["printString", "", true, false],
         ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF statement greater or equal",
+      code: "IF 77 >= 88\n" +
+        "PRINT\n" +
+        "END IF\n",
+      parsed: [
         ["numericLiteralExpression", "77"],
         ["numericLiteralExpression", "88"],
-        ["boolGreaterOrEqualExpression", 24, 25],
-        ["ifStatement", 26],
+        ["boolGreaterOrEqualExpression", 0, 1],
+        ["ifStatement", 2],
         ["printString", "", true, false],
         ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF statement less or equal",
+      code: "IF 77 <= 88\n" +
+        "PRINT\n" +
+        "ELSE\n" +
+        "PRINT\n" +
+        "END IF\n",
+      parsed: [
         ["numericLiteralExpression", "77"],
         ["numericLiteralExpression", "88"],
-        ["boolLessOrEqualExpression", 30, 31],
-        ["ifStatement", 32],
-        ["printString", "", true, false],
-        ["elseStatement"],
-        ["printString", "", true, false],
-        ["endIf"],
-        ["numericLiteralExpression", "77"],
-        ["numericLiteralExpression", "88"],
-        ["boolNotEqualExpression", 38, 39],
-        ["ifStatement", 40],
+        ["boolLessOrEqualExpression", 0, 1],
+        ["ifStatement", 2],
         ["printString", "", true, false],
         ["elseStatement"],
         ["printString", "", true, false],
@@ -653,14 +1162,28 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "Boolean comparison operator precedence",
+      description: "IF statement not equal",
+      code: "IF 77 <> 88\n" +
+        "PRINT\n" +
+        "ELSE\n" +
+        "PRINT\n" +
+        "END IF\n",
+      parsed: [
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolNotEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["elseStatement"],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean comparison operator precedence - multiplication and addition",
       code: "IF 7*8 > 7+8 THEN\n" +
-        "END IF\n" +
-        "IF SIX+42 > 7*EIGHTYEIGHT THEN\n" +
-        "END IF\n" +
-        "IF 6+7*8 > 7*8+9 THEN\n" +
-        "END IF\n" +
-        "IF A+B+\"C\" = \"a\"+\"A\"+\"a\" THEN\n" +
         "END IF\n",
       parsed: [
         ["numericLiteralExpression", "7"],
@@ -672,56 +1195,75 @@ function ParserTests(display) {
         ["boolGreaterExpression", 2, 5],
         ["ifStatement", 6],
         ["endIf"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean comparison operator precedence - addition and multiplication with variables",
+      code: "IF SIX+42 > 7*EIGHTYEIGHT THEN\n" +
+        "END IF\n",
+      parsed: [
         ["variableExpression", "SIX"],
         ["numericLiteralExpression", "42"],
-        ["additionExpression", 9, 10],
+        ["additionExpression", 0, 1],
         ["numericLiteralExpression", "7"],
         ["variableExpression", "EIGHTYEIGHT"],
-        ["multiplicationExpression", 12, 13],
-        ["boolGreaterExpression", 11, 14],
-        ["ifStatement", 15],
-        ["endIf"],
-        ["numericLiteralExpression", "6"],
-        ["numericLiteralExpression", "7"],
-        ["numericLiteralExpression", "8"],
-        ["multiplicationExpression", 19, 20],
-        ["additionExpression", 18, 21],
-        ["numericLiteralExpression", "7"],
-        ["numericLiteralExpression", "8"],
-        ["multiplicationExpression", 23, 24],
-        ["numericLiteralExpression", "9"],
-        ["additionExpression", 25, 26],
-        ["boolGreaterExpression", 22, 27],
-        ["ifStatement", 28],
-        ["endIf"],
-        ["variableExpression", "A"],
-        ["variableExpression", "B"],
-        ["additionExpression", 31, 32],
-        ["stringLiteralExpression", "C"],
-        ["additionExpression", 33, 34],
-        ["stringLiteralExpression", "a"],
-        ["stringLiteralExpression", "A"],
-        ["additionExpression", 36, 37],
-        ["stringLiteralExpression", "a"],
-        ["additionExpression", 38, 39],
-        ["boolEqualExpression", 35, 40],
-        ["ifStatement", 41],
+        ["multiplicationExpression", 3, 4],
+        ["boolGreaterExpression", 2, 5],
+        ["ifStatement", 6],
         ["endIf"],
         ["finalize"],
       ],
       errors: []
     },
     {
-      description: "Boolean AND and OR operator precedence",
+      description: "Boolean comparison operator precedence -  complicated numeric",
+      code: "IF 6+7*8 > 7*8+9 THEN\n" +
+        "END IF\n",
+      parsed: [
+        ["numericLiteralExpression", "6"],
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["multiplicationExpression", 1, 2],
+        ["additionExpression", 0, 3],
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["multiplicationExpression", 5, 6],
+        ["numericLiteralExpression", "9"],
+        ["additionExpression", 7, 8],
+        ["boolGreaterExpression", 4, 9],
+        ["ifStatement", 10],
+        ["endIf"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean comparison operator precedence - string expressions",
+      code: "IF A+B+\"C\" = \"a\"+\"A\"+\"a\" THEN\n" +
+        "END IF\n",
+      parsed: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["additionExpression", 0, 1],
+        ["stringLiteralExpression", "C"],
+        ["additionExpression", 2, 3],
+        ["stringLiteralExpression", "a"],
+        ["stringLiteralExpression", "A"],
+        ["additionExpression", 5, 6],
+        ["stringLiteralExpression", "a"],
+        ["additionExpression", 7, 8],
+        ["boolEqualExpression", 4, 9],
+        ["ifStatement", 10],
+        ["endIf"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean OR operator",
       code: "If 66 > 77 OR 88 > 99 THEN\n" +
-        "END IF\n"+
-        "If 66 > 77 AND 88 > 99 THEN\n" +
-        "END IF\n"+
-        "If 66+77 > 66-77 OR 88*99 > 88/99 THEN\n" +
-        "END IF\n"+
-        "If A < B OR C >= D AND E >= F\n" +
-        "END IF\n" +
-        "If A <= B AND C != D OR E == F\n" +
         "END IF\n",
       parsed: [
         ["numericLiteralExpression", "66"],
@@ -733,73 +1275,101 @@ function ParserTests(display) {
         ["boolOrExpression", 2, 5],
         ["ifStatement", 6],
         ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean AND operator",
+      code: "If 66 > 77 AND 88 > 99 THEN\n" +
+        "END IF\n",
+      parsed: [
         ["numericLiteralExpression", "66"],
         ["numericLiteralExpression", "77"],
-        ["boolGreaterExpression", 9, 10],
+        ["boolGreaterExpression", 0, 1],
         ["numericLiteralExpression", "88"],
         ["numericLiteralExpression", "99"],
-        ["boolGreaterExpression", 12, 13],
-        ["boolAndExpression", 11, 14],
-        ["ifStatement", 15],
-        ["endIf"],
-        ["numericLiteralExpression", "66"],
-        ["numericLiteralExpression", "77"],
-        ["additionExpression", 18, 19],
-        ["numericLiteralExpression", "66"],
-        ["numericLiteralExpression", "77"],
-        ["subtractionExpression", 21, 22],
-        ["boolGreaterExpression", 20, 23],
-        ["numericLiteralExpression", "88"],
-        ["numericLiteralExpression", "99"],
-        ["multiplicationExpression", 25, 26],
-        ["numericLiteralExpression", "88"],
-        ["numericLiteralExpression", "99"],
-        ["divisionExpression", 28, 29],
-        ["boolGreaterExpression", 27, 30],
-        ["boolOrExpression", 24, 31],
-        ["ifStatement", 32],
-        ["endIf"],
-        ["variableExpression", "A"],
-        ["variableExpression", "B"],
-        ["boolLessExpression", 35, 36],
-        ["variableExpression", "C"],
-        ["variableExpression", "D"],
-        ["boolGreaterOrEqualExpression", 38, 39],
-        ["variableExpression", "E"],
-        ["variableExpression", "F"],
-        ["boolGreaterOrEqualExpression", 41, 42],
-        ["boolAndExpression", 40, 43],
-        ["boolOrExpression", 37, 44],
-        ["ifStatement", 45],
-        ["endIf"],
-        ["variableExpression", "A"],
-        ["variableExpression", "B"],
-        ["boolLessOrEqualExpression", 48, 49],
-        ["variableExpression", "C"],
-        ["variableExpression", "D"],
-        ["boolNotEqualExpression", 51, 52],
-        ["boolAndExpression", 50, 53],
-        ["variableExpression", "E"],
-        ["variableExpression", "F"],
-        ["boolEqualExpression", 55, 56],
-        ["boolOrExpression", 54, 57],
-        ["ifStatement", 58],
+        ["boolGreaterExpression", 3, 4],
+        ["boolAndExpression", 2 ,  5],
+        ["ifStatement", 6],
         ["endIf"],
         ["finalize"]
       ],
       errors: []
     },
     {
-      description: "Bool expressions with NOT",
+      description: "OR operator with numeric expressions",
+      code: "If 66+77 > 66-77 OR 88*99 > 88/99 THEN\n" +
+        "END IF\n",
+      parsed: [
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["additionExpression", 0 , 1 ],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["subtractionExpression", 3 , 4 ],
+        ["boolGreaterExpression", 2 , 5 ],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["multiplicationExpression", 7, 8],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["divisionExpression", 10, 11],
+        ["boolGreaterExpression", 9, 12],
+        ["boolOrExpression", 6, 13],
+        ["ifStatement", 14],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean AND and OR operator precedence - OR first",
+      code: "If A < B OR C >= D AND E >= F\n" +
+        "END IF\n",
+      parsed: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolLessExpression", 0, 1],
+        ["variableExpression", "C"],
+        ["variableExpression", "D"],
+        ["boolGreaterOrEqualExpression", 3, 4],
+        ["variableExpression", "E"],
+        ["variableExpression", "F"],
+        ["boolGreaterOrEqualExpression", 6, 7],
+        ["boolAndExpression", 5, 8],
+        ["boolOrExpression", 2, 9],
+        ["ifStatement", 10],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean AND and OR operator precedence - AND first",
+      code: "If A <= B AND C != D OR E == F\n" +
+        "END IF\n",
+      parsed: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolLessOrEqualExpression", 0, 1],
+        ["variableExpression", "C"],
+        ["variableExpression", "D"],
+        ["boolNotEqualExpression", 3, 4],
+        ["boolAndExpression", 2, 5],
+        ["variableExpression", "E"],
+        ["variableExpression", "F"],
+        ["boolEqualExpression", 7, 8],
+        ["boolOrExpression", 6, 9],
+        ["ifStatement", 10],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Simple Bool expression with NOT",
       code: "IF NOT 77=88\n" +
-        "END IF\n" +
-        "IF NOT (A=77 OR B=88)\n" +
-        "END IF\n" +
-        "IF NOT (A=77) OR B=88\n" +
-        "END IF\n" +
-        "IF A=77 OR NOT(B=88)\n" +
-        "END IF\n"+
-        "IF NOT A=77 OR B=88 AND C=99\n" +
         "END IF\n",
       parsed: [
         ["numericLiteralExpression", "77"],
@@ -808,73 +1378,118 @@ function ParserTests(display) {
         ["boolNotExpression", 2],
         ["ifStatement", 3],
         ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bool expression - NOT of parens",
+      code: "IF NOT (A=77 OR B=88)\n" +
+        "END IF\n",
+      parsed: [
         ["variableExpression", "A"],
         ["numericLiteralExpression", "77"],
-        ["boolEqualExpression", 6, 7],
+        ["boolEqualExpression", 0, 1],
         ["variableExpression", "B"],
         ["numericLiteralExpression", "88"],
-        ["boolEqualExpression", 9, 10],
-        ["boolOrExpression", 8, 11],
-        ["parenExpression", 12],
-        ["boolNotExpression", 13],
-        ["ifStatement", 14],
-        ["endIf"],
-        ["variableExpression", "A"],
-        ["numericLiteralExpression", "77"],
-        ["boolEqualExpression", 17, 18],
-        ["parenExpression", 19],
-        ["boolNotExpression", 20],
-        ["variableExpression", "B"],
-        ["numericLiteralExpression", "88"],
-        ["boolEqualExpression", 22, 23],
-        ["boolOrExpression", 21, 24],
-        ["ifStatement", 25],
-        ["endIf"],
-        ["variableExpression", "A"],
-        ["numericLiteralExpression", "77"],
-        ["boolEqualExpression", 28, 29],
-        ["variableExpression", "B"],
-        ["numericLiteralExpression", "88"],
-        ["boolEqualExpression", 31, 32],
-        ["parenExpression", 33],
-        ["boolNotExpression", 34],
-        ["boolOrExpression", 30, 35],
-        ["ifStatement", 36],
-        ["endIf"],
-        ["variableExpression", "A"],
-        ["numericLiteralExpression", "77"],
-        ["boolEqualExpression", 39, 40],
-        ["boolNotExpression", 41],
-        ["variableExpression", "B"],
-        ["numericLiteralExpression", "88"],
-        ["boolEqualExpression", 43, 44],
-        ["variableExpression", "C"],
-        ["numericLiteralExpression", "99"],
-        ["boolEqualExpression", 46, 47],
-        ["boolAndExpression", 45, 48],
-        ["boolOrExpression", 42, 49],
-        ["ifStatement", 50],
+        ["boolEqualExpression", 3, 4],
+        ["boolOrExpression", 2, 5],
+        ["parenExpression", 6],
+        ["boolNotExpression", 7],
+        ["ifStatement", 8],
         ["endIf"],
         ["finalize"]
       ],
       errors: []
     },
     {
-      description: "WHILE statement",
+      description: "Bool expression with NOT parens",
+      code:
+        "IF NOT (A=77) OR B=88\n" +
+        "END IF\n",
+      parsed: [
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 0, 1],
+        ["parenExpression", 2],
+        ["boolNotExpression", 3],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 5, 6],
+        ["boolOrExpression", 4, 7],
+        ["ifStatement", 8],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bool expression with NOT after OR",
+      code:
+        "IF A=77 OR NOT B=88\n" +
+        "END IF\n",
+      parsed: [
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 0, 1],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 3, 4],
+        ["boolNotExpression", 5],
+        ["boolOrExpression", 2, 6],
+        ["ifStatement", 7],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bool expressions with NOT, OR and AND",
+      code:
+        "IF NOT A=77 OR B=88 AND C=99\n" +
+        "END IF\n",
+      parsed: [
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 0, 1],
+        ["boolNotExpression", 2],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 4, 5],
+        ["variableExpression", "C"],
+        ["numericLiteralExpression", "99"],
+        ["boolEqualExpression", 7, 8],
+        ["boolAndExpression", 6, 9],
+        ["boolOrExpression", 3, 10],
+        ["ifStatement", 11],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "WHILE statement 1",
       code: "WHILE A = A DO\n" +
-        "WEND\n" +
-        "WHILE A < 10\n" +
-        "END WHILE\n",
+        "WEND\n",
       parsed: [
         ["variableExpression", "A"],
         ["variableExpression", "A"],
         ["boolEqualExpression", 0, 1],
         ["whileStatement", 2],
         ["endWhile"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "WHILE statement 2",
+      code: "WHILE A < 10\n" +
+        "END WHILE\n",
+      parsed: [
         ["variableExpression", "A"],
         ["numericLiteralExpression", "10"],
-        ["boolLessExpression", 5, 6],
-        ["whileStatement", 7],
+        ["boolLessExpression", 0, 1],
+        ["whileStatement", 2],
         ["endWhile"],
         ["finalize"],
       ],
@@ -956,21 +1571,21 @@ function ParserTests(display) {
   ];
 
   function compareNestedLists(listA, listB) {
-    if (listA.length != listB.length)
+    if (listA.length !== listB.length)
       return false;
     for (var i=0;i<listA.length;i++) {
-      if (listA[i].length != listB[i].length)
+      if (listA[i].length !== listB[i].length)
         return false;
       for (var j=0;j<listA[i].length;j++) {
         // Handle list parameters - for subroutine args, etc.
         if (listA[i][j] && listA[i][j].push !== undefined) {
-          if (!listB[i][j] || listB[i][j].length != listA[i][j].length)
+          if (!listB[i][j] || listB[i][j].length !== listA[i][j].length)
             return false;
           for (var k=0;k<listA[i][j].length;k++) {
-            if (listA[i][j][k] != listB[i][j][k])
+            if (listA[i][j][k] !== listB[i][j][k])
               return false;
           }
-        } else if (listA[i][j] != listB[i][j])
+        } else if (listA[i][j] !== listB[i][j])
           return false;
       }
     }
@@ -980,11 +1595,11 @@ function ParserTests(display) {
   // Exact error messages aren't matched
   // We want to know that an error on the same line is reported
   function compareErrorLists(listA, listB) {
-    if (listA.length != listB.length)
+    if (listA.length !== listB.length)
       return false;
     // First line is line number of error
     for (var i=0;i<listA.length;i++) {
-      if (listA[i][0] != listB[i][0])
+      if (listA[i][0] !== listB[i][0])
         return false;
     }
     return true;
