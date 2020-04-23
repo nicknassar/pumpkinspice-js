@@ -216,6 +216,35 @@ function Parser(handlers,logger){
     return ['ABS','CINT','FIX','INT','LEFT$','LEN','RIGHT$','STR$','VAL','RANDOM'].indexOf(identifier)!=-1;
   }
 
+  // Used to parse subroutine params
+  // returns pair with list of expressions and remaining tokens
+  function parseExpressionList(tokens) {
+    var argExps = [];
+    var pos = 0;
+    var start = 0;
+    var parendepth = 0;
+    while (pos < tokens.length &&
+           !isBooleanOperator(tokens[pos])) {
+      while (pos < tokens.length && (tokens[pos].type !== COMMA || parendepth > 0) &&
+             !isBooleanOperator(tokens[pos])) {
+	if (tokens[pos].type === OPENPAREN)
+	  parendepth++;
+	if (tokens[pos].type === CLOSEPAREN)
+	  parendepth--;
+        pos++;
+      }
+      var tempExp = expression(tokens.slice(start,pos));
+      if (tempExp === null) {
+        return [null, []];
+      }
+            argExps.push(tempExp);
+      if (pos < tokens.length && !isBooleanOperator(tokens[pos]))
+        pos++; // skip the comma
+      start = pos;
+    }
+    return [argExps, tokens.slice(pos)];
+  }
+
   // returns the expression up to the next infix operator, plus the remaining tokens
   function nextSimpleExpression(tokens) {
     if (tokens.length === 0) {
@@ -315,37 +344,12 @@ function Parser(handlers,logger){
 	  logger.error("CALL expression expects the name of a subroutine to call");
 	  return [null, []];
 	}
-	// XXX this is duplicated in the statement handler
-	var argExps = [];
-	var start = 2;
-	var pos = start;
-	var parendepth = 0;
-	while (pos < tokens.length &&
-               !isBooleanOperator(tokens[pos])) {
-          // XXX check for trailing comparison, AND, or OR operator
-          while (pos < tokens.length && (tokens[pos].type !== COMMA || parendepth > 0) &&
-                 !isBooleanOperator(tokens[pos])) {
-	    if (tokens[pos].type === OPENPAREN)
-	      parendepth++;
-	    if (tokens[pos].type === CLOSEPAREN)
-	      parendepth--;
-            pos++;
-	  }
-          var tempExp = expression(tokens.slice(start,pos));
-          if (tempExp === null) {
-            return [null, []];
-          }
-          if (tempExp === undefined) {
-            // XXX this shouldn't happen
-            logger.error("Undefined expression");
-            return [null, []];
-          }
-          argExps.push(tempExp);
-          if (pos < tokens.length && !isBooleanOperator(tokens[pos]))
-            pos++; // skip the comma
-          start = pos;
-	}
-	return [handler.callSubroutineExpression(tokens[1].value,argExps), tokens.slice(pos)];
+        var expressionList = parseExpressionList(tokens.slice(2));
+        var argExps = expressionList[0];
+        if (argExps === null)
+          return [null, []];
+        var remaining = expressionList[1];
+	return [handler.callSubroutineExpression(tokens[1].value,argExps), remaining];
 
       } else {
 	return [handler.variableExpression(tokens[0].value), tokens.slice(1)];
@@ -473,26 +477,16 @@ function Parser(handlers,logger){
           }
           return handler.beginSubroutine(tokens[1].value,args);
         } else if (tokens[0].value==='CALL' && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
-	  // XXX this is duplicated in the expression handler
-          var argExps = [];
-          var start = 2;
-          var pos = start;
-	  var parendepth = 0;
-          while (pos < tokens.length) {
-	    while (pos < tokens.length && (tokens[pos].type !== COMMA || parendepth > 0)) {
-	      if (tokens[pos].type === OPENPAREN)
-		parendepth++;
-	      if (tokens[pos].type === CLOSEPAREN)
-		parendepth--;
-	      pos++;
-	    }
-
-            argExps.push(expression(tokens.slice(start,pos)));
-            pos++; // skip the comma
-            start = pos;
+          var expressionList = parseExpressionList(tokens.slice(2));
+          var argExps = expressionList[0];
+          if (argExps === null) {
+            return null;
+          } else if (expressionList[1].length > 0) {
+            logger.error("Extra junk at the end of this CALL statement");
+            return null;
+          } else {
+            return handler.callSubroutine(tokens[1].value,argExps);
           }
-          return handler.callSubroutine(tokens[1].value,argExps);
-
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'SUBROUTINE') {
           return handler.endSubroutine();
 

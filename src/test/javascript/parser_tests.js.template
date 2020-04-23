@@ -989,6 +989,16 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "CALL statement error",
+      code: "CALL Foo OR SOMETHING\n",
+      parsed: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Extra junk"]
+      ]
+    },
+    {
       description: "CALL expression 1",
       code: "A = CALL Foo\n",
       parsed: [
