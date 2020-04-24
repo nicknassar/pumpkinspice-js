@@ -2,6 +2,9 @@ function ParserTests(display) {
   {{parser.js}}
   {{testing_compiler_pass.js}}
 
+  var successCount = 0;
+  var errorCount = 0;
+
   // List of code to parse, the expected calls into the handler,
   // and the expected errors
 
@@ -2004,13 +2007,29 @@ function ParserTests(display) {
   }
 
   function checkResults(expectation, handlerLog, errorLog) {
+    var success = true;
     if (!compareNestedLists(expectation.parsed, handlerLog)) {
+      success = false;
       printParseMismatch(expectation, handlerLog);
     }
     if (!compareErrorLists(expectation.errors, errorLog)) {
+      success = false;
       printErrorMismatch(expectation, errorLog);
     }
+    if (success)
+      successCount++;
+    else
+      errorCount++;
   }
+
+  function getSuccessCount() {
+    return successCount;
+  }
+
+  function getErrorCount() {
+    return errorCount;
+  }
+
 
   function run() {
     for (var i=0;i<expectations.length;i++) {
@@ -2025,5 +2044,9 @@ function ParserTests(display) {
     }
     display.sendUpdates();
   }
-  return {run:run};
+  return {
+    run:run,
+    getSuccessCount:getSuccessCount,
+    getErrorCount:getErrorCount
+  };
 }

@@ -10,16 +10,35 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
 {{display.js}}
 
 {{parser_tests.js.template}}
+{{type_manager_tests.js.template}}
 {{testing_logger.js}}
+
+  var successCount = 0;
+  var errorCount = 0;
 
   var display = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
   display.print("TESTING...\n");
   display.sendUpdates();
 
-  parserTests = ParserTests(display);
-  parserTests.run();
+  var testSuites = [
+    ParserTests(display),
+    TypeManagerTests(display)
+  ];
 
-  display.print("Done.\n")
+  for (var i=0;i<testSuites.length;i++) {
+    var testSuite = testSuites[i];
+    testSuite.run();
+    successCount += testSuite.getSuccessCount();
+    errorCount += testSuite.getErrorCount();
+  }
+
+  if (errorCount === 0)
+    display.setColor(2);
+  else
+    display.setColor(4);
+  display.print((successCount+errorCount)+" tests run\n");
+  display.print(errorCount+" errors\n");
+  display.setColor(7);
   display.sendUpdates();
 }
 {{initialize_tests.js}}
