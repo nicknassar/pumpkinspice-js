@@ -7,6 +7,7 @@ SRC_DIR := src
 DIST_DIR := dist
 
 PUMPKINSPICE2HTML_SOURCE_DIR := $(SRC_DIR)/pumpkinspice2html/java
+PUMPKINSPICE2HTML_RESOURCE_DIR := $(SRC_DIR)/pumpkinspice2html/resources
 PUMPKINSPICE2HTML_BUILD_DIR := $(BUILD_DIR)/pumpkinspice2html/classes
 
 TOOLS_SOURCE_DIR := $(SRC_DIR)/tools/java
@@ -22,9 +23,15 @@ TEST_BUILD_DIR := $(BUILD_DIR)/test
 CLOSURE_COMPILER_JAR := $(wildcard lib/closure-compiler-v[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].jar)
 OUTPUT_JAR := $(DIST_DIR)/pumpkinspice2html-v$(BUILD_VERSION).jar
 
+ifdef JAVA_HOME
+JAVAC := $(JAVA_HOME)/bin/javac
+JAVA := $(JAVA_HOME)/bin/java
+JAR := $(JAVA_HOME)/bin/jar
+else
 JAVAC := javac
 JAVA := java
 JAR := jar
+endif
 MKDIR := mkdir
 
 ifeq ($(OS),Windows_NT)
@@ -53,10 +60,13 @@ JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js 
 TEST_SOURCES := run_tests.js.template initialize_tests.js parser_tests.js.template type_manager_tests.js.template testing_compiler_pass.js testing_logger.js parser.js display.js legacy.js global_utilities.js
 
 .PHONY: all
-all: test.html test.debug.html $(OUTPUT_JAR)
+all: test.html test.debug.html pumpkinspice2html
 
 .PHONY: test
 test: $(TEST_OUTPUT)
+
+.PHONY: pumpkinspice2html
+pumpkinspice2html: $(DIST_DIR)/pumpkinspice2html $(DIST_DIR)/pumpkinspice2html.bat
 
 .PHONY: clean
 clean:
@@ -89,6 +99,13 @@ else
 closure_compiler: $(CLOSURE_COMPILER_JAR)
 endif
 
+$(DIST_DIR)/pumpkinspice2html: $(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.sh $(OUTPUT_JAR)
+	cat "$(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.sh" "$(OUTPUT_JAR)" > "$@"
+	chmod 755 "$@"
+
+$(DIST_DIR)/pumpkinspice2html.bat: $(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.bat $(OUTPUT_JAR)
+	cat "$(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.bat" "$(OUTPUT_JAR)" > "$@"
+
 run-tests.html: $(TEST_RESOURCES) $(JAVA_BUILD_CLASSES) | $(DIST_DIR)
 	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --title "Pumpkin Spice Tests" --javascript $(TEST_BUILD_DIR)/run_tests.js --nocode "$(DIST_DIR)/run-tests.html"
 
@@ -104,7 +121,7 @@ pumpkinspice.js: $(JAVASCRIPT_SOURCES) $(JAVA_TOOLS_CLASSES) | $(BUILD_RESOURCE_
 	$(JAVA) -classpath "$(TOOLS_BUILD_DIR)" com.nicknassar.pumpkinspice.TemplateFiller $< "$(BUILD_RESOURCE_DIR)/$@"
 
 pumpkinspice.optimized.js: pumpkinspice.js | $(BUILD_RESOURCE_DIR) closure_compiler
-	$(JAVA) -jar $(CLOSURE_COMPILER_JAR) --compilation_level ADVANCED_OPTIMIZATIONS --js "$(BUILD_RESOURCE_DIR)/$<" --js_output_file "$(BUILD_RESOURCE_DIR)/$@"
+	$(JAVA) -jar $(CLOSURE_COMPILER_JAR) --compilation_level ADVANCED_OPTIMIZATIONS --js "$(BUILD_RESOURCE_DIR)/$(notdir $<)" --js_output_file "$(BUILD_RESOURCE_DIR)/$@"
 
 %.html.template: $(RESOURCE_DIR)/%.html.template | $(BUILD_RESOURCE_DIR)
 	cp $< "$(BUILD_RESOURCE_DIR)/$@"
@@ -115,5 +132,5 @@ pumpkinspice.optimized.js: pumpkinspice.js | $(BUILD_RESOURCE_DIR) closure_compi
 %.debug.html: %.pumpkinspice $(JAVA_BUILD_CLASSES) $(DEBUG_RESOURCES)
 	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --debug $<
 
-$(OUTPUT_JAR): $(JAVA_CLASSES) $(DEBUG_RESOURCES) $(OPTIMIZED_RESOURCES) | $(DIST_DIR)
+$(OUTPUT_JAR): $(DEBUG_RESOURCES) $(OPTIMIZED_RESOURCES) com/nicknassar/pumpkinspice/Builder.class | $(DIST_DIR)
 	$(JAR) cfe $@ com.nicknassar.pumpkinspice.Builder -C $(PUMPKINSPICE2HTML_BUILD_DIR) . -C $(BUILD_RESOURCE_DIR) .
