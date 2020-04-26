@@ -1,21 +1,29 @@
 function Logger(display) {
-  var line_number;
+  // Simple error logger
+
+  // The convention is that when a function encounters an error, it
+  // logs it and returns null or false (depending on whether the
+  // expected result is an object or success/failure). When a function
+  // encounters a null or false return value from another pumpkinspice
+  // function, it knows that the error has already been logged and
+  // returns null or false without additional logging.
+  var lineNumber;
   return {
-    set_line_number: function(num)  {
-      line_number = num;
+    setLineNumber: function(num)  {
+      lineNumber = num;
     },
-    clear_line_number: function() {
-      line_number = undefined;
+    clearLineNumber: function() {
+      lineNumber = undefined;
     },
     error: function(message) {
-      var long_message;
-      if (line_number !== undefined)
-        long_message = message+" on line "+line_number;
+      var longMessage;
+      if (lineNumber !== undefined)
+        longMessage = message+" on line "+lineNumber;
       else
-        long_message = message;
+        longMessage = message;
       if (window.console && window.console.error)
-	window.console.error(long_message);
-      display.print(long_message+"\n");
+	window.console.error(longMessage);
+      display.print(longMessage+"\n");
     }
   }
 }

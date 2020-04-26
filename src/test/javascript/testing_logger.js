@@ -1,15 +1,15 @@
 function TestingLogger() {
-  var line_number;
+  var lineNumber;
   var log = [];
   return {
-    set_line_number: function(num)  {
-      line_number = num;
+    setLineNumber: function(num)  {
+      lineNumber = num;
     },
-    clear_line_number: function() {
-      line_number = undefined;
+    clearLineNumber: function() {
+      lineNumber = undefined;
     },
     error: function(message) {
-      log.push([line_number, message]);
+      log.push([lineNumber, message]);
     },
     getLog: function() {
       return log;

@@ -832,12 +832,12 @@ function Parser(handlers,logger){
     if (lines.length===1)
       lines = text.split("\r");
     for (var n=0;n<lines.length;n++) {
-      logger.set_line_number(n);
+      logger.setLineNumber(n);
       if (!parseLine(lines[n],n)) {
         success = false;
       }
     }
-    logger.clear_line_number();
+    logger.clearLineNumber();
     return success;
   }
 

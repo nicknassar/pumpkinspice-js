@@ -65,10 +65,10 @@ function TypeManagerTests(display) {
     {
       description: "ambiguous global - number then string",
       run: function(typeManager, logger) {
-        logger.set_line_number(1);
+        logger.setLineNumber(1);
         assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) !== null,
                "first type generates no errors");
-        logger.set_line_number(2);
+        logger.setLineNumber(2);
         assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
                "second type generates a null");
         assert(typeManager.validate() === false, "does not validate");
@@ -79,10 +79,10 @@ function TypeManagerTests(display) {
     {
       description: "ambiguous global - string then number",
       run: function(typeManager, logger) {
-        logger.set_line_number(1);
+        logger.setLineNumber(1);
         assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) !== null,
                "first type generates no errors");
-        logger.set_line_number(2);
+        logger.setLineNumber(2);
         assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
                "second type generates a null");
         assert(typeManager.validate() === false, "does not validate");
@@ -93,13 +93,13 @@ function TypeManagerTests(display) {
     {
       description: "ambiguous global - combined expression",
       run: function(typeManager, logger) {
-        logger.set_line_number(1);
+        logger.setLineNumber(1);
         assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("TXT")) !== null,
                "first type generates no errors");
-        logger.set_line_number(2);
+        logger.setLineNumber(2);
         assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("NUM")) !== null,
                "second type generates no errors");
-        logger.set_line_number(3);
+        logger.setLineNumber(3);
         assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("NUM"),
                                                      typeManager.typeExpressionForGlobal("TXT")) === null,
                "combined type generates errors");
@@ -112,7 +112,7 @@ function TypeManagerTests(display) {
     {
       description: "boolean global",
       run: function(typeManager, logger) {
-        logger.set_line_number(1);
+        logger.setLineNumber(1);
         assert(typeManager.genTypesForBoolExpression(typeManager.typeExpressionForGlobal("NUM")) === null,
                "setting global to bool type generates errors");
         assert(typeManager.validate() === false, "does not validate");
