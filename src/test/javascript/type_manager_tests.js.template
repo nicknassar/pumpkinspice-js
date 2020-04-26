@@ -24,7 +24,7 @@ function TypeManagerTests(display) {
     {
       description: "single global string",
       run: function(typeManager, logger) {
-        typeManager.assignGlobalStringType("NAME");
+        typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("NAME"));
         typeManager.validate();
 
         assert(typeManager.globalHasStringType("NAME"),
@@ -39,7 +39,7 @@ function TypeManagerTests(display) {
     {
       description: "single global number",
       run: function(typeManager, logger) {
-        typeManager.assignGlobalNumericType("NUM");
+        typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("NUM"));
         typeManager.validate();
 
         assert(typeManager.globalHasNumericType("NUM"),

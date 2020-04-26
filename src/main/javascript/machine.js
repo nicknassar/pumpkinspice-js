@@ -54,7 +54,7 @@ function Machine(display, audio, logger) {
   var code = {"!":[]};
 
   // hash of global variables by name
-  var vars;
+  var vars = {};
 
   // Set to non-null to interrupt
   // non-zero values are a timeout
@@ -231,17 +231,13 @@ function go() {
     setBGColor: display.setBGColor,
     clear: display.clear,
 
-    init: function(vars_param) {
-      vars = vars_param; // Variables
-
-      // register for return values
-      // returnValue = undefined;
-
-      // Uncomment to prevent the machine from be re-init. If we want
-      // to allow re-init, we need to add code to clear everything and
-      // avoid re-adding listeners, etc.
-
-      // this.init = undefined;
+    init: function(numericVars, stringVars) {
+      for (var i=0;i<numericVars.length;i++) {
+        vars[numericVars[i]] = 0;
+      }
+      for (var i=0;i<stringVars.length;i++) {
+        vars[stringVars[i]] = "";
+      }
     },
      go: function() {
        // There was something output. Display it now

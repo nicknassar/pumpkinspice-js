@@ -873,10 +873,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
     }
 
     function input(varname) {
-      if (typeManager.globalHasUndefinedType(varname)) {
-        logger.error(varname+" undefined in INPUT");
-        return;
-      }
       pushInstruction(function() {
         machine.setInterruptDelay(0);
         machine.setInputVariable(varname);
@@ -903,11 +899,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
         logger.error("what the FOR");
         return false;
       }
-      //addFor: function(varname,first,last) {
-      if (typeManager.globalHasUndefinedType(varname)) {
-        logger.error(varname+" undefined in FOR");
-        return;
-      }
 
       first = expressionToFunction(first);
       last = expressionToFunction(last);
@@ -921,14 +912,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
       return true;
     }
     function letStatement(varname,exp) {
-      if (!varname) {
-        logger.error("Invalid expression assigned to "+varname);
-        return false;
-      }
-      if (typeManager.globalHasUndefinedType(varname)) {
-        logger.error(varname+" undefined in assignment");
-        return;
-      }
       var value = expressionToFunction(exp);
       pushInstruction(function() {
         machine.setGlobal(varname,value());
@@ -1189,8 +1172,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
   function finalize() {
     // XXX check that there are no empty code locations, etc.
     if (typeManager.validate()) {
-      // Maybe make this less machine specific?
-      machine.init(typeManager.getVarsObject());
+      machine.init(typeManager.getNumericGlobals(), typeManager.getStringGlobals());
       return true;
     } else {
       return false;

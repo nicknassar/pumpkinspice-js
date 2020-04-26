@@ -53,36 +53,21 @@ function TypeGeneratorPass(typeManager, logger) {
     }
 
     function beginSubroutine(name, args) {
-      // XXX CHECK THAT VARIABLE HASN'T BEEN DEFINED
-      // XXX WHEN VARS ARE DEFINED, CHECK THAT SUBROUTINE HASN'T BEEN DEFINED
-      // If there's an existing subArgNames entry, this had already been defined!
-      if (typeManager.subIsDefined(name)) {
-        logger.error("SUBROUTINE "+name+" REDEFINED");
-        return false;
-      } else {
-        // This is the current sub now.
+      if (typeManager.registerSubroutineDefinition(name, args)) {
         currentSub = name;
-
-        // We've never seen this before. Save the count, too
-        if (typeManager.getSubArgCount(name) === undefined ||
-            typeManager.getSubArgCount(name) == args.length) {
-          typeManager.setSubArgNames(name, args);
-
-        } else { // We've seen this called. Check that the param count matches.
-          logger.error("SUBROUTINE "+name+" HAS "+args.length+" args but was called with "+typeManager.getSubArgCount(name));
-          return false;
-        }
         return true;
+      } else {
+        return false;
       }
     }
 
     function callSubroutine(name, argExps) {
-      return typeManager.callSubroutineStatement(name, argExps);
+      return typeManager.typeExpressionForCallSubroutine(name, argExps) !== null;
     }
 
     function endSubroutine() {
       if (!typeManager.subHasReturnType(currentSub)) {
-        if (typeManager.returnStatement(currentSub, typeManager.voidTypeIndicator()) === null) {
+        if (typeManager.typeExpressionForVoidReturnStatement(currentSub) === null) {
           return false;
         }
       }
@@ -91,11 +76,11 @@ function TypeGeneratorPass(typeManager, logger) {
     }
 
     function returnStatement(exp) {
-      return typeManager.returnStatement(currentSub, exp);
+      return typeManager.typeExpressionForReturnStatement(currentSub, exp) !== null;
     }
 
     function voidReturnStatement() {
-      return typeManager.returnStatement(currentSub, typeManager.voidTypeIndicator());
+      return typeManager.typeExpressionForVoidReturnStatement(currentSub) !== null;
     }
 
     function beginAsk(promptExp) {
@@ -168,7 +153,7 @@ function TypeGeneratorPass(typeManager, logger) {
     }
 
     function input(valueExp) {
-      return typeManager.assignGlobalStringType(valueExp);
+      return typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal(valueExp));
     }
 
     function play(valueExp) {
@@ -182,7 +167,7 @@ function TypeGeneratorPass(typeManager, logger) {
     }
 
     function forStatement(varExp,startExp,endExp) {
-      if (!typeManager.assignGlobalNumericType(varExp) ||
+      if (!typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal(varExp)) ||
           typeManager.genTypesForNumericExpression(startExp)===null ||
           typeManager.genTypesForNumericExpression(endExp)===null) {
         logger.error("Type mismatch for FOR");
@@ -194,39 +179,13 @@ function TypeGeneratorPass(typeManager, logger) {
 
     function letStatement(varExp,valueExp) {
       if (varExp === null || valueExp === null) {
-        logger.error("Type mismatch for assignment to "+varExp);
         return false;
       }
       if (typeManager.localVariableDefined(currentSub, varExp)) {
         logger.error("Local variable assignment not supported, yet!");
         return false;
       }
-      // Value exp has an unknown type
-      if (typeManager.isStringType(valueExp)) {
-        if (!typeManager.assignGlobalStringType(varExp)) {
-          logger.error("Type mismatch for assignment to "+varExp);
-          return false;
-        } else
-          return true;
-      } else if (typeManager.isNumericType(valueExp)) {
-        if (!typeManager.assignGlobalNumericType(varExp)) {
-          logger.error("Type mismatch for assignment to "+varExp);
-          return false;
-        } else
-          return true;
-      } else {
-        // The variable has a type- set the arg based on that
-        if (typeManager.globalHasStringType(varExp)) {
-          return typeManager.assignUnknownsStringTypes(valueExp);
-        } else if (typeManager.globalHasNumericType(varExp)) {
-          return typeManager.assignUnknownsNumericType(valueExp);
-        } else {
-          // There are no types yet
-
-          typeManager.addGlobalToUnassignedType(valueExp, varExp);
-          return true;
-        }
-      }
+      return !!typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal(varExp), valueExp);
     }
 
 /***********************************************************************
@@ -246,53 +205,39 @@ function TypeGeneratorPass(typeManager, logger) {
         }
         if (typeManager.genTypesForNumericExpression(a) &&
             typeManager.genTypesForNumericExpression(b))
-          return typeManager.numericTypeIndicator();
+          return typeManager.numericTypeExpression();
         else
           return null;
       }
 
       function variableExpression(name) {
         if (typeManager.localVariableDefined(currentSub, name)) {
-          if (typeManager.localHasUndefinedType(currentSub, name)) {
-            return typeManager.localVariableIndicator(currentSub, name);
-          } else if (typeManager.localHasStringType(currentSub, name)) {
-            return typeManager.stringTypeIndicator();
-          } else if (typeManager.localHasNumericType(currentSub, name)) {
-            return typeManager.numericTypeIndicator();
-          }
+          return typeManager.typeExpressionForLocal(currentSub, name);
         } else {
-          if (typeManager.globalHasUndefinedType(name)) {
-            return typeManager.globalVariableIndicator(name); // unknown
-          } else if (typeManager.globalHasStringType(name)) {
-            return typeManager.stringTypeIndicator();
-          } else if (typeManager.globalHasNumericType(name)) {
-            return typeManager.numericTypeIndicator();
-          }
+          return typeManager.typeExpressionForGlobal(name);
         }
       }
 
       function validateNumericSubExpression(subExp) {
-        if (!typeManager.isNumericType(subExp)) {
-          // if it's not an exact match, check it out
-          subExp = typeManager.genTypesForNumericExpression(subExp)
-          if (!subExp) {
-            logger.error("TYPE MISMATCH. I was expecting a number");
-            return null;
-          }
+        if (subExp === null)
+          return null;
+        var newType = typeManager.genTypesForNumericExpression(subExp);
+        if (newType === null)  {
+          logger.error("TYPE MISMATCH. I was expecting a number");
+          return null;
         }
-        return subExp;
+        return newType;
       }
 
       function validateStringSubExpression(subExp) {
-        if (!typeManager.isStringType(subExp)) {
-          // if it's not an exact match, check it out
-          subExp = typeManager.genTypesForStringExpression(subExp)
-          if (!subExp) {
-            logger.error("TYPE MISMATCH. I was expecting text");
-            return null;
-          }
+        if (subExp === null)
+          return null;
+        var newType = typeManager.genTypesForStringExpression(subExp);
+        if (newType === null)  {
+          logger.error("TYPE MISMATCH. I was expecting a string");
+          return null;
         }
-        return subExp;
+        return newType;
       }
 
       function passthroughExpression(exp) {
@@ -300,74 +245,89 @@ function TypeGeneratorPass(typeManager, logger) {
       }
 
       function notExpression(exp) {
-	if (!exp)
-	  return null;
-	if (!typeManager.isBoolType(exp)) {
-	  logger.error("Expected boolean expression after NOT");
-	  return null;
-	}
-        return exp;
+        if (exp === null)
+          return null;
+        var newType = typeManager.genTypesForBoolExpression(exp);
+        if (newType === null)  {
+          logger.error("TYPE MISMATCH. I was expecting a boolean (true/false) value");
+          return null;
+        }
+        return newType;
       }
 
       function orExpression(exp1,exp2) {
-        if (!exp1 || !exp2)
+        if (exp1 === null || exp2 === null)
           return null;
-	if (!typeManager.isBoolType(exp1) || !typeManager.isBoolType(exp2)) {
-	  logger.error("Expected boolean type for OR expression");
-	  return null;
-	}
-        return exp1; // bool type
+        var newType1 = typeManager.genTypesForBoolExpression(exp1);
+        var newType2 = typeManager.genTypesForBoolExpression(exp2);
+        if (newType1 === null)  {
+          logger.error("TYPE MISMATCH. I was expecting a boolean (true/false) value before OR");
+        }
+        if (newType2 === null)  {
+          logger.error("TYPE MISMATCH. I was expecting a boolean (true/false) value after OR");
+        }
+        if (newType1 === null || newType2 === null)  {
+          return null;
+        }
+        return typeManager.genTypesForExpressionPair(exp1, exp2);
       }
 
       function andExpression(exp1,exp2) {
-        if (!exp1 || !exp2)
+        if (exp1 === null || exp2 === null)
           return null;
-	if (!typeManager.isBoolType(exp1) || !typeManager.isBoolType(exp2)) {
-	  logger.error("Expected boolean type for AND expression");
-	  return null;
-	}
-        return exp1; // bool type
+        var newType1 = typeManager.genTypesForBoolExpression(exp1);
+        var newType2 = typeManager.genTypesForBoolExpression(exp2);
+        if (newType1 === null)  {
+          logger.error("TYPE MISMATCH. I was expecting a boolean (true/false) value before AND");
+        }
+        if (newType2 === null)  {
+          logger.error("TYPE MISMATCH. I was expecting a boolean (true/false) value after AND");
+        }
+        if (newType1 === null || newType2 === null)  {
+          return null;
+        }
+        return typeManager.genTypesForExpressionPair(exp1, exp2);
       }
 
       function callSubroutineExpression(name,argExps) {
-        return typeManager.callSubroutineExpression(name, argExps);
+        return typeManager.typeExpressionForCallSubroutine(name, argExps);
       }
 
   function comparison(exp1, exp2) {
     if (!typeManager.genTypesForExpressionPair(exp1, exp2))
       return null;
-    return typeManager.boolTypeIndicator();
+    return typeManager.boolTypeExpression();
   }
 
   function numericToNumericFunction(exp) {
     if (validateNumericSubExpression(exp) !== null)
-      return typeManager.numericTypeIndicator();
+      return typeManager.numericTypeExpression();
     else
       return null;
   }
   function numericNumericToNumericFunction(exp1, exp2) {
     if (validateNumericSubExpression(exp1) !== null &&
         validateNumericSubExpression(exp2) !== null)
-      return typeManager.numericTypeIndicator();
+      return typeManager.numericTypeExpression();
     else
       return null;
   }
   function stringNumericToStringFunction(exp1, exp2) {
     if (validateStringSubExpression(exp1) !== null &&
         validateNumericSubExpression(exp2) !== null)
-      return typeManager.stringTypeIndicator();
+      return typeManager.stringTypeExpression();
     else
       return null;
   }
   function stringToNumericFunction(exp) {
     if (validateStringSubExpression(exp) !== null)
-      return typeManager.numericTypeIndicator();
+      return typeManager.numericTypeExpression();
     else
       return null;
   }
   function numericToStringFunction(exp) {
     if (validateNumericSubExpression(exp) !== null)
-      return typeManager.stringTypeIndicator();
+      return typeManager.stringTypeExpression();
     else
       return null;
   }
@@ -430,10 +390,10 @@ function TypeGeneratorPass(typeManager, logger) {
     next: trueFunc,
 
     // Expressions
-    numericLiteralExpression: typeManager.numericTypeIndicator,
-    stringLiteralExpression: typeManager.stringTypeIndicator,
+    numericLiteralExpression: typeManager.numericTypeExpression,
+    stringLiteralExpression: typeManager.stringTypeExpression,
     randomBuiltinExpression: numericNumericToNumericFunction,
-    piBuiltinExpression: typeManager.numericTypeIndicator,
+    piBuiltinExpression: typeManager.numericTypeExpression,
     variableExpression: variableExpression,
     cintBuiltinExpression: numericToNumericFunction,
     intBuiltinExpression: numericToNumericFunction,

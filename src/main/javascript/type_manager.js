@@ -53,6 +53,20 @@
       return name;
     };
 
+    function typeExpressionForGlobal(name) {
+      if (varTypes[name] === undefined)
+        varTypes[name] = [name];
+      return varTypes[name];
+    }
+
+    function typeExpressionForLocal(sub, name) {
+      name = localVarName(sub, name);
+      if (varTypes[name] === undefined)
+        varTypes[name] = [name];
+      return varTypes[name];
+    }
+
+
     // Call with FOO,0 to get the name of the first arg of subroutine FOO
     // Call with FOO,1 to get the name of the second arg of subroutine FOO
     // Used internally in varTypes to keep track of type
@@ -66,19 +80,22 @@
       return sub+"!";
     }
 
-    function getVarsObject() {
-      // Initialize numeric values to 0, strings to empty string
-      // Variables with unknown types remain undefined, always fail in comparisons
-      // XXX I don't like this because it assumes the machine uses a
-      //     hash for variables
-      var vars = {};
+    function getNumericGlobals() {
+      var varNames = [];
       for (var v in varTypes) {
-        if (varTypes[v] === NUMERIC_TYPE)
-          vars[v] = 0;
-        else if (varTypes[v] === STRING_TYPE)
-          vars[v] = "";
+        if (v.indexOf("!") === -1 && varTypes[v] === NUMERIC_TYPE)
+          varNames.push(v);
       }
-      return vars;
+      return varNames;
+    }
+
+    function getStringGlobals() {
+      var varNames = [];
+      for (var v in varTypes) {
+        if (v.indexOf("!") === -1 && varTypes[v] === STRING_TYPE)
+          varNames.push(v);
+      }
+      return varNames;
     }
 
     function assignTypes(variables,type) {
@@ -113,22 +130,6 @@
 
     }
 
-    function assignGlobalNumericType(variable) {
-      return assignTypes([variable], NUMERIC_TYPE);
-    }
-
-    function assignGlobalStringType(variable) {
-      return assignTypes([variable], STRING_TYPE);
-    }
-
-    function assignUnknownsNumericType(variables) {
-      return assignTypes(variables, NUMERIC_TYPE);
-    }
-
-    function assignUnknownsStringType(variables) {
-      return assignTypes(variables, STRING_TYPE);
-    }
-
     function saveUnassignedTypes(variables) {
       // This is O(n^2) in the worst case
       //
@@ -152,18 +153,9 @@
       }
     }
 
-    function addGlobalToUnassignedType(unassigned, variable) {
-      var newUnassigned = [variable];
-      for (var i=0;i<unassigned.length;i++) {
-        newUnassigned.push(unassigned[i]);
-      }
-      return saveUnassignedTypes(newUnassigned);
-    }
-
     function genTypesForExpressionPair(type1,type2) {
       // Returns type of expression pair
-      // Just like findTypeOfTokenExpression can return
-      //   STRING_TYPE, NUMERIC_TYPE, null, or list
+      //   *_TYPE, null, or list
 
       // Something is bad
       if (type1 === null || type2 === null)
@@ -231,24 +223,20 @@
       return genTypesForExpressionPair(exp, NUMERIC_TYPE);
     }
 
-    function voidTypeIndicator() {
-      return VOID_TYPE;
+    function genTypesForBoolExpression(exp) {
+      return genTypesForExpressionPair(exp, BOOL_TYPE);
     }
 
-    function stringTypeIndicator() {
+    function stringTypeExpression() {
       return STRING_TYPE;
     }
 
-    function numericTypeIndicator() {
+    function numericTypeExpression() {
       return NUMERIC_TYPE;
     }
 
-    function boolTypeIndicator() {
+    function boolTypeExpression() {
       return BOOL_TYPE;
-    }
-
-    function globalVariableIndicator(name) {
-      return [name];
     }
 
     function globalHasStringType(name) {
@@ -259,16 +247,8 @@
       return varTypes[name] === NUMERIC_TYPE;
     }
 
-    function globalHasUndefinedType(name) {
-      return varTypes[name] === undefined;
-    }
-
     function localVariableDefined(sub, name) {
       return localVarName(sub, name) != name;
-    }
-
-    function localVariableIndicator(sub, name) {
-      return [localVarName(sub, name)];
     }
 
     function localHasStringType(sub, name) {
@@ -279,37 +259,23 @@
       return varTypes[localVarName(sub, name)] === NUMERIC_TYPE;
     }
 
-    function localHasUndefinedType(sub, name) {
-      return varTypes[localVarName(sub, name)] === undefined;
-    }
-
-    function subIsDefined(name) {
-      return subArgNames[name] !== undefined;
-    }
-
-    function getSubArgCount(name) {
-      return subArgCount[name];
-    }
-
-    function setSubArgNames(name, args) {
-      subArgCount[name] = args.length;
+    function registerSubroutineDefinition(name, args) {
+      if (subArgCount[name] === undefined)
+        subArgCount[name] = args.length;
+      if (subArgCount[name] !== args.length) {
+        logger.error("SUBROUTINE "+name+" called with "+subArgCount[name]+" arguments, but defined with "+args.length+" arguments");
+        return false;
+      }
+      if (subArgNames[name] !== undefined) {
+        logger.error("SUBROUTINE "+name+" redefined");
+        return false;
+      }
       subArgNames[name] = args;
+      return true;
     }
 
     function getSubArgNames(name) {
       return subArgNames[name];
-    }
-
-    function subArgHasStringType(sub, argNum) {
-      return varTypes[argNameByArity(sub, argNum)] === STRING_TYPE;
-    }
-
-    function subArgHasNumericType(sub, argNum) {
-      return varTypes[argNameByArity(sub, argNum)] === NUMERIC_TYPE;
-    }
-
-    function subArgHasUndefinedType(sub, argNum) {
-      return varTypes[argNameByArity(sub, argNum)] === undefined;
     }
 
     function subHasStringReturnType(sub) {
@@ -327,66 +293,32 @@
       return varTypes[returnValueName(sub)] !== undefined;
     }
 
-    function callSubroutineStatement(name, argExps) {
-      if (subArgCount[name] === undefined) {
-        subArgCount[name] = argExps.length;
-        calledSubs[calledSubs.length] = name;
-      }
-      if (subArgCount[name] !== argExps.length) {
-        logger.error("SUBROUTINE "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]);
-        return false;
-      }
-      for (var i=0;i<argExps.length;i++) {
-        if (argExps[i] === null) {
-          logger.error("Invalid argument to "+name);
-          return false;
-        }
-        var varName = argNameByArity(name,i);
-        if (varTypes[varName]) {
-          var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
-          if (!result) {
-            logger.error("Invalid argument type mismatch in "+name);
-            return false;
-          } else {
-            // XXX should this be assignTypes?
-            varTypes[varName] = result;
-          }
-        } else {
-          // XXX should this be assignTypes?
-          varTypes[varName] = argExps[i];
-        }
-      }
-      return true;
-    }
-
-    function returnStatement(sub, exp) {
+    function typeExpressionForReturnStatement(sub, exp) {
       if (exp === null) {
-        logger.error("INVALID RETURN EXPRESSION");
-        return false;
+        return null;
       }
       if (sub === undefined) {
         logger.error("RETURN OUTSIDE OF SUBROUTINE");
-        return false;
+        return null;
       }
       var retValName=returnValueName(sub);
       if (varTypes[retValName]) {
         var result = genTypesForExpressionPair(exp,varTypes[retValName]);
         if (result === null) {
           logger.error("TYPE MISMATCH IN RETURN");
-          return false;
-        } else {
-          // XXX should this be assignTypes?
-          varTypes[retValName] = result;
+          return null;
         }
       } else {
-        // XXX should this be assignTypes?
         varTypes[retValName] = exp;
       }
-      return true;
+      return varTypes[retValName];
     }
 
-    function callSubroutineExpression(name, argExps) {
-        // XXX similar to statement
+    function typeExpressionForVoidReturnStatement(sub) {
+      return typeExpressionForReturnStatement(sub, VOID_TYPE);
+    }
+
+    function typeExpressionForCallSubroutine(name, argExps) {
         if (subArgCount[name] === undefined) {
           subArgCount[name] = argExps.length;
         }
@@ -396,35 +328,29 @@
         }
         for (var i=0;i<argExps.length;i++) {
           if (argExps[i] === null) {
-            logger.error("Invalid argument to SUBROUTINE CALL "+name);
             return null;
           }
           var varName = argNameByArity(name,i);
-          if (varTypes[varName]) {
+          if (varTypes[varName] !== undefined) {
             var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
-            if (!result) {
-              logger.error("Invalid argument type mismatch in CALL "+name);
+            if (result === null) {
+              logger.error("Invalid argument: type mismatch in CALL "+name);
               return null;
-            } else {
-              // XXX should this be assignTypes?
-              varTypes[varName] = result;
             }
           } else {
-            // XXX should this be assignTypes?
             varTypes[varName] = argExps[i];
           }
         }
         var retName = returnValueName(name);
-        if (varTypes[retName])
-          return varTypes[retName];
-        else
-          return [retName];
+        if (varTypes[retName] === undefined)
+          varTypes[retName] = [retName];
+        return varTypes[retName];
     }
 
     function validate() {
-      // Calling fake subroutines is stupid
-      // XXX this doesn't even work
-      // XXX There's probably more we can check for
+      // XXX incomplete
+      // Check that all subroutines called exist and have types
+      // Check that subroutines and variables don't share names
       // for (var i=0;i<calledSubs.length;i++) {
       //   var name=calledSubs[i];
       //   if (!machine.isSubroutineDefined(name)) {
@@ -437,51 +363,35 @@
 
     return {
       // Type assigning functions
-      assignGlobalNumericType: assignGlobalNumericType,
-      assignGlobalStringType: assignGlobalStringType,
-      assignUnknownsStringType: assignUnknownsStringType,
-      assignUnknownsNumericType: assignUnknownsNumericType,
+      typeExpressionForGlobal: typeExpressionForGlobal,
+      typeExpressionForLocal: typeExpressionForLocal,
+      typeExpressionForCallSubroutine: typeExpressionForCallSubroutine,
+      typeExpressionForReturnStatement: typeExpressionForReturnStatement,
+      typeExpressionForVoidReturnStatement: typeExpressionForVoidReturnStatement,
+      registerSubroutineDefinition: registerSubroutineDefinition,
+      numericTypeExpression: numericTypeExpression,
+      stringTypeExpression: stringTypeExpression,
+      boolTypeExpression: boolTypeExpression,
+
       genTypesForExpressionPair: genTypesForExpressionPair,
       genTypesForStringExpression: genTypesForStringExpression,
       genTypesForNumericExpression: genTypesForNumericExpression,
-
-      isNumericType: isNumericType,
-      isStringType: isStringType,
-      isBoolType: isBoolType,
-      isVoidType: isVoidType,
-
-      addGlobalToAssignedType: addGlobalToUnassignedType,
-      callSubroutineStatement: callSubroutineStatement,
-      callSubroutineExpression: callSubroutineExpression,
-      returnStatement: returnStatement,
-      localVariableIndicator: localVariableIndicator,
-      globalVariableIndicator: globalVariableIndicator,
-      numericTypeIndicator: numericTypeIndicator,
-      stringTypeIndicator: stringTypeIndicator,
-      boolTypeIndicator: boolTypeIndicator,
-      voidTypeIndicator: voidTypeIndicator,
-      setSubArgNames: setSubArgNames,
+      genTypesForBoolExpression: genTypesForBoolExpression,
 
       // Type reading functions
       globalHasStringType: globalHasStringType,
       globalHasNumericType: globalHasNumericType,
-      globalHasUndefinedType: globalHasUndefinedType,
       localVariableDefined: localVariableDefined,
       localHasStringType: localHasStringType,
       localHasNumericType: localHasNumericType,
-      localHasUndefinedType: localHasUndefinedType,
-      subIsDefined: subIsDefined,
       getSubArgNames: getSubArgNames,
-      getSubArgCount: getSubArgCount,
-      subArgHasStringType: subArgHasStringType,
-      subArgHasNumericType: subArgHasNumericType,
-      subArgHasUndefinedType: subArgHasUndefinedType,
       subHasReturnType: subHasReturnType,
       subHasStringReturnType: subHasStringReturnType,
       subHasNumericReturnType: subHasNumericReturnType,
       subHasVoidReturnType: subHasVoidReturnType,
-      validate: validate,
 
-      getVarsObject: getVarsObject,
+      getNumericGlobals: getNumericGlobals,
+      getStringGlobals: getStringGlobals,
+      validate: validate
     };
   }

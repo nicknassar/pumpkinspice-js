@@ -419,6 +419,14 @@ END IF
 ' XXX = CALL BARE_RETURN
 ' Generates an error
 
+IF NEVER_SET_NUMERIC <> 0
+  CALL ERROR "Numeric variable initialization failed"
+END IF
+
+IF NEVER_SET_TEXT <> ""
+  CALL ERROR "String variable initialization failed"
+END IF
+
 REM Interactive test for subroutines within ASK prompts
 
 REM TEST_PROMPT = "First prompt!"
