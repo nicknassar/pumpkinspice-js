@@ -40,6 +40,9 @@
     var calledSubs = [];  // Subroutines that were called before being defined
     // So we can check that they eventually get defined
 
+    // Set to false if validation fails at any point
+    var valid = true;
+
     function localVarName(sub, name) {
       if (sub !== undefined) {
         var pos = 0;
@@ -101,7 +104,8 @@
     function assignTypes(variables,type) {
       // type must be resolved before this is called
       if (type !== STRING_TYPE && type !== NUMERIC_TYPE) {
-        logger.error("TYPE SYSTEM ERROR. I am very, confused about what is text and what is numbers");
+        logger.error("TYPE SYSTEM ERROR. This is neither text nor a number");
+        valid = false;
         return false;
       }
       var sameTypeVars = [];
@@ -115,8 +119,9 @@
           varTypes[variables[i]] = type;
         } else if (varTypes[variables[i]] !== undefined &&
                    varTypes[variables[i]] !== type) {
-          // Display more specific error
-          // logger.error("TYPE MISMATCH");
+          // Maybe display more specific error
+          logger.error("type mismatch");
+          valid = false;
           return false;
         } else {
           varTypes[variables[i]] = type;
@@ -140,7 +145,8 @@
             (varTypes[variables[i]]===STRING_TYPE ||
              varTypes[variables[i]]===NUMERIC_TYPE)) {
           logger.error("UNASSIGNED TYPE NOT RESOLVED CORRECTLY");
-          throw "typeassignerror"; // We should never get here
+          valid = false;
+          return false;
         }
         if (varTypes[variables[i]]) {
           for (var j=0;j<variables.length;j++) {
@@ -151,6 +157,7 @@
           varTypes[variables[i]] = variables.slice(0);
         }
       }
+      return true;
     }
 
     function genTypesForExpressionPair(type1,type2) {
@@ -167,10 +174,14 @@
           return type1;
         } else if (type2 !== STRING_TYPE && type2 !== NUMERIC_TYPE && type2 !== BOOL_TYPE && type2 !== VOID_TYPE) {
           // Type 2 is a list of unknowns
-          assignTypes(type2,type1);
-          return type1;
+          if (assignTypes(type2,type1))
+            return type1;
+          else
+            return null;
         } else {
           // It's not a match and it's not unknown
+          logger.error("type mismatch");
+          valid = false;
           return null;
         }
       }
@@ -179,8 +190,10 @@
 
       // The second expression can be resolved
       if (type2 === STRING_TYPE || type2 === NUMERIC_TYPE || type2 === BOOL_TYPE || type2 === VOID_TYPE) {
-        assignTypes(type1,type2);
-        return type2;
+        if (assignTypes(type1,type2))
+          return type2;
+        else
+          return null;
       }
 
       // There's probably a better way to combine two lists
@@ -191,10 +204,13 @@
       for (var i=0;i<type2.length;i++) {
         undefineds.push(type2[i]);
       }
-      if (undefineds.length === 0)
+      if (undefineds.length === 0) {
+        logger.error("Assigning type to empty expression");
+        valid = false;
         return null;
-      else {
-        saveUnassignedTypes(undefineds);
+      } else {
+        if (!saveUnassignedTypes(undefineds))
+          return null;
         return undefineds;
       }
     }
@@ -264,10 +280,12 @@
         subArgCount[name] = args.length;
       if (subArgCount[name] !== args.length) {
         logger.error("SUBROUTINE "+name+" called with "+subArgCount[name]+" arguments, but defined with "+args.length+" arguments");
+        valid = false;
         return false;
       }
       if (subArgNames[name] !== undefined) {
         logger.error("SUBROUTINE "+name+" redefined");
+        valid = false;
         return false;
       }
       subArgNames[name] = args;
@@ -299,13 +317,13 @@
       }
       if (sub === undefined) {
         logger.error("RETURN OUTSIDE OF SUBROUTINE");
+        valid = false;
         return null;
       }
       var retValName=returnValueName(sub);
       if (varTypes[retValName]) {
         var result = genTypesForExpressionPair(exp,varTypes[retValName]);
         if (result === null) {
-          logger.error("TYPE MISMATCH IN RETURN");
           return null;
         }
       } else {
@@ -324,6 +342,7 @@
         }
         if (subArgCount[name] !== argExps.length) {
           logger.error("SUBROUTINE CALL "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]);
+          valid = false;
           return null;
         }
         for (var i=0;i<argExps.length;i++) {
@@ -334,7 +353,6 @@
           if (varTypes[varName] !== undefined) {
             var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
             if (result === null) {
-              logger.error("Invalid argument: type mismatch in CALL "+name);
               return null;
             }
           } else {
@@ -348,6 +366,8 @@
     }
 
     function validate() {
+      if (!valid)
+        return false;
       // XXX incomplete
       // Check that all subroutines called exist and have types
       // Check that subroutines and variables don't share names
@@ -392,6 +412,7 @@
 
       getNumericGlobals: getNumericGlobals,
       getStringGlobals: getStringGlobals,
+
       validate: validate
     };
   }

@@ -21,17 +21,23 @@ function TypeManagerTests(display) {
   }
 
   var tests = [
+    // BEGIN tests for global variables
     {
       description: "single global string",
       run: function(typeManager, logger) {
-        typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("NAME"));
-        typeManager.validate();
+        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("NAME")) !== null,
+               "type was generated");
+        assert(typeManager.validate(), "validates");
 
         assert(typeManager.globalHasStringType("NAME"),
                "string type is set");
-        assert(!(typeManager.globalHasNumericType("NAME") ||
-                 typeManager.globalHasUndefinedType("NAME")),
-               "other type is not set");
+        assert(!typeManager.globalHasNumericType("NAME"),
+               "numeric type is not set");
+        assert(typeManager.getStringGlobals().length === 1 &&
+               typeManager.getStringGlobals().indexOf("NAME") === 0,
+               "global is reported");
+        assert(typeManager.getNumericGlobals().length === 0,
+               "no other global variables found");
         assert(logger.getLog().length === 0,
                "Errors found: "+logger.getLog().join(", "));
       }
@@ -39,28 +45,100 @@ function TypeManagerTests(display) {
     {
       description: "single global number",
       run: function(typeManager, logger) {
-        typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("NUM"));
-        typeManager.validate();
+        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("NUM")) !== null,
+               "type was generated");
+        assert(typeManager.validate(), "validates");
 
         assert(typeManager.globalHasNumericType("NUM"),
                "numeric type is set");
-        assert(!(typeManager.globalHasStringType("NUM") ||
-                 typeManager.globalHasUndefinedType("NUM")),
-               "other type is not set");
+        assert(!typeManager.globalHasStringType("NUM"),
+               "string type is not set");
+        assert(typeManager.getNumericGlobals().length === 1 &&
+               typeManager.getNumericGlobals().indexOf("NUM") === 0,
+               "global is reported")
+        assert(typeManager.getStringGlobals().length === 0,
+               "no other global variables found");
         assert(logger.getLog().length === 0,
                "Errors found: "+logger.getLog().join(", "));
       }
     },
+    {
+      description: "ambiguous global - number then string",
+      run: function(typeManager, logger) {
+        logger.set_line_number(1);
+        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) !== null,
+               "first type generates no errors");
+        logger.set_line_number(2);
+        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
+               "second type generates a null");
+        assert(typeManager.validate() === false, "does not validate");
+        assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 2,
+               "expected error message is set on correct line");
+      }
+    },
+    {
+      description: "ambiguous global - string then number",
+      run: function(typeManager, logger) {
+        logger.set_line_number(1);
+        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) !== null,
+               "first type generates no errors");
+        logger.set_line_number(2);
+        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
+               "second type generates a null");
+        assert(typeManager.validate() === false, "does not validate");
+        assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 2,
+               "expected error message is set on correct line");
+      }
+    },
+    {
+      description: "ambiguous global - combined expression",
+      run: function(typeManager, logger) {
+        logger.set_line_number(1);
+        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("TXT")) !== null,
+               "first type generates no errors");
+        logger.set_line_number(2);
+        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("NUM")) !== null,
+               "second type generates no errors");
+        logger.set_line_number(3);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("NUM"),
+                                                     typeManager.typeExpressionForGlobal("TXT")) === null,
+               "combined type generates errors");
+
+        assert(typeManager.validate() === false, "does not validate");
+        assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 3,
+               "expected error message is set on correct line");
+      }
+    },
+    {
+      description: "boolean global",
+      run: function(typeManager, logger) {
+        logger.set_line_number(1);
+        assert(typeManager.genTypesForBoolExpression(typeManager.typeExpressionForGlobal("NUM")) === null,
+               "setting global to bool type generates errors");
+        assert(typeManager.validate() === false, "does not validate");
+        assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 1,
+               "expected error message is set on correct line");
+      }
+    }
+    // END tests for global variables
   ];
 
   function printFailure(description, failures) {
     display.setColor(4);
-    display.print("TestManager failed test \""+description+"\":\n");
-    display.setColor(15);
+    display.print("TestManager failed test \"");
+    display.setColor(12);
+    display.print(description);
+    display.setColor(4);
+    display.print("\":\n");
+
     for (var i=0;i<failures.length;i++) {
-      display.print(failures[i]+"\n");
+      display.setColor(7);
+      display.print("Assertion \"");
+      display.setColor(15);
+      display.print(failures[i]);
+      display.setColor(7);
+      display.print("\" failed\n");
     }
-    display.setColor(7);
     display.print("\n");
   }
 
