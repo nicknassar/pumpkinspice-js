@@ -71,7 +71,7 @@ function TypeManagerTests(display) {
         logger.setLineNumber(2);
         assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
                "second type generates a null");
-        assert(typeManager.validate() === false, "does not validate");
+        assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 2,
                "expected error message is set on correct line");
       }
@@ -85,7 +85,7 @@ function TypeManagerTests(display) {
         logger.setLineNumber(2);
         assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
                "second type generates a null");
-        assert(typeManager.validate() === false, "does not validate");
+        assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 2,
                "expected error message is set on correct line");
       }
@@ -104,7 +104,7 @@ function TypeManagerTests(display) {
                                                      typeManager.typeExpressionForGlobal("TXT")) === null,
                "combined type generates errors");
 
-        assert(typeManager.validate() === false, "does not validate");
+        assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 3,
                "expected error message is set on correct line");
       }
@@ -115,9 +115,131 @@ function TypeManagerTests(display) {
         logger.setLineNumber(1);
         assert(typeManager.genTypesForBoolExpression(typeManager.typeExpressionForGlobal("NUM")) === null,
                "setting global to bool type generates errors");
-        assert(typeManager.validate() === false, "does not validate");
+        assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 1,
                "expected error message is set on correct line");
+      }
+    },
+    {
+      description: "indirect typing",
+      run: function(typeManager, logger) {
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("D"),
+                                                     typeManager.typeExpressionForGlobal("E")) !== null,
+               "no problem generating types for pair D,E");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("B"),
+                                                     typeManager.typeExpressionForGlobal("C")) !== null,
+               "no problem generating types for pair B,C");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
+                                                     typeManager.typeExpressionForGlobal("B")) !== null,
+               "no problem generating types for pair A,B");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("C"),
+                                                     typeManager.typeExpressionForGlobal("D")) !== null,
+               "no problem generating types for pair C,D");
+        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("A")) !== null,
+               "no problem setting numeric type for A");
+
+        assert(typeManager.validate(), "validates");
+        assert(typeManager.globalHasNumericType("A"),
+               "numeric type is set for A");
+        assert(typeManager.globalHasNumericType("B"),
+               "numeric type is set for B");
+        assert(typeManager.globalHasNumericType("C"),
+               "numeric type is set for C");
+        assert(typeManager.globalHasNumericType("D"),
+               "numeric type is set for D");
+        assert(typeManager.globalHasNumericType("E"),
+               "numeric type is set for E");
+        assert(typeManager.getNumericGlobals().length === 5 &&
+               typeManager.getNumericGlobals().indexOf("A") !== -1 &&
+               typeManager.getNumericGlobals().indexOf("B") !== -1 &&
+               typeManager.getNumericGlobals().indexOf("C") !== -1 &&
+               typeManager.getNumericGlobals().indexOf("D") !== -1 &&
+               typeManager.getNumericGlobals().indexOf("E") !== -1,
+               "globals are reported")
+        assert(typeManager.getStringGlobals().length === 0,
+               "no other global variables found");
+        assert(logger.getLog().length === 0,
+               "Errors found: "+logger.getLog().join(", "));
+
+      }
+    },
+    {
+      description: "indirect typing with error",
+      run: function(typeManager, logger) {
+        logger.setLineNumber(1);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("B"),
+                                                     typeManager.typeExpressionForGlobal("C")) !== null,
+               "no problem generating types for pair B,C");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
+                                                     typeManager.typeExpressionForGlobal("B")) !== null,
+               "no problem generating types for pair A,B");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("C"),
+                                                     typeManager.typeExpressionForGlobal("D")) !== null,
+               "no problem generating types for pair C,D");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("D"),
+                                                     typeManager.typeExpressionForGlobal("E")) !== null,
+               "no problem generating types for pair D,E");
+        logger.setLineNumber(2);
+        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("A")) !== null,
+               "no problem setting numeric type for A");
+        logger.setLineNumber(3);
+        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("E")) === null,
+               "problem setting string type for E");
+
+        assert(!typeManager.validate(), "does not validate");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 3,
+               "error is logged");
+      }
+    },
+    {
+      description: "indirect typing with error #2",
+      run: function(typeManager, logger) {
+        logger.setLineNumber(1);
+        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("A")) !== null,
+               "no problem setting numeric type for A");
+        logger.setLineNumber(2);
+        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("E")) !== null,
+               "no problem setting string type for E");
+        logger.setLineNumber(3);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("B"),
+                                                     typeManager.typeExpressionForGlobal("C")) !== null,
+               "no problem generating types for pair B,C");
+        logger.setLineNumber(4);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
+                                                     typeManager.typeExpressionForGlobal("B")) !== null,
+               "no problem generating types for pair A,B");
+        logger.setLineNumber(5);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("C"),
+                                                     typeManager.typeExpressionForGlobal("D")) !== null,
+               "no problem generating types for pair C,D");
+        logger.setLineNumber(6);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("D"),
+                                                     typeManager.typeExpressionForGlobal("E")) === null,
+               "problem generating types for pair D,E");
+
+        assert(!typeManager.validate(), "does not validate");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 6,
+               "error is logged");
+      }
+    },
+    {
+      description: "dead code variable",
+      run: function(typeManager, logger) {
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
+                                                     typeManager.typeExpressionForGlobal("A")) !== null,
+               "no problem generating types for pair A,A");
+
+        assert(typeManager.validate(), "validates");
+        assert(logger.getLog().length === 0,
+               "no errors");
+        assert(typeManager.getNumericGlobals().length === 0,
+               "no numeric global variables");
+        assert(typeManager.getStringGlobals().length === 0,
+               "no string global variables");
+
+        // Maybe we should provide a list of dead variables and semantics
       }
     }
     // END tests for global variables

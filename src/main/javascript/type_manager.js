@@ -141,14 +141,15 @@
       // There's a much better way to handle this
 
       for (var i=0;i<variables.length;i++) {
-        if (varTypes[variables[i]] &&
-            (varTypes[variables[i]]===STRING_TYPE ||
-             varTypes[variables[i]]===NUMERIC_TYPE)) {
-          logger.error("UNASSIGNED TYPE NOT RESOLVED CORRECTLY");
-          valid = false;
-          return false;
-        }
+        // if (varTypes[variables[i]] &&
+        //     (varTypes[variables[i]]===STRING_TYPE ||
+        //      varTypes[variables[i]]===NUMERIC_TYPE)) {
+        //   logger.error("UNASSIGNED TYPE NOT RESOLVED CORRECTLY");
+        //   valid = false;
+        //   return false;
+        // }
         if (varTypes[variables[i]]) {
+          // Can this result in duplicates?
           for (var j=0;j<variables.length;j++) {
             varTypes[variables[i]].push(variables[j]);
           }
