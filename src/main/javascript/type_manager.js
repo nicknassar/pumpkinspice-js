@@ -393,8 +393,9 @@
       numericTypeExpression: numericTypeExpression,
       stringTypeExpression: stringTypeExpression,
       boolTypeExpression: boolTypeExpression,
-
       genTypesForExpressionPair: genTypesForExpressionPair,
+
+      // Convenience functions for genTypesForExpressionPair(<type>TypeExpression, expression)
       genTypesForStringExpression: genTypesForStringExpression,
       genTypesForNumericExpression: genTypesForNumericExpression,
       genTypesForBoolExpression: genTypesForBoolExpression,

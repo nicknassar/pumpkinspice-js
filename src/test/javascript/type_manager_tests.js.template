@@ -241,8 +241,66 @@ function TypeManagerTests(display) {
 
         // Maybe we should provide a list of dead variables and semantics
       }
-    }
+    },
     // END tests for global variables
+    // BEGIN tests for subroutines
+    {
+      description: "subroutine with no args",
+      run: function(typeManager, logger) {
+        assert(typeManager.registerSubroutineDefinition("RUNME", []),
+               "registration succsessful");
+        assert(typeManager.typeExpressionForVoidReturnStatement("RUNME") !== null,
+               "void return type");
+        assert(typeManager.typeExpressionForCallSubroutine("RUNME", []) !== null,
+               "called successfully");
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasVoidReturnType("RUNME"),
+               "sub has void return");
+        assert(!(typeManager.subHasStringReturnType("RUNME") ||
+                 typeManager.subHasNumericReturnType("RUNME")),
+               "sub does not have a string or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 0,
+               "sub has no args");
+      }
+    },
+    // subroutine called before defined
+    // subroutine called before defined with type
+    {
+      description: "subroutine with one arg",
+      run: function(typeManager, logger) {
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1"]),
+               "registration succsessful");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG1"),
+                                                     typeManager.stringTypeExpression()) !== null,
+               "arg successfully set to string");
+        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.stringTypeExpression()) !== null,
+               "string return type");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.stringTypeExpression()]), typeManager.stringTypeExpression()) !== null,
+               "called")
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasStringReturnType("RUNME"),
+               "sub has string return type");
+        assert(!(typeManager.subHasVoidReturnType("RUNME") ||
+                 typeManager.subHasNumericReturnType("RUNME")),
+               "sub does not have a void or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 1 &&
+               typeManager.getSubArgNames("RUNME")[0] === "ARG1",
+               "sub has an arg");
+        assert(typeManager.localVariableDefined("RUNME","ARG1") &&
+               typeManager.localHasStringType("RUNME","ARG1"),
+               "arg1 has string type");
+        assert(!typeManager.localHasNumericType("RUNME","ARG1"),
+               "arg1 is not numeric");
+      }
+    }
+    // subroutine with
+    // subroutine with two args
+    // subroutine with three args
+    // subroutine called with invalid args
+    // type graphs with globals, args, and return types
+    // END tests for subroutines
   ];
 
   function printFailure(description, failures) {
