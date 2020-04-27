@@ -103,7 +103,11 @@
 
     function assignTypes(variables,type) {
       // type must be resolved before this is called
-      if (type !== STRING_TYPE && type !== NUMERIC_TYPE) {
+
+      // globals, args/locals, and subroutine return values can be
+      // STRING_TYPE or NUMERIC_TYPE, but only sub return values can
+      // be VOID_TYPE
+      if (type !== STRING_TYPE && type !== NUMERIC_TYPE && type != VOID_TYPE) {
         logger.error("TYPE SYSTEM ERROR. This is neither text nor a number");
         valid = false;
         return false;
@@ -322,15 +326,14 @@
         return null;
       }
       var retValName=returnValueName(sub);
-      if (varTypes[retValName]) {
-        var result = genTypesForExpressionPair(exp,varTypes[retValName]);
-        if (result === null) {
-          return null;
-        }
-      } else {
-        varTypes[retValName] = exp;
+      if (varTypes[retValName] === undefined) {
+        varTypes[retValName] = [retValName];
       }
-      return varTypes[retValName];
+      var result = genTypesForExpressionPair(exp,varTypes[retValName]);
+      if (result === null) {
+        return null;
+      }
+      return result;
     }
 
     function typeExpressionForVoidReturnStatement(sub) {

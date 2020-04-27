@@ -71,6 +71,7 @@ function TypeManagerTests(display) {
         logger.setLineNumber(2);
         assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
                "second type generates a null");
+        logger.setLineNumber(3);
         assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 2,
                "expected error message is set on correct line");
@@ -85,6 +86,7 @@ function TypeManagerTests(display) {
         logger.setLineNumber(2);
         assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
                "second type generates a null");
+        logger.setLineNumber(3);
         assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 2,
                "expected error message is set on correct line");
@@ -103,7 +105,7 @@ function TypeManagerTests(display) {
         assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("NUM"),
                                                      typeManager.typeExpressionForGlobal("TXT")) === null,
                "combined type generates errors");
-
+        logger.setLineNumber(4);
         assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 3,
                "expected error message is set on correct line");
@@ -115,6 +117,7 @@ function TypeManagerTests(display) {
         logger.setLineNumber(1);
         assert(typeManager.genTypesForBoolExpression(typeManager.typeExpressionForGlobal("NUM")) === null,
                "setting global to bool type generates errors");
+        logger.setLineNumber(2);
         assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 1,
                "expected error message is set on correct line");
@@ -185,7 +188,7 @@ function TypeManagerTests(display) {
         logger.setLineNumber(3);
         assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("E")) === null,
                "problem setting string type for E");
-
+        logger.setLineNumber(4);
         assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 &&
                logger.getLog()[0][0] === 3,
@@ -217,7 +220,7 @@ function TypeManagerTests(display) {
         assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("D"),
                                                      typeManager.typeExpressionForGlobal("E")) === null,
                "problem generating types for pair D,E");
-
+        logger.setLineNumber(7);
         assert(!typeManager.validate(), "does not validate");
         assert(logger.getLog().length === 1 &&
                logger.getLog()[0][0] === 6,
@@ -238,6 +241,8 @@ function TypeManagerTests(display) {
                "no numeric global variables");
         assert(typeManager.getStringGlobals().length === 0,
                "no string global variables");
+        assert(logger.getLog().length === 0,
+               "no errors");
 
         // Maybe we should provide a list of dead variables and semantics
       }
@@ -262,10 +267,34 @@ function TypeManagerTests(display) {
                "sub does not have a string or numeric return type");
         assert(typeManager.getSubArgNames("RUNME").length === 0,
                "sub has no args");
+        assert(logger.getLog().length === 0,
+               "no errors");
       }
     },
-    // subroutine called before defined
-    // subroutine called before defined with type
+    {
+      description: "subroutine with no args called before defined",
+      run: function(typeManager, logger) {
+        var callType = typeManager.typeExpressionForCallSubroutine("RUNME", []);
+        assert(callType !== null &&
+               typeManager.genTypesForExpressionPair(typeManager.stringTypeExpression(),callType) !== null,
+               "called successfully");
+        assert(typeManager.registerSubroutineDefinition("RUNME", []),
+               "registration succsessful");
+        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.stringTypeExpression()) !== null,
+               "void return type");
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasStringReturnType("RUNME"),
+               "sub has void return");
+        assert(!(typeManager.subHasVoidReturnType("RUNME") ||
+                 typeManager.subHasNumericReturnType("RUNME")),
+               "sub does not have a string or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 0,
+               "sub has no args");
+        assert(logger.getLog().length === 0,
+               "no errors");
+      }
+    },
     {
       description: "subroutine with one arg",
       run: function(typeManager, logger) {
@@ -293,13 +322,252 @@ function TypeManagerTests(display) {
                "arg1 has string type");
         assert(!typeManager.localHasNumericType("RUNME","ARG1"),
                "arg1 is not numeric");
+        assert(logger.getLog().length === 0,
+               "no errors");
       }
-    }
-    // subroutine with
-    // subroutine with two args
-    // subroutine with three args
-    // subroutine called with invalid args
-    // type graphs with globals, args, and return types
+    },
+    {
+      description: "subroutine with two args",
+      run: function(typeManager, logger) {
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2"]),
+               "registration succsessful");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG1"),
+                                                     typeManager.numericTypeExpression()) !== null,
+               "arg1 successfully set to number");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG2"),
+                                                     typeManager.stringTypeExpression()) !== null,
+               "arg2 successfully set to string");
+        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.numericTypeExpression()) !== null,
+               "string return type");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.numericTypeExpression(), typeManager.stringTypeExpression()]), typeManager.numericTypeExpression()) !== null,
+               "called")
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasNumericReturnType("RUNME"),
+               "sub has string return type");
+        assert(!(typeManager.subHasVoidReturnType("RUNME") ||
+                 typeManager.subHasStringReturnType("RUNME")),
+               "sub does not have a void or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 2 &&
+               typeManager.getSubArgNames("RUNME")[0] === "ARG1" &&
+               typeManager.getSubArgNames("RUNME")[1] === "ARG2",
+               "sub has 2 args");
+        assert(typeManager.localVariableDefined("RUNME","ARG1") &&
+               typeManager.localHasNumericType("RUNME","ARG1"),
+               "arg1 has numeric type");
+        assert(!typeManager.localHasStringType("RUNME","ARG1"),
+               "arg1 is not string");
+        assert(typeManager.localVariableDefined("RUNME","ARG2") &&
+               typeManager.localHasStringType("RUNME","ARG2"),
+               "arg2 has string type");
+        assert(!typeManager.localHasNumericType("RUNME","ARG2"),
+               "arg2 does not have numeric type");
+        assert(logger.getLog().length === 0,
+               "no errors");
+      }
+    },
+    {
+      description: "subroutine with three args",
+      run: function(typeManager, logger) {
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
+               "registration succsessful");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG2"),
+                                                     typeManager.numericTypeExpression()) !== null,
+               "arg2 successfully set to number");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG3"),
+                                                     typeManager.stringTypeExpression()) !== null,
+               "arg3 successfully set to string");
+        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.numericTypeExpression()) !== null,
+               "string return type");
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.typeExpressionForGlobal("FIRST"), typeManager.numericTypeExpression(), typeManager.stringTypeExpression()]), typeManager.numericTypeExpression()) !== null,
+               "called")
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasNumericReturnType("RUNME"),
+               "sub has string return type");
+        assert(!(typeManager.subHasVoidReturnType("RUNME") ||
+                 typeManager.subHasStringReturnType("RUNME")),
+               "sub does not have a void or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 3 &&
+               typeManager.getSubArgNames("RUNME")[0] === "ARG1" &&
+               typeManager.getSubArgNames("RUNME")[1] === "ARG2" &&
+               typeManager.getSubArgNames("RUNME")[2] === "ARG3",
+               "sub has 3 args");
+        assert(typeManager.localVariableDefined("RUNME","ARG1") &&
+               !(typeManager.localHasNumericType("RUNME","ARG1") ||
+                 typeManager.localHasStringType("RUNME","ARG1")),
+               "arg1 has no type");
+        assert(typeManager.localVariableDefined("RUNME","ARG2") &&
+               typeManager.localHasNumericType("RUNME","ARG2"),
+               "arg2 has numeric type");
+        assert(!typeManager.localHasStringType("RUNME","ARG2"),
+               "arg2 does not have string type");
+        assert(typeManager.localVariableDefined("RUNME","ARG3") &&
+               typeManager.localHasStringType("RUNME","ARG3"),
+               "arg3 has string type");
+        assert(!typeManager.localHasNumericType("RUNME","ARG3"),
+               "arg3 does not have numeric type");
+        assert(logger.getLog().length === 0,
+               "no errors");
+      }
+    },
+    {
+      description: "subroutine with mismatched arg",
+      run: function(typeManager, logger) {
+        logger.setLineNumber(1);
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
+               "registration succsessful");
+        logger.setLineNumber(2);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG2"),
+                                                     typeManager.numericTypeExpression()) !== null,
+               "arg2 successfully set to number");
+        logger.setLineNumber(3);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG3"),
+                                                     typeManager.stringTypeExpression()) !== null,
+               "arg3 successfully set to string");
+        logger.setLineNumber(4);
+        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.numericTypeExpression()) !== null,
+               "string return type");
+        logger.setLineNumber(5);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.typeExpressionForGlobal("FIRST"), typeManager.stringTypeExpression(), typeManager.stringTypeExpression()]), typeManager.numericTypeExpression()) === null,
+               "called")
+        logger.setLineNumber(6);
+        assert(!typeManager.validate(),
+               "does not validate");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 5,
+               "error is logged");
+
+      }
+    },
+    {
+      description: "subroutine with mismatched arg called before definition",
+      run: function(typeManager, logger) {
+        logger.setLineNumber(1);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.typeExpressionForGlobal("FIRST"), typeManager.stringTypeExpression(), typeManager.stringTypeExpression()]), typeManager.numericTypeExpression()) !== null,
+               "called")
+        logger.setLineNumber(2);
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
+               "registration succsessful");
+        logger.setLineNumber(3);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG2"),
+                                                     typeManager.numericTypeExpression()) === null,
+               "arg2 cannot be set to number");
+        logger.setLineNumber(4);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG3"),
+                                                     typeManager.stringTypeExpression()) !== null,
+               "arg3 successfully set to string");
+        logger.setLineNumber(5);
+        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.numericTypeExpression()) !== null,
+               "string return type");
+        logger.setLineNumber(6);
+        assert(!typeManager.validate(),
+               "does not validate");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 3,
+               "error is logged");
+      }
+    },
+    {
+      description: "infer type from subroutine with subroutine expression arg",
+      run: function(typeManager, logger) {
+        assert(typeManager.registerSubroutineDefinition("ONEARG", ["ARG1"]),
+               "registration succsessful");
+        assert(typeManager.typeExpressionForReturnStatement("ONEARG", typeManager.typeExpressionForLocal("ONEARG","ARG1")) !== null,
+               "returns argument");
+
+        assert(typeManager.registerSubroutineDefinition("NOARG", []),
+               "registration succsessful");
+        assert(typeManager.typeExpressionForReturnStatement("NOARG", typeManager.typeExpressionForGlobal("B")) !== null,
+               "returns global without a type");
+
+        assert(typeManager.genTypesForExpressionPair(
+          typeManager.typeExpressionForCallSubroutine("ONEARG", [typeManager.typeExpressionForCallSubroutine("NOARG",[])]),
+          typeManager.typeExpressionForGlobal("A")) !== null,
+               "called")
+
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
+                                                     typeManager.stringTypeExpression()) !== null,
+               "set A to string type");
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasReturnType("ONEARG") && typeManager.subHasStringReturnType("ONEARG"),
+               "onearg sub has string return type");
+        assert(typeManager.subHasReturnType("NOARG") && typeManager.subHasStringReturnType("NOARG"),
+               "noarg sub has string return type");
+        assert(!(typeManager.subHasVoidReturnType("ONEARG") ||
+                 typeManager.subHasNumericReturnType("ONEARG")),
+               "one arg sub does not have a void or numeric return type");
+        assert(!(typeManager.subHasVoidReturnType("NOARG") ||
+                 typeManager.subHasNumericReturnType("NOARG")),
+               "no arg sub does not have a void or numeric return type");
+        assert(typeManager.getSubArgNames("ONEARG").length === 1 &&
+               typeManager.getSubArgNames("ONEARG")[0] === "ARG1",
+               "one arg sub has an arg");
+        assert(typeManager.getSubArgNames("NOARG").length === 0,
+               "no arg sub has no arg");
+        assert(typeManager.localVariableDefined("ONEARG","ARG1") &&
+               typeManager.localHasStringType("ONEARG","ARG1"),
+               "arg1 has string type");
+        assert(!typeManager.localHasNumericType("ONEARG","ARG1"),
+               "arg1 is not numeric");
+        assert(typeManager.globalHasStringType("A"),
+               "string type is set for A");
+        assert(!typeManager.globalHasNumericType("A"),
+               "numeric type is not set for A");
+        assert(typeManager.globalHasStringType("B"),
+               "string type is set for B");
+        assert(!typeManager.globalHasNumericType("B"),
+               "numeric type is not set for B");
+        assert(typeManager.getNumericGlobals().length === 0,
+               "no numeric globals reported");
+        assert(typeManager.getStringGlobals().length === 2 &&
+               typeManager.getStringGlobals().indexOf("A") !== -1 &&
+               typeManager.getStringGlobals().indexOf("B") !== -1,
+               "string globals reported");
+
+        assert(logger.getLog().length === 0,
+               "no errors");
+      }
+    },
+    {
+      description: "infer type conflict from subroutine with subroutine expression arg",
+      run: function(typeManager, logger) {
+        logger.setLineNumber(1);
+        assert(typeManager.registerSubroutineDefinition("ONEARG", ["ARG1"]),
+               "registration succsessful");
+        logger.setLineNumber(2);
+        assert(typeManager.typeExpressionForReturnStatement("ONEARG", typeManager.typeExpressionForLocal("ONEARG","ARG1")) !== null,
+               "returns argument");
+        logger.setLineNumber(3);
+        assert(typeManager.registerSubroutineDefinition("NOARG", []),
+               "registration succsessful");
+        logger.setLineNumber(4);
+        assert(typeManager.typeExpressionForReturnStatement("NOARG", typeManager.typeExpressionForGlobal("B")) !== null,
+               "returns global without type");
+        logger.setLineNumber(5);
+        assert(typeManager.genTypesForExpressionPair(
+          typeManager.typeExpressionForCallSubroutine("ONEARG", [typeManager.typeExpressionForCallSubroutine("NOARG",[])]),
+          typeManager.typeExpressionForGlobal("A")) !== null,
+               "called");
+        logger.setLineNumber(6);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("B"),
+                                                     typeManager.numericTypeExpression()) !== null,
+              "set B to numeric type");
+        logger.setLineNumber(7);
+        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
+                                                     typeManager.stringTypeExpression()) === null,
+               "set A to string type fails");
+        logger.setLineNumber(8);
+        assert(!typeManager.validate(),
+               "does not validate");
+
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 7,
+               "no errors"+logger.getLog().join("-"));
+
+              }
+      }
     // END tests for subroutines
   ];
 
