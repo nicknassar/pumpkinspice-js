@@ -2,8 +2,15 @@ function ParserTests(display) {
   {{parser.js}}
   {{testing_compiler_pass.js}}
 
-  var successCount = 0;
-  var errorCount = 0;
+  // variables reset for each run
+  var logger;
+  var handler;
+  var compiler;
+  function setup() {
+    logger = TestingLogger();
+    handler = TestingCompilerPass();
+    compiler = Parser([handler], logger);
+  }
 
   // List of code to parse, the expected calls into the handler,
   // and the expected errors
@@ -2007,46 +2014,38 @@ function ParserTests(display) {
   }
 
   function checkResults(expectation, handlerLog, errorLog) {
-    var success = true;
     if (!compareNestedLists(expectation.parsed, handlerLog)) {
-      success = false;
+      assert(false, "parsed result matches expectations");
       printParseMismatch(expectation, handlerLog);
     }
     if (!compareErrorLists(expectation.errors, errorLog)) {
-      success = false;
+      assert(false, "error result matches expectations");
       printErrorMismatch(expectation, errorLog);
     }
-    if (success)
-      successCount++;
-    else
-      errorCount++;
   }
 
-  function getSuccessCount() {
-    return successCount;
-  }
-
-  function getErrorCount() {
-    return errorCount;
-  }
-
-
-  function run() {
-    for (var i=0;i<expectations.length;i++) {
-      var expectation = expectations[i];
-      var logger = TestingLogger();
-      var handler = TestingCompilerPass();
-      var compiler = Parser([handler], logger);
-
-      // Prepend a newline so we can get the right line numbers
+  function expectationToTestFunc(expectation) {
+    return function() {
+      // prepend a newline so line numbers match correctly- the parser
+      // assumes it's embeeded in a <script> tag
       compiler.compile("\n"+expectation.code);
       checkResults(expectation, handler.getLog(), logger.getLog());
-    }
-    display.sendUpdates();
+    };
   }
-  return {
-    run:run,
-    getSuccessCount:getSuccessCount,
-    getErrorCount:getErrorCount
-  };
+
+  function testsFromExpectations() {
+    var tests = [];
+    for (var i=0;i<expectations.length;i++) {
+      tests.push({
+        description: expectations[i].description,
+        run: expectationToTestFunc(expectations[i])
+      });
+    }
+    return tests;
+  }
+
+  var tester = BaseTester(display);
+  var assert = tester.assert;
+  tester.init(setup, testsFromExpectations());
+  return tester;
 }

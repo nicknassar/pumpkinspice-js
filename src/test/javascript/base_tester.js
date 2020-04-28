@@ -3,6 +3,7 @@ function BaseTester(display) {
   var errorCount = 0;
 
   // Failures for the CURRENT test
+  var description = "";
   var failures = [];
   var setup = function (){};
   var tests;
@@ -21,35 +22,39 @@ function BaseTester(display) {
   }
 
   function assert(test, message) {
-    if (test !== true)
+    if (test !== true) {
+      if (failures.length === 0)
+        printFailureHeader();
+      printFailure(message);
       failures.push(message);
+    }
+
   }
 
-  function printFailure(description, failures) {
+  function printFailureHeader() {
     display.setColor(4);
     display.print("TestManager failed test \"");
     display.setColor(12);
     display.print(description);
     display.setColor(4);
     display.print("\":\n");
+  }
 
-    for (var i=0;i<failures.length;i++) {
-      display.setColor(7);
-      display.print("Assertion \"");
-      display.setColor(15);
-      display.print(failures[i]);
-      display.setColor(7);
-      display.print("\" failed\n");
-    }
-    display.print("\n");
+  function printFailure(failure) {
+    display.setColor(7);
+    display.print("Assertion \"");
+    display.setColor(15);
+    display.print(failure);
+    display.setColor(7);
+    display.print("\" failed\n");
   }
 
   function check(test) {
     failures = [];
 
+    description = test.description;
     test.run();
     if (failures.length > 0) {
-      printFailure(test.description, failures);
       errorCount++;
     } else {
       successCount++;
