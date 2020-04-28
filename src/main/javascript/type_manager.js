@@ -56,13 +56,13 @@
       return name;
     };
 
-    function typeExpressionForGlobal(name) {
+    function typeForGlobal(name) {
       if (varTypes[name] === undefined)
         varTypes[name] = [name];
       return varTypes[name];
     }
 
-    function typeExpressionForLocal(sub, name) {
+    function typeForLocal(sub, name) {
       name = localVarName(sub, name);
       if (varTypes[name] === undefined)
         varTypes[name] = [name];
@@ -165,7 +165,7 @@
       return true;
     }
 
-    function genTypesForExpressionPair(type1,type2) {
+    function typeForPair(type1,type2) {
       // Returns type of expression pair
       //   *_TYPE, null, or list
 
@@ -236,27 +236,27 @@
       return type === BOOL_TYPE;
     }
 
-    function genTypesForStringExpression(exp) {
-      return genTypesForExpressionPair(exp, STRING_TYPE);
+    function typeForStringExpression(exp) {
+      return typeForPair(exp, STRING_TYPE);
     }
 
-    function genTypesForNumericExpression(exp) {
-      return genTypesForExpressionPair(exp, NUMERIC_TYPE);
+    function typeForNumericExpression(exp) {
+      return typeForPair(exp, NUMERIC_TYPE);
     }
 
-    function genTypesForBoolExpression(exp) {
-      return genTypesForExpressionPair(exp, BOOL_TYPE);
+    function typeForBoolExpression(exp) {
+      return typeForPair(exp, BOOL_TYPE);
     }
 
-    function stringTypeExpression() {
+    function stringType() {
       return STRING_TYPE;
     }
 
-    function numericTypeExpression() {
+    function numericType() {
       return NUMERIC_TYPE;
     }
 
-    function boolTypeExpression() {
+    function boolType() {
       return BOOL_TYPE;
     }
 
@@ -316,7 +316,7 @@
       return varTypes[returnValueName(sub)] !== undefined;
     }
 
-    function typeExpressionForReturnStatement(sub, exp) {
+    function typeForReturnStatement(sub, exp) {
       if (exp === null) {
         return null;
       }
@@ -329,18 +329,18 @@
       if (varTypes[retValName] === undefined) {
         varTypes[retValName] = [retValName];
       }
-      var result = genTypesForExpressionPair(exp,varTypes[retValName]);
+      var result = typeForPair(exp,varTypes[retValName]);
       if (result === null) {
         return null;
       }
       return result;
     }
 
-    function typeExpressionForVoidReturnStatement(sub) {
-      return typeExpressionForReturnStatement(sub, VOID_TYPE);
+    function typeForVoidReturnStatement(sub) {
+      return typeForReturnStatement(sub, VOID_TYPE);
     }
 
-    function typeExpressionForCallSubroutine(name, argExps) {
+    function typeForCallSubroutine(name, argExps) {
         if (subArgCount[name] === undefined) {
           subArgCount[name] = argExps.length;
         }
@@ -355,7 +355,7 @@
           }
           var varName = argNameByArity(name,i);
           if (varTypes[varName] !== undefined) {
-            var result = genTypesForExpressionPair(argExps[i],varTypes[varName])
+            var result = typeForPair(argExps[i],varTypes[varName])
             if (result === null) {
               return null;
             }
@@ -387,21 +387,21 @@
 
     return {
       // Type assigning functions
-      typeExpressionForGlobal: typeExpressionForGlobal,
-      typeExpressionForLocal: typeExpressionForLocal,
-      typeExpressionForCallSubroutine: typeExpressionForCallSubroutine,
-      typeExpressionForReturnStatement: typeExpressionForReturnStatement,
-      typeExpressionForVoidReturnStatement: typeExpressionForVoidReturnStatement,
+      typeForGlobal: typeForGlobal,
+      typeForLocal: typeForLocal,
+      typeForCallSubroutine: typeForCallSubroutine,
+      typeForReturnStatement: typeForReturnStatement,
+      typeForVoidReturnStatement: typeForVoidReturnStatement,
       registerSubroutineDefinition: registerSubroutineDefinition,
-      numericTypeExpression: numericTypeExpression,
-      stringTypeExpression: stringTypeExpression,
-      boolTypeExpression: boolTypeExpression,
-      genTypesForExpressionPair: genTypesForExpressionPair,
+      numericType: numericType,
+      stringType: stringType,
+      boolType: boolType,
+      typeForPair: typeForPair,
 
-      // Convenience functions for genTypesForExpressionPair(<type>TypeExpression, expression)
-      genTypesForStringExpression: genTypesForStringExpression,
-      genTypesForNumericExpression: genTypesForNumericExpression,
-      genTypesForBoolExpression: genTypesForBoolExpression,
+      // Convenience functions for typeForPair(<type>Type, expression)
+      typeForStringExpression: typeForStringExpression,
+      typeForNumericExpression: typeForNumericExpression,
+      typeForBoolExpression: typeForBoolExpression,
 
       // Type reading functions
       globalHasStringType: globalHasStringType,

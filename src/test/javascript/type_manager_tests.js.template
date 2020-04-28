@@ -25,7 +25,7 @@ function TypeManagerTests(display) {
     {
       description: "single global string",
       run: function(typeManager, logger) {
-        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("NAME")) !== null,
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("NAME")) !== null,
                "type was generated");
         assert(typeManager.validate(), "validates");
 
@@ -45,7 +45,7 @@ function TypeManagerTests(display) {
     {
       description: "single global number",
       run: function(typeManager, logger) {
-        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("NUM")) !== null,
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("NUM")) !== null,
                "type was generated");
         assert(typeManager.validate(), "validates");
 
@@ -66,10 +66,10 @@ function TypeManagerTests(display) {
       description: "ambiguous global - number then string",
       run: function(typeManager, logger) {
         logger.setLineNumber(1);
-        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) !== null,
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("AMBIGUOUS")) !== null,
                "first type generates no errors");
         logger.setLineNumber(2);
-        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("AMBIGUOUS")) === null,
                "second type generates a null");
         logger.setLineNumber(3);
         assert(!typeManager.validate(), "does not validate");
@@ -81,10 +81,10 @@ function TypeManagerTests(display) {
       description: "ambiguous global - string then number",
       run: function(typeManager, logger) {
         logger.setLineNumber(1);
-        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) !== null,
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("AMBIGUOUS")) !== null,
                "first type generates no errors");
         logger.setLineNumber(2);
-        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("AMBIGUOUS")) === null,
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("AMBIGUOUS")) === null,
                "second type generates a null");
         logger.setLineNumber(3);
         assert(!typeManager.validate(), "does not validate");
@@ -96,14 +96,14 @@ function TypeManagerTests(display) {
       description: "ambiguous global - combined expression",
       run: function(typeManager, logger) {
         logger.setLineNumber(1);
-        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("TXT")) !== null,
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("TXT")) !== null,
                "first type generates no errors");
         logger.setLineNumber(2);
-        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("NUM")) !== null,
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("NUM")) !== null,
                "second type generates no errors");
         logger.setLineNumber(3);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("NUM"),
-                                                     typeManager.typeExpressionForGlobal("TXT")) === null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("NUM"),
+                                                     typeManager.typeForGlobal("TXT")) === null,
                "combined type generates errors");
         logger.setLineNumber(4);
         assert(!typeManager.validate(), "does not validate");
@@ -115,7 +115,7 @@ function TypeManagerTests(display) {
       description: "boolean global",
       run: function(typeManager, logger) {
         logger.setLineNumber(1);
-        assert(typeManager.genTypesForBoolExpression(typeManager.typeExpressionForGlobal("NUM")) === null,
+        assert(typeManager.typeForBoolExpression(typeManager.typeForGlobal("NUM")) === null,
                "setting global to bool type generates errors");
         logger.setLineNumber(2);
         assert(!typeManager.validate(), "does not validate");
@@ -126,19 +126,19 @@ function TypeManagerTests(display) {
     {
       description: "indirect typing",
       run: function(typeManager, logger) {
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("D"),
-                                                     typeManager.typeExpressionForGlobal("E")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("D"),
+                                                     typeManager.typeForGlobal("E")) !== null,
                "no problem generating types for pair D,E");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("B"),
-                                                     typeManager.typeExpressionForGlobal("C")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
+                                                     typeManager.typeForGlobal("C")) !== null,
                "no problem generating types for pair B,C");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
-                                                     typeManager.typeExpressionForGlobal("B")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.typeForGlobal("B")) !== null,
                "no problem generating types for pair A,B");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("C"),
-                                                     typeManager.typeExpressionForGlobal("D")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("C"),
+                                                     typeManager.typeForGlobal("D")) !== null,
                "no problem generating types for pair C,D");
-        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("A")) !== null,
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("A")) !== null,
                "no problem setting numeric type for A");
 
         assert(typeManager.validate(), "validates");
@@ -170,23 +170,23 @@ function TypeManagerTests(display) {
       description: "indirect typing with error",
       run: function(typeManager, logger) {
         logger.setLineNumber(1);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("B"),
-                                                     typeManager.typeExpressionForGlobal("C")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
+                                                     typeManager.typeForGlobal("C")) !== null,
                "no problem generating types for pair B,C");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
-                                                     typeManager.typeExpressionForGlobal("B")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.typeForGlobal("B")) !== null,
                "no problem generating types for pair A,B");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("C"),
-                                                     typeManager.typeExpressionForGlobal("D")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("C"),
+                                                     typeManager.typeForGlobal("D")) !== null,
                "no problem generating types for pair C,D");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("D"),
-                                                     typeManager.typeExpressionForGlobal("E")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("D"),
+                                                     typeManager.typeForGlobal("E")) !== null,
                "no problem generating types for pair D,E");
         logger.setLineNumber(2);
-        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("A")) !== null,
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("A")) !== null,
                "no problem setting numeric type for A");
         logger.setLineNumber(3);
-        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("E")) === null,
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("E")) === null,
                "problem setting string type for E");
         logger.setLineNumber(4);
         assert(!typeManager.validate(), "does not validate");
@@ -199,26 +199,26 @@ function TypeManagerTests(display) {
       description: "indirect typing with error #2",
       run: function(typeManager, logger) {
         logger.setLineNumber(1);
-        assert(typeManager.genTypesForNumericExpression(typeManager.typeExpressionForGlobal("A")) !== null,
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("A")) !== null,
                "no problem setting numeric type for A");
         logger.setLineNumber(2);
-        assert(typeManager.genTypesForStringExpression(typeManager.typeExpressionForGlobal("E")) !== null,
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("E")) !== null,
                "no problem setting string type for E");
         logger.setLineNumber(3);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("B"),
-                                                     typeManager.typeExpressionForGlobal("C")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
+                                                     typeManager.typeForGlobal("C")) !== null,
                "no problem generating types for pair B,C");
         logger.setLineNumber(4);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
-                                                     typeManager.typeExpressionForGlobal("B")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.typeForGlobal("B")) !== null,
                "no problem generating types for pair A,B");
         logger.setLineNumber(5);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("C"),
-                                                     typeManager.typeExpressionForGlobal("D")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("C"),
+                                                     typeManager.typeForGlobal("D")) !== null,
                "no problem generating types for pair C,D");
         logger.setLineNumber(6);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("D"),
-                                                     typeManager.typeExpressionForGlobal("E")) === null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("D"),
+                                                     typeManager.typeForGlobal("E")) === null,
                "problem generating types for pair D,E");
         logger.setLineNumber(7);
         assert(!typeManager.validate(), "does not validate");
@@ -230,8 +230,8 @@ function TypeManagerTests(display) {
     {
       description: "dead code variable",
       run: function(typeManager, logger) {
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
-                                                     typeManager.typeExpressionForGlobal("A")) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.typeForGlobal("A")) !== null,
                "no problem generating types for pair A,A");
 
         assert(typeManager.validate(), "validates");
@@ -254,9 +254,9 @@ function TypeManagerTests(display) {
       run: function(typeManager, logger) {
         assert(typeManager.registerSubroutineDefinition("RUNME", []),
                "registration succsessful");
-        assert(typeManager.typeExpressionForVoidReturnStatement("RUNME") !== null,
+        assert(typeManager.typeForVoidReturnStatement("RUNME") !== null,
                "void return type");
-        assert(typeManager.typeExpressionForCallSubroutine("RUNME", []) !== null,
+        assert(typeManager.typeForCallSubroutine("RUNME", []) !== null,
                "called successfully");
         assert(typeManager.validate(),
                "validates");
@@ -274,13 +274,13 @@ function TypeManagerTests(display) {
     {
       description: "subroutine with no args called before defined",
       run: function(typeManager, logger) {
-        var callType = typeManager.typeExpressionForCallSubroutine("RUNME", []);
+        var callType = typeManager.typeForCallSubroutine("RUNME", []);
         assert(callType !== null &&
-               typeManager.genTypesForExpressionPair(typeManager.stringTypeExpression(),callType) !== null,
+               typeManager.typeForPair(typeManager.stringType(),callType) !== null,
                "called successfully");
         assert(typeManager.registerSubroutineDefinition("RUNME", []),
                "registration succsessful");
-        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.stringType()) !== null,
                "void return type");
         assert(typeManager.validate(),
                "validates");
@@ -300,12 +300,12 @@ function TypeManagerTests(display) {
       run: function(typeManager, logger) {
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1"]),
                "registration succsessful");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG1"),
-                                                     typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG1"),
+                                                     typeManager.stringType()) !== null,
                "arg successfully set to string");
-        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.stringType()) !== null,
                "string return type");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.stringTypeExpression()]), typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.stringType()]), typeManager.stringType()) !== null,
                "called")
         assert(typeManager.validate(),
                "validates");
@@ -331,15 +331,15 @@ function TypeManagerTests(display) {
       run: function(typeManager, logger) {
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2"]),
                "registration succsessful");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG1"),
-                                                     typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG1"),
+                                                     typeManager.numericType()) !== null,
                "arg1 successfully set to number");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG2"),
-                                                     typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
+                                                     typeManager.stringType()) !== null,
                "arg2 successfully set to string");
-        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.numericType()) !== null,
                "string return type");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.numericTypeExpression(), typeManager.stringTypeExpression()]), typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.numericType(), typeManager.stringType()]), typeManager.numericType()) !== null,
                "called")
         assert(typeManager.validate(),
                "validates");
@@ -371,15 +371,15 @@ function TypeManagerTests(display) {
       run: function(typeManager, logger) {
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
                "registration succsessful");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG2"),
-                                                     typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
+                                                     typeManager.numericType()) !== null,
                "arg2 successfully set to number");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG3"),
-                                                     typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG3"),
+                                                     typeManager.stringType()) !== null,
                "arg3 successfully set to string");
-        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.numericType()) !== null,
                "string return type");
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.typeExpressionForGlobal("FIRST"), typeManager.numericTypeExpression(), typeManager.stringTypeExpression()]), typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.typeForGlobal("FIRST"), typeManager.numericType(), typeManager.stringType()]), typeManager.numericType()) !== null,
                "called")
         assert(typeManager.validate(),
                "validates");
@@ -418,18 +418,18 @@ function TypeManagerTests(display) {
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
                "registration succsessful");
         logger.setLineNumber(2);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG2"),
-                                                     typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
+                                                     typeManager.numericType()) !== null,
                "arg2 successfully set to number");
         logger.setLineNumber(3);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG3"),
-                                                     typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG3"),
+                                                     typeManager.stringType()) !== null,
                "arg3 successfully set to string");
         logger.setLineNumber(4);
-        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.numericType()) !== null,
                "string return type");
         logger.setLineNumber(5);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.typeExpressionForGlobal("FIRST"), typeManager.stringTypeExpression(), typeManager.stringTypeExpression()]), typeManager.numericTypeExpression()) === null,
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.typeForGlobal("FIRST"), typeManager.stringType(), typeManager.stringType()]), typeManager.numericType()) === null,
                "called")
         logger.setLineNumber(6);
         assert(!typeManager.validate(),
@@ -444,21 +444,21 @@ function TypeManagerTests(display) {
       description: "subroutine with mismatched arg called before definition",
       run: function(typeManager, logger) {
         logger.setLineNumber(1);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForCallSubroutine("RUNME", [typeManager.typeExpressionForGlobal("FIRST"), typeManager.stringTypeExpression(), typeManager.stringTypeExpression()]), typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.typeForGlobal("FIRST"), typeManager.stringType(), typeManager.stringType()]), typeManager.numericType()) !== null,
                "called")
         logger.setLineNumber(2);
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
                "registration succsessful");
         logger.setLineNumber(3);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG2"),
-                                                     typeManager.numericTypeExpression()) === null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
+                                                     typeManager.numericType()) === null,
                "arg2 cannot be set to number");
         logger.setLineNumber(4);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForLocal("RUNME","ARG3"),
-                                                     typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG3"),
+                                                     typeManager.stringType()) !== null,
                "arg3 successfully set to string");
         logger.setLineNumber(5);
-        assert(typeManager.typeExpressionForReturnStatement("RUNME", typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.numericType()) !== null,
                "string return type");
         logger.setLineNumber(6);
         assert(!typeManager.validate(),
@@ -473,21 +473,21 @@ function TypeManagerTests(display) {
       run: function(typeManager, logger) {
         assert(typeManager.registerSubroutineDefinition("ONEARG", ["ARG1"]),
                "registration succsessful");
-        assert(typeManager.typeExpressionForReturnStatement("ONEARG", typeManager.typeExpressionForLocal("ONEARG","ARG1")) !== null,
+        assert(typeManager.typeForReturnStatement("ONEARG", typeManager.typeForLocal("ONEARG","ARG1")) !== null,
                "returns argument");
 
         assert(typeManager.registerSubroutineDefinition("NOARG", []),
                "registration succsessful");
-        assert(typeManager.typeExpressionForReturnStatement("NOARG", typeManager.typeExpressionForGlobal("B")) !== null,
+        assert(typeManager.typeForReturnStatement("NOARG", typeManager.typeForGlobal("B")) !== null,
                "returns global without a type");
 
-        assert(typeManager.genTypesForExpressionPair(
-          typeManager.typeExpressionForCallSubroutine("ONEARG", [typeManager.typeExpressionForCallSubroutine("NOARG",[])]),
-          typeManager.typeExpressionForGlobal("A")) !== null,
+        assert(typeManager.typeForPair(
+          typeManager.typeForCallSubroutine("ONEARG", [typeManager.typeForCallSubroutine("NOARG",[])]),
+          typeManager.typeForGlobal("A")) !== null,
                "called")
 
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
-                                                     typeManager.stringTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.stringType()) !== null,
                "set A to string type");
         assert(typeManager.validate(),
                "validates");
@@ -537,26 +537,26 @@ function TypeManagerTests(display) {
         assert(typeManager.registerSubroutineDefinition("ONEARG", ["ARG1"]),
                "registration succsessful");
         logger.setLineNumber(2);
-        assert(typeManager.typeExpressionForReturnStatement("ONEARG", typeManager.typeExpressionForLocal("ONEARG","ARG1")) !== null,
+        assert(typeManager.typeForReturnStatement("ONEARG", typeManager.typeForLocal("ONEARG","ARG1")) !== null,
                "returns argument");
         logger.setLineNumber(3);
         assert(typeManager.registerSubroutineDefinition("NOARG", []),
                "registration succsessful");
         logger.setLineNumber(4);
-        assert(typeManager.typeExpressionForReturnStatement("NOARG", typeManager.typeExpressionForGlobal("B")) !== null,
+        assert(typeManager.typeForReturnStatement("NOARG", typeManager.typeForGlobal("B")) !== null,
                "returns global without type");
         logger.setLineNumber(5);
-        assert(typeManager.genTypesForExpressionPair(
-          typeManager.typeExpressionForCallSubroutine("ONEARG", [typeManager.typeExpressionForCallSubroutine("NOARG",[])]),
-          typeManager.typeExpressionForGlobal("A")) !== null,
+        assert(typeManager.typeForPair(
+          typeManager.typeForCallSubroutine("ONEARG", [typeManager.typeForCallSubroutine("NOARG",[])]),
+          typeManager.typeForGlobal("A")) !== null,
                "called");
         logger.setLineNumber(6);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("B"),
-                                                     typeManager.numericTypeExpression()) !== null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
+                                                     typeManager.numericType()) !== null,
               "set B to numeric type");
         logger.setLineNumber(7);
-        assert(typeManager.genTypesForExpressionPair(typeManager.typeExpressionForGlobal("A"),
-                                                     typeManager.stringTypeExpression()) === null,
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.stringType()) === null,
                "set A to string type fails");
         logger.setLineNumber(8);
         assert(!typeManager.validate(),
