@@ -1,28 +1,9 @@
 function TypeManagerTests(display) {
   {{type_manager.js}}
 
-  var successCount = 0;
-  var errorCount = 0;
-
-  // Failures for the CURRENT test
-  var failures = [];
-
   // globals reset for each test
   var typeManager;
   var logger;
-
-  function getSuccessCount() {
-    return successCount;
-  }
-
-  function getErrorCount() {
-    return errorCount;
-  }
-
-  function assert(test, message) {
-    if (test !== true)
-      failures.push(message);
-  }
 
   var tests = [
     // BEGIN tests for global variables
@@ -608,51 +589,13 @@ function TypeManagerTests(display) {
     // END tests for subroutines
   ];
 
-  function printFailure(description, failures) {
-    display.setColor(4);
-    display.print("TestManager failed test \"");
-    display.setColor(12);
-    display.print(description);
-    display.setColor(4);
-    display.print("\":\n");
-
-    for (var i=0;i<failures.length;i++) {
-      display.setColor(7);
-      display.print("Assertion \"");
-      display.setColor(15);
-      display.print(failures[i]);
-      display.setColor(7);
-      display.print("\" failed\n");
-    }
-    display.print("\n");
+  function setup() {
+    logger = TestingLogger();
+    typeManager = TypeManager(logger);
   }
 
-  function check(test) {
-    failures = [];
-
-    test.run();
-    if (failures.length > 0) {
-      printFailure(test.description, failures);
-      errorCount++;
-    } else {
-      successCount++;
-    }
-  }
-
-  function run() {
-    for (var i=0;i<tests.length;i++) {
-      // reset globals
-      logger = TestingLogger();
-      typeManager = TypeManager(logger);
-
-      check(tests[i]);
-    }
-    display.sendUpdates();
-  }
-
-  return {
-    run:run,
-    getSuccessCount:getSuccessCount,
-    getErrorCount:getErrorCount
-  };
+  var tester = BaseTester(display);
+  var assert = tester.assert;
+  tester.init(setup, tests);
+  return tester;
 }

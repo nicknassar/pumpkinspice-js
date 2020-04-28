@@ -8,6 +8,7 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
 {{legacy.js}}
 {{global_utilities.js}}
 {{display.js}}
+{{base_tester.js}}
 
 {{parser_tests.js.template}}
 {{type_manager_tests.js.template}}
