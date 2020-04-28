@@ -57,6 +57,11 @@
     };
 
     function typeForGlobal(name) {
+      if (subArgNames[name] !== undefined) {
+        logger.error(name+" is alreday defined as a subroutine. It cannot also be a variable");
+        valid = false;
+        return null;
+      }
       if (varTypes[name] === undefined)
         varTypes[name] = [name];
       return varTypes[name];
@@ -285,6 +290,11 @@
         subArgCount[name] = args.length;
       if (subArgCount[name] !== args.length) {
         logger.error("SUBROUTINE "+name+" called with "+subArgCount[name]+" arguments, but defined with "+args.length+" arguments");
+        valid = false;
+        return false;
+      }
+      if (varTypes[name] !== undefined) {
+        logger.error(name+" is already defined as a variable. It cannot also be a subroutine");
         valid = false;
         return false;
       }

@@ -7,6 +7,10 @@ function TypeManagerTests(display) {
   // Failures for the CURRENT test
   var failures = [];
 
+  // globals reset for each test
+  var typeManager;
+  var logger;
+
   function getSuccessCount() {
     return successCount;
   }
@@ -24,7 +28,7 @@ function TypeManagerTests(display) {
     // BEGIN tests for global variables
     {
       description: "single global string",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("NAME")) !== null,
                "type was generated");
         assert(typeManager.validate(), "validates");
@@ -44,7 +48,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "single global number",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("NUM")) !== null,
                "type was generated");
         assert(typeManager.validate(), "validates");
@@ -64,7 +68,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "ambiguous global - number then string",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("AMBIGUOUS")) !== null,
                "first type generates no errors");
@@ -79,7 +83,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "ambiguous global - string then number",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("AMBIGUOUS")) !== null,
                "first type generates no errors");
@@ -94,7 +98,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "ambiguous global - combined expression",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("TXT")) !== null,
                "first type generates no errors");
@@ -113,7 +117,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "boolean global",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.typeForBoolExpression(typeManager.typeForGlobal("NUM")) === null,
                "setting global to bool type generates errors");
@@ -125,7 +129,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "indirect typing",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.typeForPair(typeManager.typeForGlobal("D"),
                                                      typeManager.typeForGlobal("E")) !== null,
                "no problem generating types for pair D,E");
@@ -168,7 +172,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "indirect typing with error",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
                                                      typeManager.typeForGlobal("C")) !== null,
@@ -197,7 +201,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "indirect typing with error #2",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("A")) !== null,
                "no problem setting numeric type for A");
@@ -229,7 +233,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "dead code variable",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
                                                      typeManager.typeForGlobal("A")) !== null,
                "no problem generating types for pair A,A");
@@ -251,7 +255,7 @@ function TypeManagerTests(display) {
     // BEGIN tests for subroutines
     {
       description: "subroutine with no args",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.registerSubroutineDefinition("RUNME", []),
                "registration succsessful");
         assert(typeManager.typeForVoidReturnStatement("RUNME") !== null,
@@ -273,7 +277,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "subroutine with no args called before defined",
-      run: function(typeManager, logger) {
+      run: function() {
         var callType = typeManager.typeForCallSubroutine("RUNME", []);
         assert(callType !== null &&
                typeManager.typeForPair(typeManager.stringType(),callType) !== null,
@@ -297,7 +301,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "subroutine with one arg",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1"]),
                "registration succsessful");
         assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG1"),
@@ -328,7 +332,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "subroutine with two args",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2"]),
                "registration succsessful");
         assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG1"),
@@ -368,7 +372,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "subroutine with three args",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
                "registration succsessful");
         assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
@@ -413,7 +417,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "subroutine with mismatched arg",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
                "registration succsessful");
@@ -442,7 +446,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "subroutine with mismatched arg called before definition",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.typeForGlobal("FIRST"), typeManager.stringType(), typeManager.stringType()]), typeManager.numericType()) !== null,
                "called")
@@ -470,7 +474,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "infer type from subroutine with subroutine expression arg",
-      run: function(typeManager, logger) {
+      run: function() {
         assert(typeManager.registerSubroutineDefinition("ONEARG", ["ARG1"]),
                "registration succsessful");
         assert(typeManager.typeForReturnStatement("ONEARG", typeManager.typeForLocal("ONEARG","ARG1")) !== null,
@@ -532,7 +536,7 @@ function TypeManagerTests(display) {
     },
     {
       description: "infer type conflict from subroutine with subroutine expression arg",
-      run: function(typeManager, logger) {
+      run: function() {
         logger.setLineNumber(1);
         assert(typeManager.registerSubroutineDefinition("ONEARG", ["ARG1"]),
                "registration succsessful");
@@ -564,10 +568,43 @@ function TypeManagerTests(display) {
 
         assert(logger.getLog().length === 1 &&
                logger.getLog()[0][0] === 7,
-               "no errors"+logger.getLog().join("-"));
-
-              }
+               "no errors");
       }
+    },
+    {
+      description: "subroutine with same name as global",
+      run: function() {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForGlobal("A") !== null,
+               "create global");
+        logger.setLineNumber(2);
+        assert(!typeManager.registerSubroutineDefinition("A",[]),
+               "register subroutine fails");
+        logger.setLineNumber(3);
+        assert(!typeManager.validate(),
+               "validation fails");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 2,
+               "logged error");
+      }
+    },
+    {
+      description: "global with same name as subroutine",
+      run: function() {
+        logger.setLineNumber(1);
+        assert(typeManager.registerSubroutineDefinition("A",[]),
+               "register subroutine");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForGlobal("A") === null,
+               "create global fails");
+        logger.setLineNumber(3);
+        assert(!typeManager.validate(),
+               "validation fails");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 2,
+               "logged error");
+      }
+    }
     // END tests for subroutines
   ];
 
@@ -590,10 +627,10 @@ function TypeManagerTests(display) {
     display.print("\n");
   }
 
-  function check(typeManager, logger, test) {
+  function check(test) {
     failures = [];
 
-    test.run(typeManager, logger);
+    test.run();
     if (failures.length > 0) {
       printFailure(test.description, failures);
       errorCount++;
@@ -604,10 +641,11 @@ function TypeManagerTests(display) {
 
   function run() {
     for (var i=0;i<tests.length;i++) {
-      var test = tests[i];
-      var logger = TestingLogger();
-      var typeManager = TypeManager(logger);
-      check(typeManager, logger, tests[i]);
+      // reset globals
+      logger = TestingLogger();
+      typeManager = TypeManager(logger);
+
+      check(tests[i]);
     }
     display.sendUpdates();
   }
