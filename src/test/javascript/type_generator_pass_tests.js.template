@@ -30,7 +30,196 @@ function TypeGeneratorPassTests(display) {
       ],
       errors: []
     },
-  ];
+    {
+      description: "PRINT paren expression",
+      run: function() {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.parenExpression(
+            typeGeneratorPass.stringLiteralExpression("somestring")), true, false);
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT double paren expression",
+      run: function() {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.parenExpression(
+            typeGeneratorPass.parenExpression(
+              typeGeneratorPass.stringLiteralExpression("somestring"))), true, false);
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string concatenation expression",
+      run: function() {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.stringLiteralExpression("string"),
+            typeGeneratorPass.stringLiteralExpression("string")
+          ),
+          true,
+          false);
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["stringType"],
+        ["typeForPair", 0, 1],
+        ["typeForStringExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string multi concatenation expression",
+      run: function() {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.stringLiteralExpression("string"),
+            typeGeneratorPass.stringLiteralExpression("string")
+          ),
+          true,
+          false);
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["stringType"],
+        ["typeForPair", 0, 1],
+        ["typeForStringExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT variable",
+      run: function() {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.variableExpression("VARIABLE"),
+          true,
+          false);
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "VARIABLE"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT variable+literal",
+      run: function() {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.variableExpression("VARIABLE"),
+            typeGeneratorPass.stringLiteralExpression("Literally")
+          ),
+          true,
+          false);
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "VARIABLE"],
+        ["stringType"],
+        ["typeForPair", 0, 1],
+        ["typeForStringExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "COLOR statement",
+      run: function() {
+        typeGeneratorPass.color(
+          typeGeneratorPass.numericLiteralExpression("7"));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "COLOR statement with expression",
+      run: function() {
+        typeGeneratorPass.color(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.numericLiteralExpression("7"),
+            typeGeneratorPass.variableExpression("X")
+          ));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForGlobal", "X"],
+        ["typeForPair", 0, 1],
+        ["typeForNumericExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+
+    },
+    {
+      description: "BGCOLOR statement",
+      run: function() {
+        typeGeneratorPass.bgColor(
+          typeGeneratorPass.numericLiteralExpression("7"));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "BGCOLOR statement with expression",
+      run: function() {
+        typeGeneratorPass.bgColor(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.numericLiteralExpression("7"),
+            typeGeneratorPass.variableExpression("X")
+          ));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForGlobal","X"],
+        ["typeForPair", 0, 1],
+        ["typeForNumericExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+
+    },
+    {
+      description: "CLEAR statement",
+      run: function() {
+        typeGeneratorPass.clear();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["validate"]
+      ],
+      errors: []
+    }
+ ];
 
 
   function expectationToTestFunc(expectation) {

@@ -57,7 +57,7 @@ TEST_RESOURCES := run_tests.js index.html.template
 TEST_OUTPUT := run-tests.html
 
 JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js display.js  machine.js  legacy.js global_utilities.js code_generator_pass.js type_generator_pass.js parser.js type_manager.js
-TEST_SOURCES := run_tests.js.template initialize_tests.js base_tester.js matching_tester.js parser_tests.js.template type_manager_tests.js.template testing_compiler_pass.js testing_logger.js type_generator_pass_tests.js.template testing_type_manager.js simple_call_logger.js parser.js display.js legacy.js global_utilities.js parser.js type_manager.js
+TEST_SOURCES := run_tests.js.template initialize_tests.js base_tester.js matching_tester.js parser_tests.js.template type_manager_tests.js.template testing_compiler_pass.js testing_logger.js type_generator_pass_tests.js.template testing_type_manager.js simple_call_logger.js parser.js display.js legacy.js global_utilities.js parser.js type_manager.js type_generator_pass.js
 
 .PHONY: all
 all: test.html test.debug.html pumpkinspice2html
