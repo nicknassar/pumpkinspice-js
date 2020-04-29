@@ -9,9 +9,12 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
 {{global_utilities.js}}
 {{display.js}}
 {{base_tester.js}}
+{{matching_tester.js}}
+{{simple_call_logger.js}}
 
 {{parser_tests.js.template}}
 {{type_manager_tests.js.template}}
+{{type_generator_pass_tests.js.template}}
 {{testing_logger.js}}
 
   var successCount = 0;
@@ -23,7 +26,8 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
 
   var testSuites = [
     ParserTests(display),
-    TypeManagerTests(display)
+    TypeManagerTests(display),
+    TypeGeneratorPassTests(display)
   ];
 
   for (var i=0;i<testSuites.length;i++) {

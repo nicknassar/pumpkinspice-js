@@ -1,18 +1,10 @@
-function BaseTester(display) {
+function BaseTester(display, setup, tests) {
   var successCount = 0;
   var errorCount = 0;
 
   // Failures for the CURRENT test
   var description = "";
   var failures = [];
-  var setup = function (){};
-  var tests;
-
-  function init(setupParam, testsParam) {
-    setup = setupParam;
-    tests = testsParam;
-  }
-
   function getSuccessCount() {
     return successCount;
   }
@@ -70,7 +62,6 @@ function BaseTester(display) {
   }
 
   return {
-    init: init,
     assert: assert,
     run:run,
     getSuccessCount:getSuccessCount,

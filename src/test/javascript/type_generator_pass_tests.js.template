@@ -1,0 +1,55 @@
+function TypeGeneratorPassTests(display) {
+  {{type_generator_pass.js}}
+  {{testing_type_manager.js}}
+
+  // variables reset for each run
+  var logger;
+  var typeManager;
+  var typeGeneratorPass;
+  function setup() {
+    logger = TestingLogger();
+    typeManager = TestingTypeManager();
+    typeGeneratorPass = TypeGeneratorPass(typeManager, logger);
+  }
+
+  // List of objects with description, function to run, the expected
+  // calls into the type manager, and the expected errors
+
+  // The testing type manager returns the number of
+  // an expression. The values that are from expressions
+  // refer to the order in which handler functions were called
+  var expectations = [
+    {
+      description: "Hello World",
+      run: function() {
+        typeGeneratorPass.printString("Hello World!", true, false);
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["validate"]
+      ],
+      errors: []
+    },
+  ];
+
+
+  function expectationToTestFunc(expectation) {
+    return expectation.run;
+  }
+
+  function expectationText(expectation) {
+    return expectation.run.toString();
+  }
+
+  function getCallLog() {
+    return typeManager.getLog();
+  }
+
+  function getErrorLog() {
+    return logger.getLog();
+  }
+
+
+  var tester = MatchingTester(display, setup, expectations, expectationToTestFunc, expectationText, getCallLog, getErrorLog);
+  return tester;
+}

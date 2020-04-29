@@ -340,7 +340,7 @@ function TypeGeneratorPass(typeManager, logger) {
 ***********************************************************************/
 
   function finalize() {
-    return true;
+    return typeManager.validate();
   }
 
   return {

@@ -594,8 +594,8 @@ function TypeManagerTests(display) {
     typeManager = TypeManager(logger);
   }
 
-  var tester = BaseTester(display);
+  var tester = BaseTester(display, setup, tests);
   var assert = tester.assert;
-  tester.init(setup, tests);
+
   return tester;
 }

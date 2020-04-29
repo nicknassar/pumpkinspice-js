@@ -22,7 +22,7 @@ function ParserTests(display) {
     {
       description: "Hello World",
       code: "PRINT \"Hello World!\"\n",
-      parsed: [
+      calls: [
         ["printString", "Hello World!", true, false],
         ["finalize"]
       ],
@@ -31,7 +31,7 @@ function ParserTests(display) {
     {
       description: "Bare PRINT",
       code: "PRINT\n",
-      parsed: [
+      calls: [
         ["printString", "", true, false],
         ["finalize"]
       ],
@@ -40,7 +40,7 @@ function ParserTests(display) {
     {
       description: "PRINT No newline",
       code: "PRINT \"No newline\";\n",
-      parsed: [
+      calls: [
         ["printString", "No newline", false, false],
         ["finalize"]
       ],
@@ -50,7 +50,7 @@ function ParserTests(display) {
       // Test simple print statements
       description: "PRINT No Op",
       code: "PRINT;\n",
-      parsed: [
+      calls: [
         ["printString", "", false, false],
         ["finalize"]
       ],
@@ -60,7 +60,7 @@ function ParserTests(display) {
       // Test simple print statements
       description: "PAUSE statement",
       code: "PAUSE \"Press any key\"\n",
-      parsed: [
+      calls: [
         ["printString", "Press any key", true, true],
         ["finalize"]
       ],
@@ -70,7 +70,7 @@ function ParserTests(display) {
       // Test simple print statements
       description: "PAUSE newline",
       code: "PAUSE\n",
-      parsed: [
+      calls: [
         ["printString", "", true, true],
         ["finalize"]
       ],
@@ -80,7 +80,7 @@ function ParserTests(display) {
       // Test simple print statements
       description: "PAUSE no newline",
       code: "PAUSE \"Press any key\";\n",
-      parsed: [
+      calls: [
         ["printString", "Press any key", false, true],
         ["finalize"]
       ],
@@ -90,7 +90,7 @@ function ParserTests(display) {
       // Test simple print statements
       description: "PAUSE print nothing",
       code: "PAUSE;\n",
-      parsed: [
+      calls: [
         ["printString", "", false, true],
         ["finalize"]
       ],
@@ -99,7 +99,7 @@ function ParserTests(display) {
     {
       description: "REM Comment",
       code: "REM this is a comment\n",
-      parsed: [
+      calls: [
         ["comment","this is a comment"],
         ["finalize"]
       ],
@@ -108,7 +108,7 @@ function ParserTests(display) {
     {
       description: "Apostrophe comment",
       code: "' comment 2\n",
-      parsed: [
+      calls: [
         ["comment","comment 2"],
         ["finalize"]
       ],
@@ -117,7 +117,7 @@ function ParserTests(display) {
     {
       description: "Empty REM comment",
       code: "REM\n",
-      parsed: [
+      calls: [
         ["comment",""],
         ["finalize"]
       ],
@@ -126,7 +126,7 @@ function ParserTests(display) {
     {
       description: "Empty Apostrophe comment",
       code: "'\n",
-      parsed: [
+      calls: [
         ["comment",""],
         ["finalize"]
       ],
@@ -139,7 +139,7 @@ function ParserTests(display) {
             "PRINT \"\"\"\n" +
             "% invalid line\n" +
             "PRINT \"good\"",
-      parsed: [
+      calls: [
         ["printString", "", true, false],
         ["printString", "good", true, false],
         ["finalize"]
@@ -153,7 +153,7 @@ function ParserTests(display) {
     {
       description: "PRINT paren expression 1",
       code: "PRINT (\"parens\")\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "parens"],
         ["parenExpression", 0],
         ["printExp", 1, true, false],
@@ -164,7 +164,7 @@ function ParserTests(display) {
     {
       description: "PRINT paren expression 2",
       code: "PRINT (\"parens\");\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "parens"],
         ["parenExpression", 0],
         ["printExp", 1, false, false],
@@ -175,7 +175,7 @@ function ParserTests(display) {
     {
       description: "PAUSE paren expression 1",
       code: "PAUSE (\"parens\")\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "parens"],
         ["parenExpression", 0],
         ["printExp", 1, true, true],
@@ -186,7 +186,7 @@ function ParserTests(display) {
     {
       description: "PAUSE paren expression 2",
       code: "PAUSE (\"parens\");\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "parens"],
         ["parenExpression", 0],
         ["printExp", 1, false, true],
@@ -197,7 +197,7 @@ function ParserTests(display) {
     {
       description: "PRINT string concatenation expression 1",
       code: "PRINT \"string\" + \"concatenation\"\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
         ["additionExpression", 0, 1],
@@ -209,7 +209,7 @@ function ParserTests(display) {
     {
       description: "PRINT string concatenation expression 2",
       code: "PRINT \"string\"+\"concatenation\";\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
         ["additionExpression", 0, 1],
@@ -221,7 +221,7 @@ function ParserTests(display) {
     {
       description: "PAUSE string concatenation expression 1",
       code: "PAUSE \"string\" + \"concatenation\"\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
         ["additionExpression", 0, 1],
@@ -233,7 +233,7 @@ function ParserTests(display) {
     {
       description: "PAUSE string concatenation expression 2",
       code: "PAUSE \"string\"+\"concatenation\";\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
         ["additionExpression", 0, 1],
@@ -245,7 +245,7 @@ function ParserTests(display) {
     {
       description: "PRINT string multi concatenation expression",
       code: "PRINT \"multi\" + \"string\" + \"concatenation\"\n" ,
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "multi"],
         ["stringLiteralExpression", "string"],
         ["additionExpression", 0, 1],
@@ -259,7 +259,7 @@ function ParserTests(display) {
     {
       description: "PRINT string multi parents expression",
       code: "PRINT ((\"parens\"))\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "parens"],
         ["parenExpression", 0],
         ["parenExpression", 1],
@@ -271,7 +271,7 @@ function ParserTests(display) {
     {
       description: "PRINT string parens concatenation expression",
       code: "PRINT (\"string\" + \"concatenation\")\n" ,
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
         ["additionExpression", 0, 1],
@@ -284,7 +284,7 @@ function ParserTests(display) {
     {
       description: "PRINT string variable expression",
       code: "PRINT variable\n" ,
-      parsed: [
+      calls: [
         ["variableExpression", "VARIABLE"],
         ["printExp", 0, true, false],
         ["finalize"]
@@ -294,7 +294,7 @@ function ParserTests(display) {
     {
       description: "PRINT string variable expression concatenation",
       code: "PRINT variable+\"literal\"\n" ,
-      parsed: [
+      calls: [
         ["variableExpression", "VARIABLE"],
         ["stringLiteralExpression", "literal"],
         ["additionExpression", 0, 1],
@@ -306,7 +306,7 @@ function ParserTests(display) {
     {
       description: "PRINT string parens variable expression",
       code: "PRINT (variable)\n" ,
-      parsed: [
+      calls: [
         ["variableExpression", "VARIABLE"],
         ["parenExpression", 0],
         ["printExp", 1, true, false],
@@ -319,7 +319,7 @@ function ParserTests(display) {
       code: "PRINT >\n" +
         "PRINT (>)\n" +
         "PRINT (\"mismatch\"",
-      parsed: [
+      calls: [
         ["finalize"]
       ],
       errors: [
@@ -331,7 +331,7 @@ function ParserTests(display) {
     {
       description: "COLOR statement",
       code: "COLOR 7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7"],
         ["color", 0],
         ["finalize"]
@@ -341,7 +341,7 @@ function ParserTests(display) {
     {
       description: "COLOR statement with expression",
       code: "COLOR X+7\n",
-      parsed: [
+      calls: [
         ["variableExpression", "X"],
         ["numericLiteralExpression", "7"],
         ["additionExpression", 0, 1],
@@ -354,7 +354,7 @@ function ParserTests(display) {
     {
       description: "BGCOLOR statement",
       code: "BGCOLOR 7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7"],
         ["bgColor", 0],
         ["finalize"]
@@ -364,7 +364,7 @@ function ParserTests(display) {
     {
       description: "BGCOLOR statement with expression",
       code: "BGCOLOR X+7\n",
-      parsed: [
+      calls: [
         ["variableExpression", "X"],
         ["numericLiteralExpression", "7"],
         ["additionExpression", 0, 1],
@@ -377,7 +377,7 @@ function ParserTests(display) {
     {
       description: "CLEAR statement",
       code: "CLS\n",
-      parsed: [
+      calls: [
         ["clear"],
         ["finalize"]
       ],
@@ -386,7 +386,7 @@ function ParserTests(display) {
     {
       description: "INPUT statement",
       code: "INPUT Q\n",
-      parsed: [
+      calls: [
         ["input", "Q"],
         ["finalize"]
       ],
@@ -395,7 +395,7 @@ function ParserTests(display) {
     {
       description: "INPUT statement with string param",
       code: "INPUT Q+\"Q\"\n",
-      parsed: [
+      calls: [
         ["finalize"]
       ],
       errors:[
@@ -405,7 +405,7 @@ function ParserTests(display) {
     {
       description: "PLAY statement",
       code: "PLAY \"ABC\"\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "ABC"],
         ["play", 0],
         ["finalize"]
@@ -415,7 +415,7 @@ function ParserTests(display) {
     {
       description: "SLEEP statement",
       code: "SLEEP 7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7"],
         ["sleep", 0],
         ["finalize"]
@@ -425,7 +425,7 @@ function ParserTests(display) {
     {
       description: "Assignment from variable",
       code: "A = B\n",
-      parsed: [
+      calls: [
         ["variableExpression","B"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -435,7 +435,7 @@ function ParserTests(display) {
     {
       description: "Assignment from numeric literal",
       code: "C = 7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7"],
         ["letStatement", "C", 0],
         ["finalize"]
@@ -445,7 +445,7 @@ function ParserTests(display) {
     {
       description: "Assignment from string literal",
       code: "D = \"string\"\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["letStatement", "D", 0],
         ["finalize"]
@@ -455,7 +455,7 @@ function ParserTests(display) {
     {
       description: "Assignment of numeric addition expression",
       code: "A = 100+101\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["numericLiteralExpression", "101"],
         ["additionExpression", 0, 1],
@@ -467,7 +467,7 @@ function ParserTests(display) {
     {
       description: "Assignment of subtraction expression",
       code: "A = 100-101\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["numericLiteralExpression", "101"],
         ["subtractionExpression", 0, 1],
@@ -479,7 +479,7 @@ function ParserTests(display) {
     {
       description: "Assignment of numeric expression",
       code: "A = 100*101\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["numericLiteralExpression", "101"],
         ["multiplicationExpression", 0, 1],
@@ -491,7 +491,7 @@ function ParserTests(display) {
     {
       description: "Assignment of division expression",
       code: "A = 100/101\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["numericLiteralExpression", "101"],
         ["divisionExpression", 0, 1],
@@ -503,7 +503,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal integer preceeded by plus",
       code: "A = +7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -513,7 +513,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal integer preceeded by minus",
       code: "A = -7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "-7"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -523,7 +523,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal starting with decimal point",
       code: "A = .7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", ".7"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -533,7 +533,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal starting with plus decimal point",
       code: "A = +.7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", ".7"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -543,7 +543,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal starting with minus decimal point",
       code: "A = -.7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "-.7"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -553,7 +553,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal with decimal",
       code: "A = 7.7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7.7"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -563,7 +563,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal with decimal preceeded by minus",
       code: "A = -7.7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "-7.7"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -573,7 +573,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal with decimal preceeded by plus",
       code: "A = +7.7\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7.7"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -583,7 +583,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal addition preceeded by plus",
       code: "A = +1 +1\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "1"],
         ["numericLiteralExpression", "1"],
         ["additionExpression", 0, 1],
@@ -595,7 +595,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal addition preceeded by minus",
       code: "A = -1 +1\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "-1"],
         ["numericLiteralExpression", "1"],
         ["additionExpression", 0, 1],
@@ -608,7 +608,7 @@ function ParserTests(display) {
 
       description: "Numeric literal addition with parens on first",
       code: "A = (7)+1\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7"],
         ["parenExpression", 0],
         ["numericLiteralExpression", "1"],
@@ -621,7 +621,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal addition double plus",
       code: "A = +1++1\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "1"],
         ["numericLiteralExpression", "1"],
         ["additionExpression", 0, 1],
@@ -633,7 +633,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal subtraction double minus",
       code: "A = -1--1\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "-1"],
         ["numericLiteralExpression", "-1"],
         ["subtractionExpression", 0, 1],
@@ -645,7 +645,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal subtraction with plus",
       code: "A = -1-+1\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "-1"],
         ["numericLiteralExpression", "1"],
         ["subtractionExpression", 0, 1],
@@ -657,7 +657,7 @@ function ParserTests(display) {
     {
       description: "Numeric literal addition with minus",
       code: "A = +1+-1\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "1"],
         ["numericLiteralExpression", "-1"],
         ["additionExpression", 0, 1],
@@ -669,7 +669,7 @@ function ParserTests(display) {
     {
       description: "Assignment of subtraction after parens",
       code: "A = (100)-101\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["parenExpression", 0],
         ["numericLiteralExpression", "101"],
@@ -682,7 +682,7 @@ function ParserTests(display) {
     {
       description: "Assignment of multiplication expression after parens",
       code: "A = (100)*101\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["parenExpression", 0],
         ["numericLiteralExpression", "101"],
@@ -695,7 +695,7 @@ function ParserTests(display) {
     {
       description: "Assignment of division expression after parens",
       code: "A = (100)/101\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["parenExpression", 0],
         ["numericLiteralExpression", "101"],
@@ -708,7 +708,7 @@ function ParserTests(display) {
     {
       description: "Assignment ABS",
       code: "A = ABS(100)\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["absBuiltinExpression", 0],
         ["letStatement", "A", 1],
@@ -719,7 +719,7 @@ function ParserTests(display) {
     {
       description: "Assignment of CINT",
       code: "A = CINT(100)\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["cintBuiltinExpression", 0],
         ["letStatement", "A", 1],
@@ -730,7 +730,7 @@ function ParserTests(display) {
     {
       description: "Assignment of FIX",
       code: "A = FIX(100)\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["fixBuiltinExpression", 0],
         ["letStatement", "A", 1],
@@ -741,7 +741,7 @@ function ParserTests(display) {
     {
       description: "Assignment of INT",
       code: "A = INT(100)\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["intBuiltinExpression", 0],
         ["letStatement", "A", 1],
@@ -752,7 +752,7 @@ function ParserTests(display) {
     {
       description: "Assignment of LEFT$",
       code: "A = LEFT$(\"string\", 100)\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["numericLiteralExpression", "100"],
         ["leftzBuiltinExpression", 0, 1],
@@ -764,7 +764,7 @@ function ParserTests(display) {
     {
       description: "Assignment of RIGHT$",
       code: "A = RIGHT$(\"string\", 100)\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["numericLiteralExpression", "100"],
         ["rightzBuiltinExpression", 0, 1],
@@ -776,7 +776,7 @@ function ParserTests(display) {
     {
       description: "Assignment of LEN",
       code: "A = LEN(\"string\")\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "string"],
         ["lenBuiltinExpression", 0],
         ["letStatement", "A", 1],
@@ -787,7 +787,7 @@ function ParserTests(display) {
     {
       description: "Assignment of STR$",
       code: "A = STR$(100)\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["strzBuiltinExpression", 0],
         ["letStatement", "A", 1],
@@ -798,7 +798,7 @@ function ParserTests(display) {
     {
       description: "Assignment of VAL",
       code: "A = VAL(\"100\")\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "100"],
         ["valBuiltinExpression", 0],
         ["letStatement", "A", 1],
@@ -809,7 +809,7 @@ function ParserTests(display) {
     {
       description: "Assignment of RANDOM",
       code: "A = RANDOM(100, 200)\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["numericLiteralExpression", "200"],
         ["randomBuiltinExpression", 0, 1],
@@ -821,7 +821,7 @@ function ParserTests(display) {
     {
       description: "Assignment of PI",
       code: "A = PI\n",
-      parsed: [
+      calls: [
         ["piBuiltinExpression"],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -842,7 +842,7 @@ function ParserTests(display) {
         "A = RANDOM(,100)\n" +
         "A = ABS(77)FROG",
 
-      parsed: [
+      calls: [
         // ABS(77)
         ["numericLiteralExpression", "77"],
         ["absBuiltinExpression", 0],
@@ -871,7 +871,7 @@ function ParserTests(display) {
         "A = -\n" +
         "A = -\"a\"\n" +
         "42\n",
-      parsed: [
+      calls: [
         ["finalize"]
       ],
       errors: [
@@ -886,7 +886,7 @@ function ParserTests(display) {
       description: "Subroutine 1",
       code: "SUBROUTINE foo\n" +
         "END SUBROUTINE\n",
-      parsed: [
+      calls: [
         ["beginSubroutine", "FOO", []],
         ["endSubroutine"],
         ["finalize"]
@@ -897,7 +897,7 @@ function ParserTests(display) {
       description: "Subroutine 2",
       code: "SUBROUTINE Bar Biz\n" +
         "END SUBROUTINE\n",
-      parsed: [
+      calls: [
         ["beginSubroutine", "BAR", ["BIZ"]],
         ["endSubroutine"],
         ["finalize"]
@@ -908,7 +908,7 @@ function ParserTests(display) {
       description: "Subroutine 3",
       code: "SUBROUTINE BOO BAA, bee\n" +
         "END SUBROUTINE\n",
-      parsed: [
+      calls: [
         ["beginSubroutine", "BOO", ["BAA", "BEE"]],
         ["endSubroutine"],
         ["finalize"]
@@ -920,7 +920,7 @@ function ParserTests(display) {
       code: "SUBROUTINE BOO BAA, bee\n" +
         "RETURN\n" +
         "END SUBROUTINE\n",
-      parsed: [
+      calls: [
         ["beginSubroutine", "BOO", ["BAA", "BEE"]],
         ["voidReturnStatement"],
         ["endSubroutine"],
@@ -933,7 +933,7 @@ function ParserTests(display) {
       code: "SUBROUTINE FOO\n" +
         "RETURN BAR\n" +
         "END SUBROUTINE\n",
-      parsed: [
+      calls: [
         ["beginSubroutine", "FOO", []],
         ["variableExpression", "BAR"],
         ["returnStatement", 1],
@@ -947,7 +947,7 @@ function ParserTests(display) {
       code: "SUBROUTINE FOO\n" +
         "RETURN \"BAR\"\n" +
         "END SUBROUTINE\n",
-      parsed: [
+      calls: [
         ["beginSubroutine", "FOO", []],
         ["stringLiteralExpression", "BAR"],
         ["returnStatement", 1],
@@ -961,7 +961,7 @@ function ParserTests(display) {
       code: "SUBROUTINE BOO BAA, bee\n" +
         "RETURN 7\n" +
         "END SUBROUTINE\n",
-      parsed: [
+      calls: [
         ["beginSubroutine", "BOO", ["BAA", "BEE"]],
         ["numericLiteralExpression","7"],
         ["returnStatement", 1],
@@ -975,7 +975,7 @@ function ParserTests(display) {
       code: "SUBROUTINE BOO BAA, bee\n" +
         "RETURN 7+BAR\n" +
         "END SUBROUTINE\n",
-      parsed: [
+      calls: [
         ["beginSubroutine", "BOO", ["BAA", "BEE"]],
         ["numericLiteralExpression","7"],
         ["variableExpression","BAR"],
@@ -989,7 +989,7 @@ function ParserTests(display) {
     {
       description: "CALL statement 1",
       code: "CALL Foo\n",
-      parsed: [
+      calls: [
         ["callSubroutine", "FOO", []],
         ["finalize"]
       ],
@@ -998,7 +998,7 @@ function ParserTests(display) {
     {
       description: "CALL statement 2",
       code: "CALL BAR None\n",
-      parsed: [
+      calls: [
         ["variableExpression", "NONE"],
         ["callSubroutine", "BAR", [0]],
         ["finalize"]
@@ -1008,7 +1008,7 @@ function ParserTests(display) {
     {
       description: "CALL statement 3",
       code: "CALL boo 12, \"boo\"\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "12"],
         ["stringLiteralExpression", "boo"],
         ["callSubroutine", "BOO", [0, 1]],
@@ -1019,7 +1019,7 @@ function ParserTests(display) {
     {
       description: "CALL statement error",
       code: "CALL Foo OR SOMETHING\n",
-      parsed: [
+      calls: [
         ["finalize"]
       ],
       errors: [
@@ -1029,7 +1029,7 @@ function ParserTests(display) {
     {
       description: "CALL expression 1",
       code: "A = CALL Foo\n",
-      parsed: [
+      calls: [
         ["callSubroutineExpression", "FOO", []],
         ["letStatement", "A", 0],
         ["finalize"]
@@ -1039,7 +1039,7 @@ function ParserTests(display) {
     {
       description: "CALL expression 2",
       code: "A = CALL bar None\n",
-      parsed: [
+      calls: [
         ["variableExpression", "NONE"],
         ["callSubroutineExpression", "BAR", [0]],
         ["letStatement", "A", 1],
@@ -1050,7 +1050,7 @@ function ParserTests(display) {
     {
       description: "CALL expression 3",
       code: "A = CALL Boo 12, \"boo\"\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "12"],
         ["stringLiteralExpression", "boo"],
         ["callSubroutineExpression", "BOO", [0, 1]],
@@ -1062,7 +1062,7 @@ function ParserTests(display) {
     {
       description: "PRINT CALL expression",
       code: "PRINT CALL Foo\n",
-      parsed: [
+      calls: [
 	["callSubroutineExpression", "FOO", []],
 	["printExp", 0, true, false],
 	["finalize"]
@@ -1072,7 +1072,7 @@ function ParserTests(display) {
     {
       description: "Assign CALL with numeric arg",
       code: "A = CALL FOO+77\n",
-      parsed: [
+      calls: [
 	["numericLiteralExpression", "77"],
 	["callSubroutineExpression", "FOO", [0]],
 	["letStatement", "A", 1],
@@ -1083,7 +1083,7 @@ function ParserTests(display) {
     {
       description: "Assign CALL with negative arg",
       code: "A = CALL foo-88\n",
-      parsed: [
+      calls: [
 	["numericLiteralExpression", "-88"],
 	["callSubroutineExpression", "FOO", [0]],
 	["letStatement", "A", 1],
@@ -1094,7 +1094,7 @@ function ParserTests(display) {
     {
       description: "Assign subtraction of CALL expression",
       code: "A = CALL foo(77)-88\n",
-      parsed: [
+      calls: [
 	["numericLiteralExpression", "77"],
 	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
@@ -1108,7 +1108,7 @@ function ParserTests(display) {
     {
       description: "Assignment of subtraction of CALL expression, two args",
       code: "A = CALL foo(77)-88,bar\n",
-      parsed: [
+      calls: [
 	["numericLiteralExpression", "77"],
 	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
@@ -1123,7 +1123,7 @@ function ParserTests(display) {
     {
       description: "CALL expressions with two complex args",
       code: "A = CALL foo(77)-88,bar+99\n",
-      parsed: [
+      calls: [
 	["numericLiteralExpression", "77"],
 	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
@@ -1140,7 +1140,7 @@ function ParserTests(display) {
     {
       description: "CALL expression string param variable param",
       code: "A = CALL foo(\"biz\"),boz\n",
-      parsed: [
+      calls: [
 	["stringLiteralExpression", "biz"],
 	["parenExpression", 0],
 	["variableExpression", "BOZ"],
@@ -1153,7 +1153,7 @@ function ParserTests(display) {
     {
       description: "CALL expression with three params",
       code: "PRINT CALL FOO bar, \"biz\", (baz)*2\n",
-      parsed: [
+      calls: [
 	["variableExpression", "BAR"],
 	["stringLiteralExpression", "biz"],
 	["variableExpression", "BAZ"],
@@ -1169,7 +1169,7 @@ function ParserTests(display) {
     {
       description: "CALL expression in parens, followed by addition",
       code: "PRINT (CALL FOO \"a\"+\"b\")+\"c\"\n",
-      parsed: [
+      calls: [
 	["stringLiteralExpression", "a"],
 	["stringLiteralExpression", "b"],
 	["additionExpression", 0, 1],
@@ -1186,7 +1186,7 @@ function ParserTests(display) {
       description: "Nested CALL expressions",
       code: "IF CALL PLUSONE (CALL PLUSONE 1) != CALL PLUSONE 2 THEN\n"+
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "1"],
         ["callSubroutineExpression", "PLUSONE", [0]],
         ["parenExpression", 1],
@@ -1203,7 +1203,7 @@ function ParserTests(display) {
     {
       description: "numeric infix operator precedence add, multiply",
       code: "A = 88+66*77\n",
-      parsed: [
+      calls: [
 	["numericLiteralExpression", "88"],
 	["numericLiteralExpression", "66"],
 	["numericLiteralExpression", "77"],
@@ -1217,7 +1217,7 @@ function ParserTests(display) {
     {
       description: "numeric infix operator precedence multiply, add",
       code: "A = 66*77+88\n",
-      parsed: [
+      calls: [
 	["numericLiteralExpression", "66"],
 	["numericLiteralExpression", "77"],
 	["multiplicationExpression", 0, 1],
@@ -1231,7 +1231,7 @@ function ParserTests(display) {
     {
       description: "numeric infix operator precedence subtract, divide",
       code: "A = 88-66/77\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "88"],
         ["numericLiteralExpression", "66"],
         ["numericLiteralExpression", "77"],
@@ -1245,7 +1245,7 @@ function ParserTests(display) {
     {
       description: "numeric infix operator precedence - complex",
       code: "A = 44-55+66/77*88-99+33\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "44"],
         ["numericLiteralExpression", "55"],
         ["subtractionExpression", 0, 1],
@@ -1269,7 +1269,7 @@ function ParserTests(display) {
       code: "IF 77 = 88\n" +
         "PRINT\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "77"],
         ["numericLiteralExpression", "88"],
         ["boolEqualExpression", 0, 1],
@@ -1285,7 +1285,7 @@ function ParserTests(display) {
       code: "IF \"a\" == Seven\n" +
         "PRINT\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "a"],
         ["variableExpression", "SEVEN"],
         ["boolEqualExpression", 0, 1],
@@ -1301,7 +1301,7 @@ function ParserTests(display) {
       code: "IF Q > 88 THEN\n" +
         "PRINT\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "Q"],
         ["numericLiteralExpression", "88"],
         ["boolGreaterExpression", 0, 1],
@@ -1317,7 +1317,7 @@ function ParserTests(display) {
       code: "IF 77 < Z\n" +
         "PRINT\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "77"],
         ["variableExpression", "Z"],
         ["boolLessExpression", 0, 1],
@@ -1333,7 +1333,7 @@ function ParserTests(display) {
       code: "IF 77 >= 88\n" +
         "PRINT\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "77"],
         ["numericLiteralExpression", "88"],
         ["boolGreaterOrEqualExpression", 0, 1],
@@ -1351,7 +1351,7 @@ function ParserTests(display) {
         "ELSE\n" +
         "PRINT\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "77"],
         ["numericLiteralExpression", "88"],
         ["boolLessOrEqualExpression", 0, 1],
@@ -1371,7 +1371,7 @@ function ParserTests(display) {
         "ELSE\n" +
         "PRINT\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "77"],
         ["numericLiteralExpression", "88"],
         ["boolNotEqualExpression", 0, 1],
@@ -1388,7 +1388,7 @@ function ParserTests(display) {
       description: "Boolean comparison operator precedence - multiplication and addition",
       code: "IF 7*8 > 7+8 THEN\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "7"],
         ["numericLiteralExpression", "8"],
         ["multiplicationExpression", 0, 1],
@@ -1406,7 +1406,7 @@ function ParserTests(display) {
       description: "Boolean comparison operator precedence - addition and multiplication with variables",
       code: "IF SIX+42 > 7*EIGHTYEIGHT THEN\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "SIX"],
         ["numericLiteralExpression", "42"],
         ["additionExpression", 0, 1],
@@ -1424,7 +1424,7 @@ function ParserTests(display) {
       description: "Boolean comparison operator precedence -  complicated numeric",
       code: "IF 6+7*8 > 7*8+9 THEN\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "6"],
         ["numericLiteralExpression", "7"],
         ["numericLiteralExpression", "8"],
@@ -1446,7 +1446,7 @@ function ParserTests(display) {
       description: "Boolean comparison operator precedence - string expressions",
       code: "IF A+B+\"C\" = \"a\"+\"A\"+\"a\" THEN\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["variableExpression", "B"],
         ["additionExpression", 0, 1],
@@ -1468,7 +1468,7 @@ function ParserTests(display) {
       description: "Boolean OR operator",
       code: "If 66 > 77 OR 88 > 99 THEN\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "66"],
         ["numericLiteralExpression", "77"],
         ["boolGreaterExpression", 0, 1],
@@ -1486,7 +1486,7 @@ function ParserTests(display) {
       description: "Boolean AND operator",
       code: "If 66 > 77 AND 88 > 99 THEN\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "66"],
         ["numericLiteralExpression", "77"],
         ["boolGreaterExpression", 0, 1],
@@ -1504,7 +1504,7 @@ function ParserTests(display) {
       description: "OR operator with numeric expressions",
       code: "If 66+77 > 66-77 OR 88*99 > 88/99 THEN\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "66"],
         ["numericLiteralExpression", "77"],
         ["additionExpression", 0 , 1 ],
@@ -1530,7 +1530,7 @@ function ParserTests(display) {
       description: "Boolean AND and OR operator precedence - OR first",
       code: "If A < B OR C >= D AND E >= F\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["variableExpression", "B"],
         ["boolLessExpression", 0, 1],
@@ -1552,7 +1552,7 @@ function ParserTests(display) {
       description: "Boolean AND and OR operator precedence - AND first",
       code: "If A <= B AND C != D OR E == F\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["variableExpression", "B"],
         ["boolLessOrEqualExpression", 0, 1],
@@ -1574,7 +1574,7 @@ function ParserTests(display) {
       description: "Simple Bool expression with NOT",
       code: "IF NOT 77=88\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "77"],
         ["numericLiteralExpression", "88"],
         ["boolEqualExpression", 0, 1],
@@ -1589,7 +1589,7 @@ function ParserTests(display) {
       description: "Bool expression - NOT of parens",
       code: "IF NOT (A=77 OR B=88)\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["numericLiteralExpression", "77"],
         ["boolEqualExpression", 0, 1],
@@ -1610,7 +1610,7 @@ function ParserTests(display) {
       code:
         "IF NOT (A=77) OR B=88\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["numericLiteralExpression", "77"],
         ["boolEqualExpression", 0, 1],
@@ -1631,7 +1631,7 @@ function ParserTests(display) {
       code:
         "IF A=77 OR NOT B=88\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["numericLiteralExpression", "77"],
         ["boolEqualExpression", 0, 1],
@@ -1651,7 +1651,7 @@ function ParserTests(display) {
       code:
         "IF NOT A=77 OR B=88 AND C=99\n" +
         "END IF\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["numericLiteralExpression", "77"],
         ["boolEqualExpression", 0, 1],
@@ -1674,7 +1674,7 @@ function ParserTests(display) {
       description: "WHILE statement 1",
       code: "WHILE A = A DO\n" +
         "WEND\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["variableExpression", "A"],
         ["boolEqualExpression", 0, 1],
@@ -1688,7 +1688,7 @@ function ParserTests(display) {
       description: "WHILE statement 2",
       code: "WHILE A < 10\n" +
         "END WHILE\n",
-      parsed: [
+      calls: [
         ["variableExpression", "A"],
         ["numericLiteralExpression", "10"],
         ["boolLessExpression", 0, 1],
@@ -1703,7 +1703,7 @@ function ParserTests(display) {
       code: "FOR N = 100 to 101\n" +
         "PRINT\n" +
         "NEXT N",
-      parsed: [
+      calls: [
         ["numericLiteralExpression", "100"],
         ["numericLiteralExpression", "101"],
         ["forStatement", "N", 0, 1],
@@ -1718,7 +1718,7 @@ function ParserTests(display) {
       code: "FOR N = CALL start to CALL end\n" +
         "PRINT\n" +
         "NEXT N",
-      parsed: [
+      calls: [
         ["callSubroutineExpression", "START", []],
         ["callSubroutineExpression", "END", []],
         ["forStatement", "N", 0, 1],
@@ -1736,7 +1736,7 @@ function ParserTests(display) {
         "WITH CHANCE 66.7\n" +
         "PRINT\n" +
         "END RANDOM\n",
-      parsed: [
+      calls: [
         ["beginRandom"],
         ["withChance", "33.3"],
         ["printString", "", true, false],
@@ -1755,7 +1755,7 @@ function ParserTests(display) {
         "WITH CHANCE\n" +
         "PRINT\n" +
         "END RANDOM\n",
-      parsed: [
+      calls: [
         ["beginRandom"],
         ["withEvenChance"],
         ["printString", "", true, false],
@@ -1769,7 +1769,7 @@ function ParserTests(display) {
     {
       description: "WAIT FOR MUSIC",
       code: "WAIT FOR MUSIC\n",
-      parsed: [
+      calls: [
         ["waitForMusic"],
         ["finalize"]
       ],
@@ -1783,7 +1783,7 @@ function ParserTests(display) {
         "ON YES\n" +
         "PRINT \"yes\"\n" +
         "END ASK\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "Will you?"],
         ["beginAsk", 0],
         ["onNo"],
@@ -1804,7 +1804,7 @@ function ParserTests(display) {
         "ON YES\n" +
         "PRINT \"yes\"\n" +
         "END ASK\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "Are you "],
         ["variableExpression", "NAME"],
         ["additionExpression", 0, 1],
@@ -1833,7 +1833,7 @@ function ParserTests(display) {
         "ON YES\n" +
         "PRINT \"yes\"\n" +
         "END ASK\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "Won't you?"],
         ["beginAsk", 0],
         ["askDefault", false],
@@ -1859,7 +1859,7 @@ function ParserTests(display) {
         "CHOICE A \"Last thing\"\n" +
         "PRINT\n" +
         "END MENU\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "Prompt"],
         ["beginMenu", 0],
         ["stringLiteralExpression", "First thing first"],
@@ -1891,7 +1891,7 @@ function ParserTests(display) {
         "CHOICE A \"Last thing\"\n" +
         "PRINT\n" +
         "END MENU\n",
-      parsed: [
+      calls: [
         ["stringLiteralExpression", "Prompt"],
         ["variableExpression", "A"],
         ["additionExpression", 0, 1],
@@ -1920,132 +1920,26 @@ function ParserTests(display) {
     }
   ];
 
-  function compareNestedLists(listA, listB) {
-    if (listA.length !== listB.length)
-      return false;
-    for (var i=0;i<listA.length;i++) {
-      if (listA[i].length !== listB[i].length)
-        return false;
-      for (var j=0;j<listA[i].length;j++) {
-        // Handle list parameters - for subroutine args, etc.
-        if (listA[i][j] && listA[i][j].push !== undefined) {
-          if (!listB[i][j] || listB[i][j].length !== listA[i][j].length)
-            return false;
-          for (var k=0;k<listA[i][j].length;k++) {
-            if (listA[i][j][k] !== listB[i][j][k])
-              return false;
-          }
-        } else if (listA[i][j] !== listB[i][j])
-          return false;
-      }
-    }
-    return true;
-  }
-
-  // Exact error messages aren't matched
-  // We want to know that an error on the same line is reported
-  function compareErrorLists(listA, listB) {
-    if (listA.length !== listB.length)
-      return false;
-    // First line is line number of error
-    for (var i=0;i<listA.length;i++) {
-      if (listA[i][0] !== listB[i][0])
-        return false;
-    }
-    return true;
-  }
-
-  function stringifyExpectedItem(item) {
-    var elements = [];
-    for (var i = 0;i<item.length;i++) {
-      var element = item[i];
-      if (element === null) {
-        elements.push("null");
-      } else if (element === undefined) {
-        elements.push("undefined");
-      } else if (element.length !== undefined) { // string or array
-        if (element.push !== undefined) { // array
-          elements.push("["+stringifyExpectedItem(element)+"]");
-        } else { // string
-          elements.push("\""+element.replace("\"","\\\"")+"\"");
-        }
-      } else {
-        elements.push(element);
-      }
-    }
-    return elements.join(", ");
-  }
-  function stringifyExpectedList(expected) {
-    var lines = [];
-    for (var i=0;i<expected.length;i++) {
-      lines.push(stringifyExpectedItem(expected[i]));
-    }
-    return lines.join("\n");
-  }
-
-  function printParseMismatch(expectation, handlerLog) {
-    display.setColor(4);
-    display.print("Parser gave unexpected results for test "+expectation.description+":\n");
-    display.setColor(7);
-    display.print(expectation.code+"\n\n");
-    display.setColor(15);
-    display.print("expected:\n")
-    display.setColor(7);
-    display.print(stringifyExpectedList(expectation.parsed)+"\n");
-    display.setColor(15);
-    display.print("got:\n")
-    display.setColor(7);
-    display.print(stringifyExpectedList(handlerLog)+"\n\n");
-  }
-
-  function printErrorMismatch(expectation, errorLog) {
-    display.setColor(4);
-    display.print("Parser gave unexpected errors for test "+expectation.description+":\n");
-    display.setColor(7);
-    display.print(expectation.code+"\n");
-    display.setColor(15);
-    display.print("expected:\n")
-    display.setColor(7);
-    display.print(stringifyExpectedList(expectation.errors)+"\n");
-    display.setColor(15);
-    display.print("got:\n")
-    display.setColor(7);
-    display.print(stringifyExpectedList(errorLog)+"\n\n");
-  }
-
-  function checkResults(expectation, handlerLog, errorLog) {
-    if (!compareNestedLists(expectation.parsed, handlerLog)) {
-      assert(false, "parsed result matches expectations");
-      printParseMismatch(expectation, handlerLog);
-    }
-    if (!compareErrorLists(expectation.errors, errorLog)) {
-      assert(false, "error result matches expectations");
-      printErrorMismatch(expectation, errorLog);
-    }
-  }
-
   function expectationToTestFunc(expectation) {
     return function() {
       // prepend a newline so line numbers match correctly- the parser
       // assumes it's embeeded in a <script> tag
       compiler.compile("\n"+expectation.code);
-      checkResults(expectation, handler.getLog(), logger.getLog());
     };
   }
 
-  function testsFromExpectations() {
-    var tests = [];
-    for (var i=0;i<expectations.length;i++) {
-      tests.push({
-        description: expectations[i].description,
-        run: expectationToTestFunc(expectations[i])
-      });
-    }
-    return tests;
+  function expectationText(expectation) {
+    return expectation.code;
   }
 
-  var tester = BaseTester(display);
-  var assert = tester.assert;
-  tester.init(setup, testsFromExpectations());
+  function getCallLog() {
+    return handler.getLog();
+  }
+
+  function getErrorLog() {
+    return logger.getLog();
+  }
+
+  var tester = MatchingTester(display, setup, expectations, expectationToTestFunc, expectationText, getCallLog, getErrorLog);
   return tester;
 }
