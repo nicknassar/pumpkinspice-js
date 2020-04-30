@@ -25,11 +25,11 @@ function BaseTester(display, setup, tests) {
 
   function printFailureHeader() {
     display.setColor(4);
-    display.print("TestManager failed test \"");
+    display.print("\"");
     display.setColor(12);
     display.print(description);
     display.setColor(4);
-    display.print("\":\n");
+    display.print("\" failed:\n");
   }
 
   function printFailure(failure) {

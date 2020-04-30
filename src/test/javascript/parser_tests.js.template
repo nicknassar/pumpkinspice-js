@@ -477,7 +477,7 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "Assignment of numeric expression",
+      description: "Assignment of multiplication expression",
       code: "A = 100*101\n",
       calls: [
         ["numericLiteralExpression", "100"],

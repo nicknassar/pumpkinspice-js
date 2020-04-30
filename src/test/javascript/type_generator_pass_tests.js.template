@@ -218,8 +218,413 @@ function TypeGeneratorPassTests(display) {
         ["validate"]
       ],
       errors: []
+    },
+    {
+      description: "INPUT statement",
+      run: function() {
+        typeGeneratorPass.input("Q");
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "Q"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PLAY statement",
+      run: function() {
+        typeGeneratorPass.play(typeGeneratorPass.stringLiteralExpression("ABC"));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Sleep statement",
+      run: function() {
+        typeGeneratorPass.sleep(typeGeneratorPass.numericLiteralExpression(7));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.variableExpression("B"));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "B"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from string literal",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.stringLiteralExpression("B"));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from numeric literal",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.numericLiteralExpression("1"));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from numeric addition",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.additionExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("2"))
+                                       );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from string addition",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.additionExpression(
+                                         typeGeneratorPass.stringLiteralExpression("Foo"),
+                                         typeGeneratorPass.stringLiteralExpression("Bar"))
+                                       );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["stringType"],
+        ["typeForPair", 0, 1],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from subtraction",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.subtractionExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("2"))
+                                       );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["typeForPair", 2, 3],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from multiplication",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.multiplicationExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("2"))
+                                       );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["typeForPair", 2, 3],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from division",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.divisionExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("2"))
+                                       );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["typeForPair", 2, 3],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from ABS",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.absBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from CINT",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.cintBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from FIX",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.fixBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from INT",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.intBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from LEFT$",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.leftzBuiltinExpression(
+                                         typeGeneratorPass.stringLiteralExpression("something"),
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["numericType"],
+        ["typeForStringExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from RIGHT$",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.rightzBuiltinExpression(
+                                         typeGeneratorPass.stringLiteralExpression("something"),
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["numericType"],
+        ["typeForStringExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from LEN",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.lenBuiltinExpression(
+                                         typeGeneratorPass.stringLiteralExpression("something"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from STR$",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.strzBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1001"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from VAL",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.valBuiltinExpression(
+                                         typeGeneratorPass.stringLiteralExpression("100"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from RANDOM",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.randomBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("100"))
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from PI",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.piBuiltinExpression()
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
     }
- ];
+];
 
 
   function expectationToTestFunc(expectation) {

@@ -178,7 +178,7 @@ function TypeGeneratorPass(typeManager, logger) {
         logger.error("Local variable assignment not supported, yet!");
         return false;
       }
-      return !!typeManager.typeForPair(typeManager.typeForGlobal(varExp), valueExp);
+      return !!typeManager.typeForPair(valueExp, typeManager.typeForGlobal(varExp));
     }
 
 /***********************************************************************
@@ -196,11 +196,10 @@ function TypeGeneratorPass(typeManager, logger) {
 	if (a === null || b === null) {
           return null;
         }
-        if (typeManager.typeForNumericExpression(a) &&
-            typeManager.typeForNumericExpression(b))
-          return typeManager.numericType();
-        else
-          return null;
+        return typeManager.typeForPair(
+          typeManager.typeForNumericExpression(a),
+          typeManager.typeForNumericExpression(b)
+        );
       }
 
       function variableExpression(name) {
