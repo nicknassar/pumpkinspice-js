@@ -23,7 +23,7 @@ function TestingTypeManager() {
     // Type reading functions
    globalHasStringType: loggerWithName("globalHasStringType"),
    globalHasNumericType: loggerWithName("globalHasNumericType"),
-   localVariableDefined: loggerWithName("localVariableDefined"),
+   localVariableDefined: loggerWithName("localVariableDefined", false),
    localHasStringType: loggerWithName("localHasStringType"),
    localHasNumericType: loggerWithName("localHasNumericType"),
    getSubArgNames: loggerWithName("getSubArgNames"),

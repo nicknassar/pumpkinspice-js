@@ -623,8 +623,389 @@ function TypeGeneratorPassTests(display) {
         ["validate"]
       ],
       errors: []
+    },
+    {
+      description: "Subroutine declaration",
+      run: function() {
+        typeGeneratorPass.beginSubroutine("FOO", []);
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", []],
+        ["typeForVoidReturnStatement", "FOO"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with variable return",
+      run: function() {
+        typeGeneratorPass.beginSubroutine("FOO", ["BIZ", "BANG"]);
+        typeGeneratorPass.returnStatement(
+          typeGeneratorPass.variableExpression("BAR")
+        );
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", ["BIZ", "BANG"]],
+        ["localVariableDefined", "FOO", "BAR"],
+        ["typeForGlobal", "BAR"],
+        ["typeForReturnStatement", "FOO", 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with string return",
+      run: function() {
+        typeGeneratorPass.beginSubroutine("FOO", ["BAR", "BIZ", "BAZ"]);
+        typeGeneratorPass.returnStatement(
+          typeGeneratorPass.stringLiteralExpression("BAR")
+        );
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", ["BAR", "BIZ", "BAZ"]],
+        ["stringType"],
+        ["typeForReturnStatement", "FOO", 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with numeric return",
+      run: function() {
+        typeGeneratorPass.beginSubroutine("FOO", ["BAR"]);
+        typeGeneratorPass.returnStatement(
+          typeGeneratorPass.numericLiteralExpression("700")
+        );
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", ["BAR"]],
+        ["numericType"],
+        ["typeForReturnStatement", "FOO", 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call statement",
+      run: function() {
+        typeGeneratorPass.callSubroutine("FOO", []);
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForCallSubroutine", "FOO", []],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call statement with variable expression",
+      run: function() {
+        typeGeneratorPass.callSubroutine("FOO",
+                                         [typeGeneratorPass.variableExpression("NONE")]
+                                        );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "NONE"],
+        ["typeForCallSubroutine", "FOO", [0]],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call statement with multiple literal parameters",
+      run: function() {
+        typeGeneratorPass.callSubroutine("FOO",
+                                         [
+                                           typeGeneratorPass.numericLiteralExpression("12"),
+                                           typeGeneratorPass.stringLiteralExpression("bar")
+                                         ]
+                                        );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["stringType"],
+        ["typeForCallSubroutine", "FOO", [0, 1]],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call expression",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.callSubroutineExpression("FOO", [])
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForCallSubroutine", "FOO", []],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call expression with variable param",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.callSubroutineExpression("FOO", [
+                                         typeGeneratorPass.variableExpression("BAR")
+                                       ])
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "BAR"],
+        ["typeForCallSubroutine", "FOO", [0]],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 1, 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call expression with two params",
+      run: function() {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.callSubroutineExpression("FOO", [
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.stringLiteralExpression("bar")
+                                       ])
+                                      );
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["stringType"],
+        ["typeForCallSubroutine", "FOO", [0, 1]],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with Call expressions",
+      run: function() {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolNotEqualExpression(
+            typeGeneratorPass.callSubroutineExpression(
+              "PLUSONE",
+              typeGeneratorPass.parenExpression(
+                typeGeneratorPass.callSubroutineExpression(
+                  "PLUSONE",
+                  typeGeneratorPass.numericLiteralExpression("1")
+                ))),
+            typeGeneratorPass.callSubroutineExpression(
+              "PLUSONE",
+              typeGeneratorPass.numericLiteralExpression(2)
+            )));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForCallSubroutine", "PLUSONE", 0],
+        ["typeForCallSubroutine", "PLUSONE", 1],
+        ["numericType"],
+        ["typeForCallSubroutine", "PLUSONE", 3],
+        ["typeForPair", 2, 4],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of multiply, then add",
+      run: function() {
+        typeGeneratorPass.letStatement(
+          "A",
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.numericLiteralExpression("88"),
+            typeGeneratorPass.multiplicationExpression(
+              typeGeneratorPass.numericLiteralExpression("66"),
+              typeGeneratorPass.numericLiteralExpression("77")
+            )));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 1],
+        ["typeForNumericExpression", 2],
+        ["typeForPair", 3, 4],
+        ["typeForPair", 0, 5],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 6, 7],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of divide, then subtract",
+      run: function() {
+        typeGeneratorPass.letStatement(
+          "A",
+          typeGeneratorPass.subtractionExpression(
+            typeGeneratorPass.divisionExpression(
+              typeGeneratorPass.numericLiteralExpression("66"),
+              typeGeneratorPass.numericLiteralExpression("77")
+            ),
+            typeGeneratorPass.numericLiteralExpression("88")
+          ));
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["typeForPair", 2, 3],
+        ["numericType"],
+        ["typeForNumericExpression", 4],
+        ["typeForNumericExpression", 5],
+        ["typeForPair", 6, 7],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 8, 9],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with string comparision",
+      run: function() {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolEqualExpression(
+            typeGeneratorPass.stringLiteralExpression("a"),
+            typeGeneratorPass.variableExpression("SEVEN")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForGlobal", "SEVEN"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with greater than comparision",
+      run: function() {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolGreaterExpression(
+            typeGeneratorPass.variableExpression("Q"),
+            typeGeneratorPass.numericLiteralExpression("77")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "Q"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with less than comparision",
+      run: function() {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolLessExpression(
+            typeGeneratorPass.variableExpression("Q"),
+            typeGeneratorPass.variableExpression("Z")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "Q"],
+        ["typeForGlobal", "Z"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with greater than or equal comparision",
+      run: function() {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolGreaterOrEqualExpression(
+            typeGeneratorPass.variableExpression("Q"),
+            typeGeneratorPass.numericLiteralExpression("77")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["typeForGlobal", "Q"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with less than or equal comparision",
+      run: function() {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolLessOrEqualExpression(
+            typeGeneratorPass.numericLiteralExpression("33"),
+            typeGeneratorPass.numericLiteralExpression("44")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with boolean OR and AND",
+      run: function() {
+        typeGenerator.ifStatement(
+          typeGenerator.boolOrExpression(
+            typeGenerator.boolGreaterExpression(
+              typeGeneratorPass.additionExpression(
+                typeGeneratorPass.numericLiteralExpression("66"),
+                typeGeneratorPass.numericLiteralExpression("77")
+              ),
+              typeGeneratorPass.subtractionExpression(
+                typeGeneratorPass.numericLiteralExpression("66"),
+                typeGeneratorPass.numericLiteralExpression("77")
+              )
+            ),
+            typeGeneratorPass.boolGreaterExpression(
+              typeGeneratorPass.
+
+      },
+      calls: [],
+      errors:[]
     }
-];
+  ];
 
 
   function expectationToTestFunc(expectation) {

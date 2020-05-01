@@ -1,13 +1,16 @@
 function SimpleCallLogger() {
     var callLog = [];
 
-  function loggerWithName(name) {
+  function loggerWithName(name, retval = undefined) {
     return function() {
       var call = [name];
       for (var i=0;i<arguments.length;i++)
         call.push(arguments[i]);
       callLog.push(call);
-      return callLog.length-1;
+      if (retval !== undefined)
+        return retval
+      else
+        return callLog.length-1;
     }
   }
 

@@ -13,7 +13,8 @@ function TypeGeneratorPass(typeManager, logger) {
 
     */
 
-    var currentSub; // Name of the sub we're currently adding code to
+  var currentSub; // Name of the sub we're currently adding code to
+  var sawReturnStatement = false;
 
 /***********************************************************************
   BEGIN Compiler Type Pass statement functions
@@ -54,8 +55,9 @@ function TypeGeneratorPass(typeManager, logger) {
       return true;
     }
 
-    function beginSubroutine(name, args) {
-      if (typeManager.registerSubroutineDefinition(name, args)) {
+  function beginSubroutine(name, args) {
+    sawReturnStatement = false;
+      if (typeManager.registerSubroutineDefinition(name, args) !== null) {
         currentSub = name;
         return true;
       } else {
@@ -68,7 +70,7 @@ function TypeGeneratorPass(typeManager, logger) {
     }
 
     function endSubroutine() {
-      if (!typeManager.subHasReturnType(currentSub)) {
+      if (!sawReturnStatement) {
         if (typeManager.typeForVoidReturnStatement(currentSub) === null) {
           return false;
         }
@@ -77,11 +79,13 @@ function TypeGeneratorPass(typeManager, logger) {
       return true;
     }
 
-    function returnStatement(exp) {
+  function returnStatement(exp) {
+    sawReturnStatement = true;
       return typeManager.typeForReturnStatement(currentSub, exp) !== null;
     }
 
-    function voidReturnStatement() {
+  function voidReturnStatement() {
+    sawReturnStatement = true;
       return typeManager.typeForVoidReturnStatement(currentSub) !== null;
     }
 

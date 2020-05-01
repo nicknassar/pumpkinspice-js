@@ -322,9 +322,6 @@
     function subHasVoidReturnType(sub) {
       return varTypes[returnValueName(sub)] === VOID_TYPE;
     }
-    function subHasReturnType(sub) {
-      return varTypes[returnValueName(sub)] !== undefined;
-    }
 
     function typeForReturnStatement(sub, exp) {
       if (exp === null) {
@@ -420,7 +417,6 @@
       localHasStringType: localHasStringType,
       localHasNumericType: localHasNumericType,
       getSubArgNames: getSubArgNames,
-      subHasReturnType: subHasReturnType,
       subHasStringReturnType: subHasStringReturnType,
       subHasNumericReturnType: subHasNumericReturnType,
       subHasVoidReturnType: subHasVoidReturnType,

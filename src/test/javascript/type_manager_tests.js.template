@@ -245,7 +245,7 @@ function TypeManagerTests(display) {
                "called successfully");
         assert(typeManager.validate(),
                "validates");
-        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasVoidReturnType("RUNME"),
+        assert(typeManager.subHasVoidReturnType("RUNME"),
                "sub has void return");
         assert(!(typeManager.subHasStringReturnType("RUNME") ||
                  typeManager.subHasNumericReturnType("RUNME")),
@@ -269,7 +269,7 @@ function TypeManagerTests(display) {
                "void return type");
         assert(typeManager.validate(),
                "validates");
-        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasStringReturnType("RUNME"),
+        assert(typeManager.subHasStringReturnType("RUNME"),
                "sub has void return");
         assert(!(typeManager.subHasVoidReturnType("RUNME") ||
                  typeManager.subHasNumericReturnType("RUNME")),
@@ -294,7 +294,7 @@ function TypeManagerTests(display) {
                "called")
         assert(typeManager.validate(),
                "validates");
-        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasStringReturnType("RUNME"),
+        assert(typeManager.subHasStringReturnType("RUNME"),
                "sub has string return type");
         assert(!(typeManager.subHasVoidReturnType("RUNME") ||
                  typeManager.subHasNumericReturnType("RUNME")),
@@ -328,7 +328,7 @@ function TypeManagerTests(display) {
                "called")
         assert(typeManager.validate(),
                "validates");
-        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasNumericReturnType("RUNME"),
+        assert(typeManager.subHasNumericReturnType("RUNME"),
                "sub has string return type");
         assert(!(typeManager.subHasVoidReturnType("RUNME") ||
                  typeManager.subHasStringReturnType("RUNME")),
@@ -368,7 +368,7 @@ function TypeManagerTests(display) {
                "called")
         assert(typeManager.validate(),
                "validates");
-        assert(typeManager.subHasReturnType("RUNME") && typeManager.subHasNumericReturnType("RUNME"),
+        assert(typeManager.subHasNumericReturnType("RUNME"),
                "sub has string return type");
         assert(!(typeManager.subHasVoidReturnType("RUNME") ||
                  typeManager.subHasStringReturnType("RUNME")),
@@ -476,9 +476,9 @@ function TypeManagerTests(display) {
                "set A to string type");
         assert(typeManager.validate(),
                "validates");
-        assert(typeManager.subHasReturnType("ONEARG") && typeManager.subHasStringReturnType("ONEARG"),
+        assert(typeManager.subHasStringReturnType("ONEARG"),
                "onearg sub has string return type");
-        assert(typeManager.subHasReturnType("NOARG") && typeManager.subHasStringReturnType("NOARG"),
+        assert(typeManager.subHasStringReturnType("NOARG"),
                "noarg sub has string return type");
         assert(!(typeManager.subHasVoidReturnType("ONEARG") ||
                  typeManager.subHasNumericReturnType("ONEARG")),
