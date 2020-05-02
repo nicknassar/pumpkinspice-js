@@ -56,11 +56,15 @@
       return name;
     };
 
+    function typeMismatch(text = "type mismatch") {
+      logger.error(text);
+      valid = false;
+      return null;
+    }
+
     function typeForGlobal(name) {
       if (subArgNames[name] !== undefined) {
-        logger.error(name+" is alreday defined as a subroutine. It cannot also be a variable");
-        valid = false;
-        return null;
+        return typeMismatch(name+" is alreday defined as a subroutine. It cannot also be a variable");
       }
       if (varTypes[name] === undefined)
         varTypes[name] = [name];
@@ -113,8 +117,7 @@
       // STRING_TYPE or NUMERIC_TYPE, but only sub return values can
       // be VOID_TYPE
       if (type !== STRING_TYPE && type !== NUMERIC_TYPE && type != VOID_TYPE) {
-        logger.error("TYPE SYSTEM ERROR. This is neither text nor a number");
-        valid = false;
+        typeMismatch();
         return false;
       }
       var sameTypeVars = [];
@@ -129,8 +132,7 @@
         } else if (varTypes[variables[i]] !== undefined &&
                    varTypes[variables[i]] !== type) {
           // Maybe display more specific error
-          logger.error("type mismatch");
-          valid = false;
+          typeMismatch();
           return false;
         } else {
           varTypes[variables[i]] = type;
@@ -190,9 +192,7 @@
             return null;
         } else {
           // It's not a match and it's not unknown
-          logger.error("type mismatch");
-          valid = false;
-          return null;
+          return typeMismatch();
         }
       }
 
@@ -215,9 +215,7 @@
         undefineds.push(type2[i]);
       }
       if (undefineds.length === 0) {
-        logger.error("Assigning type to empty expression");
-        valid = false;
-        return null;
+        return typeMismatch("Assigning type to empty expression");
       } else {
         if (!saveUnassignedTypes(undefineds))
           return null;
@@ -289,18 +287,15 @@
       if (subArgCount[name] === undefined)
         subArgCount[name] = args.length;
       if (subArgCount[name] !== args.length) {
-        logger.error("SUBROUTINE "+name+" called with "+subArgCount[name]+" arguments, but defined with "+args.length+" arguments");
-        valid = false;
+        typeMismatch("SUBROUTINE "+name+" called with "+subArgCount[name]+" arguments, but defined with "+args.length+" arguments");
         return false;
       }
       if (varTypes[name] !== undefined) {
-        logger.error(name+" is already defined as a variable. It cannot also be a subroutine");
-        valid = false;
+        typeMismatch(name+" is already defined as a variable. It cannot also be a subroutine");
         return false;
       }
       if (subArgNames[name] !== undefined) {
-        logger.error("SUBROUTINE "+name+" redefined");
-        valid = false;
+        typeMismatch("SUBROUTINE "+name+" redefined");
         return false;
       }
       subArgNames[name] = args;
@@ -327,11 +322,6 @@
       if (exp === null) {
         return null;
       }
-      if (sub === undefined) {
-        logger.error("RETURN OUTSIDE OF SUBROUTINE");
-        valid = false;
-        return null;
-      }
       var retValName=returnValueName(sub);
       if (varTypes[retValName] === undefined) {
         varTypes[retValName] = [retValName];
@@ -352,9 +342,7 @@
           subArgCount[name] = argExps.length;
         }
         if (subArgCount[name] !== argExps.length) {
-          logger.error("SUBROUTINE CALL "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]);
-          valid = false;
-          return null;
+          return typeMismatch("SUBROUTINE CALL "+name+" HAS "+argExps.length+" args but expected "+subArgCount[name]);
         }
         for (var i=0;i<argExps.length;i++) {
           if (argExps[i] === null) {
