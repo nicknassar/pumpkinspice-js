@@ -1,0 +1,48 @@
+function CodeGeneratorPassTests(display) {
+{{testing_display_and_audio.js}}
+{{code_generator_pass.js}}
+{{machine.js}}
+ 
+  // globals reset for each test
+  var machine;
+  var typeManager;
+  var codeGeneratorPass;
+  var io;
+  var display;
+  var audio;
+  var logger;
+
+  var tests = [
+    {
+      description: "single global string",
+      run: function() {
+        assert(codeGeneratorPass.printString("Hello World!", true, false),
+	       "prints Hello World!");
+        assert(codeGeneratorPass.finalize(), "validates");
+	
+	
+        assert(logger.getLog().length === 0,
+               "Errors found: "+logger.getLog().join(", "));
+	machine.go();
+	// XXX check display log
+      }
+    }
+  ];
+
+  function setup() {
+    logger = TestingLogger();
+    typeManager = TypeManager(logger);
+    io = TestingDisplayAndAudio();
+    display = io.display;
+    audio = io.audio;
+    machine = Machine(display, audio, logger);
+    codeGeneratorPass = CodeGeneratorPass(typeManager, machine, logger);
+    // assert setOnAudioComplete and setInputHandler were called
+    io.display.clear();
+  }
+  
+  var tester = BaseTester(display, setup, tests);
+  var assert = tester.assert;
+
+  return tester;
+}

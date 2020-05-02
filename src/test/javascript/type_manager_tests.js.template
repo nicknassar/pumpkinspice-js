@@ -1,6 +1,4 @@
 function TypeManagerTests(display) {
-  {{type_manager.js}}
-
   // globals reset for each test
   var typeManager;
   var logger;

@@ -8,6 +8,7 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
 {{legacy.js}}
 {{global_utilities.js}}
 {{display.js}}
+{{type_manager.js}}
 {{base_tester.js}}
 {{matching_tester.js}}
 {{simple_call_logger.js}}
@@ -15,6 +16,7 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
 {{parser_tests.js.template}}
 {{type_manager_tests.js.template}}
 {{type_generator_pass_tests.js.template}}
+{{code_generator_pass_tests.js.template}}
 {{testing_logger.js}}
 
   var successCount = 0;
@@ -27,7 +29,8 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
   var testSuites = [
     ParserTests(display),
     TypeManagerTests(display),
-    TypeGeneratorPassTests(display)
+    TypeGeneratorPassTests(display),
+    CodeGeneratorPassTests(display)
   ];
 
   for (var i=0;i<testSuites.length;i++) {
