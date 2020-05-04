@@ -21,10 +21,10 @@ function SimpleCallLogger() {
   function clear() {
     callLog = [];
   }
-  
+
   return {
     loggerWithName: loggerWithName,
     getLog: getLog,
-    clear: clear  
+    clear: clear
   };
 }

@@ -28,6 +28,6 @@ function TestingDisplayAndAudio() {
 
       getLog: callLogger.getLog,
       clear: callLogger.clear
-    }    
+    }
   };
 }

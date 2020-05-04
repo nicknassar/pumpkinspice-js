@@ -2,7 +2,7 @@ function CodeGeneratorPassTests(display) {
 {{testing_display_and_audio.js}}
 {{code_generator_pass.js}}
 {{machine.js}}
- 
+
   // globals reset for each test
   var machine;
   var typeManager;
@@ -12,20 +12,96 @@ function CodeGeneratorPassTests(display) {
   var audio;
   var logger;
 
-  var tests = [
+  var expectations = [
     {
       description: "single global string",
       run: function() {
         assert(codeGeneratorPass.printString("Hello World!", true, false),
 	       "prints Hello World!");
         assert(codeGeneratorPass.finalize(), "validates");
-	
-	
-        assert(logger.getLog().length === 0,
-               "Errors found: "+logger.getLog().join(", "));
+
 	machine.go();
-	// XXX check display log
-      }
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "Hello World!\n"],
+        ["sendQuietBlockElementUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      // TOTAL = 0
+      // FOR N = 2-1 TO 10*1
+      //   TOTAL = TOTAL + N
+      // NEXT N
+
+      description: "for loop",
+      run: function() {
+        assert(
+          typeManager.typeForNumericExpression(
+            typeManager.typeForGlobal("TOTAL")
+          ) !== null,
+          "set total type"
+        );
+        assert(
+          typeManager.typeForNumericExpression(
+            typeManager.typeForGlobal("N")
+          ) !== null,
+          "set N type"
+        );
+        assert(
+          codeGeneratorPass.letStatement(
+            "TOTAL",
+            codeGeneratorPass.numericLiteralExpression("0")
+          ),
+	  "set total to zero"
+        );
+        assert(
+          codeGeneratorPass.forStatement(
+            "N",
+            codeGeneratorPass.subtractionExpression(
+              codeGeneratorPass.numericLiteralExpression("2"),
+              codeGeneratorPass.numericLiteralExpression("1")
+            ),
+            codeGeneratorPass.multiplicationExpression(
+              codeGeneratorPass.numericLiteralExpression("10"),
+              codeGeneratorPass.numericLiteralExpression("1")
+            )
+          ),
+          "for"
+        );
+        assert(
+          codeGeneratorPass.letStatement(
+            "TOTAL",
+            codeGeneratorPass.additionExpression(
+              codeGeneratorPass.variableExpression("TOTAL"),
+              codeGeneratorPass.variableExpression("N")
+            )
+          ),
+          "assignment"
+        );
+        assert(codeGeneratorPass.next("N"), "next");
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.variableExpression("TOTAL")
+            ),
+            false,
+            false
+          )
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+	machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "55"],
+        ["sendQuietBlockElementUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: []
     }
   ];
 
@@ -40,9 +116,25 @@ function CodeGeneratorPassTests(display) {
     // assert setOnAudioComplete and setInputHandler were called
     io.display.clear();
   }
-  
-  var tester = BaseTester(display, setup, tests);
-  var assert = tester.assert;
 
+  function expectationToTestFunc(expectation) {
+    return expectation.run;
+  }
+
+  function expectationText(expectation) {
+    return expectation.run.toString();
+  }
+
+  function getCallLog() {
+    return display.getLog();
+  }
+
+  function getErrorLog() {
+    return logger.getLog();
+  }
+
+
+  var tester = MatchingTester(display, setup, expectations, expectationToTestFunc, expectationText, getCallLog, getErrorLog);
+  var assert = tester.assert;
   return tester;
 }
