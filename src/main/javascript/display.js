@@ -76,7 +76,8 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
   }
 
   function sendUpdates() {
-    if (pendingUpdates.length == 0) {
+    var quietNodes = quietBlockElement.childNodes;
+    if (pendingUpdates.length === 0 && quietNodes.length === 0) {
       return;
     }
 
@@ -89,9 +90,9 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
     }
 
     // Read the quietBlockElement nodes
-    oldNodes = quietBlockElement.childNodes;
-    while (oldNodes.length > 0) {
-      var node = oldNodes.item(0);
+
+    while (quietNodes.length > 0) {
+      var node = quietNodes.item(0);
       quietBlockElement.removeChild(node);
       latestBlockElement.appendChild(node);
     }
