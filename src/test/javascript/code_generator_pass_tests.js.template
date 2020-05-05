@@ -102,6 +102,172 @@ function CodeGeneratorPassTests(display) {
         ["sendUpdates"]
       ],
       errors: []
+    },
+    {
+      // TOTAL = 55
+      // STOTAL = "!"
+      // WHILE TOTAL > 0
+      //   FOR N = 1 TO 11
+      //     TOTAL = TOTAL-1
+      //   NEXT N
+      //   STOTAL = "B"+STOTAL
+      // WEND
+      // PRINT STOTAL
+
+      description: "for loop",
+      run: function() {
+        assert(
+          typeManager.typeForNumericExpression(
+            typeManager.typeForGlobal("TOTAL")
+          ) !== null,
+          "set total type"
+        );
+        assert(
+          typeManager.typeForStringExpression(
+            typeManager.typeForGlobal("STOTAL")
+          ) !== null,
+          "set stotal type"
+        );
+        assert(
+          typeManager.typeForNumericExpression(
+            typeManager.typeForGlobal("N")
+          ) !== null,
+          "set N type"
+        );
+        assert(
+          codeGeneratorPass.letStatement(
+            "TOTAL",
+            codeGeneratorPass.numericLiteralExpression("55")
+          ),
+	  "set total to fifty-five"
+        );
+        assert(
+          codeGeneratorPass.letStatement(
+            "STOTAL",
+            codeGeneratorPass.stringLiteralExpression("!")
+          ),
+	  "set stotal to band"
+        );
+        assert(
+          codeGeneratorPass.whileStatement(
+            codeGeneratorPass.boolGreaterExpression(
+              codeGeneratorPass.variableExpression("TOTAL"),
+              codeGeneratorPass.numericLiteralExpression("0")
+            )
+          ),
+          "while"
+        );
+
+        assert(
+          codeGeneratorPass.forStatement(
+            "N",
+            codeGeneratorPass.numericLiteralExpression("1"),
+            codeGeneratorPass.numericLiteralExpression("11")
+          ),
+          "for"
+        );
+        assert(
+          codeGeneratorPass.letStatement(
+            "TOTAL",
+            codeGeneratorPass.subtractionExpression(
+              codeGeneratorPass.variableExpression("TOTAL"),
+              codeGeneratorPass.numericLiteralExpression("1")
+            )
+          ),
+          "assignment"
+        );
+        assert(codeGeneratorPass.next("N"), "next");
+        assert(
+          codeGeneratorPass.letStatement(
+            "STOTAL",
+            codeGeneratorPass.additionExpression(
+              codeGeneratorPass.stringLiteralExpression("B"),
+              codeGeneratorPass.variableExpression("STOTAL")
+            )
+          ),
+          "assign stotal"
+        );
+        assert(codeGeneratorPass.endWhile());
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.variableExpression("STOTAL"),
+            false,
+            false
+          )
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+	machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "BBBBB!"],
+        ["sendQuietBlockElementUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      // STOTAL = "BBBBB!"
+      // IF STOTAL != "BBBBB!"
+      //   PRINT "if"
+      // ELSE
+      //   PRINT "else"
+      // END IF
+
+      description: "if else",
+      run: function() {
+        assert(
+          typeManager.typeForStringExpression(
+            typeManager.typeForGlobal("STOTAL")
+          ) !== null,
+          "set stotal type"
+        );
+        assert(
+          codeGeneratorPass.letStatement(
+            "STOTAL",
+            codeGeneratorPass.stringLiteralExpression("BBBBB!")
+          ),
+          "set sttotal"
+        );
+        assert(
+          codeGeneratorPass.ifStatement(
+            codeGeneratorPass.boolNotEqualExpression(
+              codeGeneratorPass.variableExpression("STOTAL"),
+              codeGeneratorPass.stringLiteralExpression("BBBBB!")
+            )
+          ),
+          "if"
+        );
+        assert(
+          codeGeneratorPass.printString(
+            "if",
+            false,
+            false
+          ),
+          "print that should never run"
+        );
+        assert(codeGeneratorPass.elseStatement());
+        assert(
+          codeGeneratorPass.printString(
+            "else",
+            false,
+            false
+          ),
+          "print that should never run"
+        );
+        assert(codeGeneratorPass.endIf());
+        assert(codeGeneratorPass.finalize(), "validates");
+
+	machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "else"],
+        ["sendQuietBlockElementUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: []
     }
   ];
 
