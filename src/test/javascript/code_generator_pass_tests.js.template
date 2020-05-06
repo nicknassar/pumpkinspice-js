@@ -25,7 +25,6 @@ function CodeGeneratorPassTests(display) {
       calls: [
         ["sendUpdates"],
         ["print", "Hello World!\n"],
-        ["sendQuietBlockElementUpdates"],
         ["sendUpdates"]
       ],
       errors: []
@@ -98,7 +97,6 @@ function CodeGeneratorPassTests(display) {
       calls: [
         ["sendUpdates"],
         ["print", "55"],
-        ["sendQuietBlockElementUpdates"],
         ["sendUpdates"]
       ],
       errors: []
@@ -202,7 +200,6 @@ function CodeGeneratorPassTests(display) {
       calls: [
         ["sendUpdates"],
         ["print", "BBBBB!"],
-        ["sendQuietBlockElementUpdates"],
         ["sendUpdates"]
       ],
       errors: []
@@ -264,7 +261,222 @@ function CodeGeneratorPassTests(display) {
       calls: [
         ["sendUpdates"],
         ["print", "else"],
-        ["sendQuietBlockElementUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "CINT positive",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.cintBuiltinExpression(
+                codeGeneratorPass.numericLiteralExpression("1.5")
+              )
+            ),
+            false,
+            false
+          ),
+          "print");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "2"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "CINT negative",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.cintBuiltinExpression(
+                codeGeneratorPass.numericLiteralExpression("-1.5")
+              )
+            ),
+            false,
+            false
+          ),
+          "print");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "-1"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "INT positive",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.intBuiltinExpression(
+                codeGeneratorPass.numericLiteralExpression("1.5")
+              )
+            ),
+            false,
+            false
+          ),
+          "print");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "1"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "INT negative",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.intBuiltinExpression(
+                codeGeneratorPass.numericLiteralExpression("-1.5")
+              )
+            ),
+            false,
+            false
+          ),
+          "print");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "-2"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "FIX positive",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.fixBuiltinExpression(
+                codeGeneratorPass.numericLiteralExpression("1.5")
+              )
+            ),
+            false,
+            false
+          ),
+          "print");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "1"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "FIX negative",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.fixBuiltinExpression(
+                codeGeneratorPass.numericLiteralExpression("-1.5")
+              )
+            ),
+            false,
+            false
+          ),
+          "print");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "-1"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "PI",
+      run: function() {
+        assert(
+          codeGeneratorPass.ifStatement(
+            codeGeneratorPass.boolGreaterExpression(
+              codeGeneratorPass.absBuiltinExpression(
+                codeGeneratorPass.subtractionExpression(
+                  codeGeneratorPass.numericLiteralExpression("3.14159"),
+                  codeGeneratorPass.piBuiltinExpression()
+                )
+              ),
+              codeGeneratorPass.numericLiteralExpression("0.001")
+            )
+          ),
+          "if statement");
+        assert(codeGeneratorPass.printString("bad", false, false));
+        assert(codeGeneratorPass.endIf());
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "ABS",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.absBuiltinExpression(
+                codeGeneratorPass.numericLiteralExpression("-1")
+              )
+            ),
+            true,
+            false
+          ),
+          "print abs of negative"
+        );
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.absBuiltinExpression(
+                codeGeneratorPass.numericLiteralExpression("1")
+              )
+            ),
+            true,
+            false
+          ),
+          "print abs of posititive"
+        );
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "1\n"],
+        ["print", "1\n"],
         ["sendUpdates"]
       ],
       errors: []

@@ -132,9 +132,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
         });
       } else {
         pushInstruction(function(){
-          if (machine.print(text))
-            // Give up the CPU to allow display
-            machine.setInterruptDelay(0);
+          machine.print(text);
           machine.advance();
         });
       }
@@ -156,9 +154,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
         });
       } else {
         pushInstruction(function(){
-          if (machine.print(text()))
-            // Give up the CPU to allow display
-            machine.setInterruptDelay(0);
+          machine.print(text());
           machine.advance();
         });
       }

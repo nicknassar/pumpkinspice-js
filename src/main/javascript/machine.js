@@ -141,9 +141,6 @@ function go() {
       display.sendQuietBlockElementUpdates();
       // flag 1 is wait for music
 
-    } else if (interruptDelay === 0) {
-      window.setTimeout(go,0);
-      display.sendQuietBlockElementUpdates();
     } else {
       window.setTimeout(go,interruptDelay);
       display.sendQuietBlockElementUpdates();
@@ -155,7 +152,7 @@ function go() {
   }
 
   // The program ended
-  if (callstack.length == 0)
+  if (callstack.length === 0)
     display.sendUpdates();
 }
 
