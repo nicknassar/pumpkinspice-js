@@ -470,6 +470,7 @@ function CodeGeneratorPassTests(display) {
           ),
           "print abs of posititive"
         );
+        assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
       },
@@ -480,7 +481,260 @@ function CodeGeneratorPassTests(display) {
         ["sendUpdates"]
       ],
       errors: []
-    }
+    },
+    {
+      description: "leftz",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.leftzBuiltinExpression(
+              codeGeneratorPass.stringLiteralExpression("goodandbad"),
+              codeGeneratorPass.numericLiteralExpression("4")
+            ),
+            false,
+            false
+          ),
+          "print the expression"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "good"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "rightz",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.rightzBuiltinExpression(
+              codeGeneratorPass.stringLiteralExpression("notsogood"),
+              codeGeneratorPass.numericLiteralExpression("4")
+            ),
+            false,
+            false
+          ),
+          "print the expression"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "good"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "len",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.lenBuiltinExpression(
+                codeGeneratorPass.stringLiteralExpression("countme")
+              )
+            ),
+            false,
+            false
+          ),
+          "print the expression"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "7"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "strz",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.numericLiteralExpression("-0.7")
+            ),
+            false,
+            false
+          ),
+          "print the expression"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "-0.7"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "val",
+      run: function() {
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.additionExpression(
+                codeGeneratorPass.valBuiltinExpression(
+                  codeGeneratorPass.stringLiteralExpression("700")
+                ),
+                codeGeneratorPass.numericLiteralExpression("7")
+              )
+            ),
+            false,
+            false
+          ),
+          "print the expression"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "707"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "random expression",
+      run: function() {
+        for (var n=1;n<=8;n++) {
+          assert(
+            typeManager.typeForNumericExpression(
+              typeManager.typeForGlobal("TESTR"+n.toString())
+            ) !== null,
+            "set testr"+n.toString()+" to numeric"
+          );
+        }
+        assert(
+          typeManager.typeForNumericExpression(
+            typeManager.typeForGlobal("TESTVAL")
+          ) !== null,
+          "set testval to numeric"
+        );
+        assert(
+          codeGeneratorPass.forStatement(
+            "N",
+            codeGeneratorPass.numericLiteralExpression("1"),
+            codeGeneratorPass.numericLiteralExpression("1000000")
+          ),
+          "for statement"
+        );
+        assert(
+          codeGeneratorPass.letStatement(
+            "TESTVAL",
+            codeGeneratorPass.randomBuiltinExpression(
+              codeGeneratorPass.numericLiteralExpression("1"),
+              codeGeneratorPass.numericLiteralExpression("8")
+            )
+          ),
+          "set random variable"
+        );
+        for (var n=1;n<=8;n++) {
+          assert(
+            codeGeneratorPass.ifStatement(
+              codeGeneratorPass.boolEqualExpression(
+                codeGeneratorPass.variableExpression("TESTVAL"),
+                codeGeneratorPass.numericLiteralExpression(n.toString())
+              )
+            ),
+            "if testval = "+n.toString()
+          );
+          assert(
+            codeGeneratorPass.letStatement(
+              "TESTR"+n.toString(),
+              codeGeneratorPass.additionExpression(
+                codeGeneratorPass.variableExpression("TESTR"+n.toString()),
+                codeGeneratorPass.numericLiteralExpression("1")
+              )
+            ),
+            "increment counter");
+          assert(
+            codeGeneratorPass.endIf(),
+            "end if"
+          );
+        }
+        assert(codeGeneratorPass.next("N"), "next");
+        for (var n=1;n<=8;n++) {
+          assert(
+            codeGeneratorPass.ifStatement(
+              codeGeneratorPass.boolEqualExpression(
+                codeGeneratorPass.variableExpression("TESTR"+n.toString()),
+                codeGeneratorPass.numericLiteralExpression("0")
+              )
+            ),
+            "if testr"+n.toString()+" is 0"
+          );
+          assert(
+            codeGeneratorPass.printString("TESTR"+n.toString()+" never hit!", true, false),
+            "print fail"
+          );
+          assert(
+            codeGeneratorPass.endIf(),
+            "end if"
+          );
+
+        }
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.additionExpression(
+                codeGeneratorPass.additionExpression(
+                  codeGeneratorPass.additionExpression(
+                    codeGeneratorPass.additionExpression(
+                      codeGeneratorPass.additionExpression(
+                        codeGeneratorPass.additionExpression(
+                          codeGeneratorPass.additionExpression(
+                            codeGeneratorPass.variableExpression("TESTR7"),
+                            codeGeneratorPass.variableExpression("TESTR8")
+                          ),
+                          codeGeneratorPass.variableExpression("TESTR6")
+                        ),
+                        codeGeneratorPass.variableExpression("TESTR5")
+                      ),
+                      codeGeneratorPass.variableExpression("TESTR4")
+                    ),
+                    codeGeneratorPass.variableExpression("TESTR3")
+                  ),
+                  codeGeneratorPass.variableExpression("TESTR2")
+                ),
+                codeGeneratorPass.variableExpression("TESTR1")
+              )
+            )
+          ),
+          "print sum"
+        );
+
+
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+
+      calls: [
+        ["sendUpdates"],
+        ["print", "1000000"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+
   ];
 
   function setup() {
