@@ -989,6 +989,315 @@ function CodeGeneratorPassTests(display) {
         ["sendUpdates"]
       ],
       errors: []
+    },
+    {
+      description: "call subroutine with single arg",
+      run: function() {
+        assert(codeGeneratorPass.beginSubroutine("FOO", []),
+               "begin sub");
+        assert(codeGeneratorPass.printString("success", false, false),
+               "print");
+        assert(codeGeneratorPass.endSubroutine(),
+               "end sub");
+        assert(codeGeneratorPass.callSubroutine("FOO", []),
+               "call sub");
+
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "success"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "call subroutine with two args",
+      run: function() {
+        assert(typeManager.registerSubroutineDefinition("FOO", ["BAR", "BAZ"]),
+               "register sub");
+        assert(
+          typeManager.typeForCallSubroutine(
+            "FOO",
+            [
+              typeManager.stringType(),
+              typeManager.numericType()
+            ]
+          ) !== null,
+          "register args"
+        );
+        assert(codeGeneratorPass.beginSubroutine("FOO", ["BAR", "BAZ"]),
+               "begin sub");
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.variableExpression("BAR"),
+            false,
+            false
+          ),
+          "print string"
+        );
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+              codeGeneratorPass.additionExpression(
+                codeGeneratorPass.variableExpression("BAZ"),
+                codeGeneratorPass.numericLiteralExpression("1")
+              )
+            ),
+            false,
+            false
+          ),
+          "print number");
+        assert(codeGeneratorPass.endSubroutine(),
+               "end sub");
+        assert(codeGeneratorPass.callSubroutine("FOO", [
+          codeGeneratorPass.stringLiteralExpression("win"),
+          codeGeneratorPass.numericLiteralExpression("99")
+        ]),
+               "call sub");
+
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "win"],
+        ["print", "100"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "call subroutine expression with two args",
+      run: function() {
+        assert(typeManager.registerSubroutineDefinition("FOO", ["BAR", "BAZ"]),
+               "register sub");
+        assert(
+          typeManager.typeForCallSubroutine(
+            "FOO",
+            [
+              typeManager.stringType(),
+              typeManager.numericType()
+            ]
+          ) !== null,
+          "register args"
+        );
+        assert(typeManager.typeForReturnStatement("FOO", typeManager.stringType()) !== null,
+               "register return type");
+        assert(codeGeneratorPass.beginSubroutine("FOO", ["BAR", "BAZ"]),
+               "begin sub");
+        assert(
+          codeGeneratorPass.returnStatement(
+            codeGeneratorPass.additionExpression(
+              codeGeneratorPass.variableExpression("BAR"),
+              codeGeneratorPass.strzBuiltinExpression(
+                codeGeneratorPass.additionExpression(
+                  codeGeneratorPass.variableExpression("BAZ"),
+                  codeGeneratorPass.numericLiteralExpression("1")
+                )
+              )
+            )
+          ),
+          "return result");
+        assert(codeGeneratorPass.endSubroutine(),
+               "end sub");
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.callSubroutineExpression(
+              "FOO",
+              [
+                codeGeneratorPass.stringLiteralExpression("win"),
+                codeGeneratorPass.numericLiteralExpression("99")
+              ]
+            ),
+            false,
+            false
+          ),
+          "call sub and print result"
+        );
+
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "win100"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "recursive call subroutine expression",
+      run: function() {
+        assert(typeManager.registerSubroutineDefinition("FOO", ["BAR", "TOTAL"]),
+               "register sub");
+        assert(
+          typeManager.typeForCallSubroutine(
+            "FOO",
+            [typeManager.numericType(),
+             typeManager.numericType()
+            ]
+          ) !== null,
+          "register args"
+        );
+        assert(typeManager.typeForReturnStatement("FOO", typeManager.numericType()) !== null,
+               "register return type");
+        assert(codeGeneratorPass.beginSubroutine("FOO", ["BAR", "TOTAL"]),
+               "begin sub");
+        assert(
+          codeGeneratorPass.ifStatement(
+            codeGeneratorPass.boolGreaterExpression(
+              codeGeneratorPass.variableExpression("BAR"),
+              codeGeneratorPass.numericLiteralExpression("0")
+            )
+          ),
+          "if"
+        );
+        assert(
+          codeGeneratorPass.returnStatement(
+            codeGeneratorPass.callSubroutineExpression(
+              "FOO",
+              [codeGeneratorPass.subtractionExpression(
+                codeGeneratorPass.variableExpression("BAR"),
+                codeGeneratorPass.numericLiteralExpression("1")),
+
+               codeGeneratorPass.additionExpression(
+                 codeGeneratorPass.variableExpression("TOTAL"),
+                 codeGeneratorPass.variableExpression("BAR"))
+              ]
+            )
+          ),
+          "recursive call"
+        );
+        assert(
+          codeGeneratorPass.elseStatement(),
+          "else");
+        assert(
+          codeGeneratorPass.returnStatement(
+            codeGeneratorPass.variableExpression("TOTAL")
+          ),
+          "base, non-recursive return"
+        );
+        assert(codeGeneratorPass.endIf(), "end the if");
+
+        assert(codeGeneratorPass.endSubroutine(),
+               "end sub");
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+            codeGeneratorPass.callSubroutineExpression(
+              "FOO",
+              [
+                codeGeneratorPass.numericLiteralExpression("14"),
+                codeGeneratorPass.numericLiteralExpression("0")
+              ]
+            ),
+            false,
+            false
+            )
+          ),
+          "call sub and print result"
+        );
+
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "105"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "recursive call subroutine expression errors - too deep",
+      run: function() {
+        assert(typeManager.registerSubroutineDefinition("FOO", ["BAR", "TOTAL"]),
+               "register sub");
+        assert(
+          typeManager.typeForCallSubroutine(
+            "FOO",
+            [typeManager.numericType(),
+             typeManager.numericType()
+            ]
+          ) !== null,
+          "register args"
+        );
+        assert(typeManager.typeForReturnStatement("FOO", typeManager.numericType()) !== null,
+               "register return type");
+        assert(codeGeneratorPass.beginSubroutine("FOO", ["BAR", "TOTAL"]),
+               "begin sub");
+        assert(
+          codeGeneratorPass.ifStatement(
+            codeGeneratorPass.boolGreaterExpression(
+              codeGeneratorPass.variableExpression("BAR"),
+              codeGeneratorPass.numericLiteralExpression("0")
+            )
+          ),
+          "if"
+        );
+        assert(
+          codeGeneratorPass.returnStatement(
+            codeGeneratorPass.callSubroutineExpression(
+              "FOO",
+              [codeGeneratorPass.subtractionExpression(
+                codeGeneratorPass.variableExpression("BAR"),
+                codeGeneratorPass.numericLiteralExpression("1")),
+
+               codeGeneratorPass.additionExpression(
+                 codeGeneratorPass.variableExpression("TOTAL"),
+                 codeGeneratorPass.variableExpression("BAR"))
+              ]
+            )
+          ),
+          "recursive call"
+        );
+        assert(
+          codeGeneratorPass.elseStatement(),
+          "else");
+        assert(
+          codeGeneratorPass.returnStatement(
+            codeGeneratorPass.variableExpression("TOTAL")
+          ),
+          "base, non-recursive return"
+        );
+        assert(codeGeneratorPass.endIf(), "end the if");
+
+        assert(codeGeneratorPass.endSubroutine(),
+               "end sub");
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.strzBuiltinExpression(
+            codeGeneratorPass.callSubroutineExpression(
+              "FOO",
+              [
+                codeGeneratorPass.numericLiteralExpression("15"),
+                codeGeneratorPass.numericLiteralExpression("0")
+              ]
+            ),
+            false,
+            false
+            )
+          ),
+          "call sub and print result"
+        );
+        logger.setLineNumber(1);
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: [
+        [1, "stack overflow"]
+      ]
     }
   ];
 

@@ -967,7 +967,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
 ***********************************************************************/
       // generate expressions
       // Returns an EXPRESSION token or null
-      // XXX Fail if types are incorrect in every case
 
       // expression result types
       var NUMERIC_TYPE={};
@@ -1014,7 +1013,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
       }
 
       function randomBuiltinExpression(l,h){
-        // XXX make constant
         // Hack to find name of variable, so optimizers can do their work
         /** @suppress {uselessCode} */
         var rndname = (function(){machine.random}).toString();
