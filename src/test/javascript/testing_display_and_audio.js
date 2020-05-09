@@ -18,7 +18,7 @@ function TestingDisplayAndAudio() {
       setBGColor: loggerWithName("setBGColor"),
 
       getLog: callLogger.getLog,
-      clear: callLogger.clear
+      clearLog: callLogger.clearLog
     },
     audio: {
       setOnAudioComplete: loggerWithName("setOnAudioComplete"),
@@ -27,7 +27,7 @@ function TestingDisplayAndAudio() {
       go: loggerWithName("go"),
 
       getLog: callLogger.getLog,
-      clear: callLogger.clear
+      clearLog: callLogger.clearLog
     }
   };
 }

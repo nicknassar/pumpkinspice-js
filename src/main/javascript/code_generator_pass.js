@@ -924,8 +924,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
       pushInstruction(function(){
         machine.clear();
         machine.advance();
-        // Give up the CPU to allow display
-        machine.setInterruptDelay(0);
       });
       return true;
     }

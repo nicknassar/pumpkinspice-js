@@ -18,13 +18,13 @@ function SimpleCallLogger() {
     return callLog;
   }
 
-  function clear() {
+  function clearLog() {
     callLog = [];
   }
 
   return {
     loggerWithName: loggerWithName,
     getLog: getLog,
-    clear: clear
+    clearLog: clearLog
   };
 }

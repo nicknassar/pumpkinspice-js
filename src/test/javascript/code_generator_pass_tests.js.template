@@ -1298,6 +1298,54 @@ function CodeGeneratorPassTests(display) {
       errors: [
         [1, "stack overflow"]
       ]
+    },
+    {
+      description: "color, bgcolor, clear",
+      run: function() {
+        assert(
+          codeGeneratorPass.color(codeGeneratorPass.numericLiteralExpression("7")),
+          "color seven"
+        );
+        assert(
+          codeGeneratorPass.bgColor(codeGeneratorPass.numericLiteralExpression("0")),
+          "background color zero"
+        );
+        assert(
+          codeGeneratorPass.clear(),
+          "reset screen"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["setColor", 7],
+        ["setBGColor", 0],
+        ["clear"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "play",
+      run: function() {
+        assert(
+          codeGeneratorPass.play(
+            codeGeneratorPass.stringLiteralExpression("ABC")
+          ),
+          "playsomenotes"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["play", "ABC"],
+        ["sendUpdates"]
+      ],
+      errors: []
     }
   ];
 
@@ -1310,7 +1358,7 @@ function CodeGeneratorPassTests(display) {
     machine = Machine(display, audio, logger);
     codeGeneratorPass = CodeGeneratorPass(typeManager, machine, logger);
     // assert setOnAudioComplete and setInputHandler were called
-    io.display.clear();
+    io.display.clearLog();
   }
 
   function expectationToTestFunc(expectation) {
