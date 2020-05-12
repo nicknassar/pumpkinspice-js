@@ -33,20 +33,39 @@ function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, in
     CodeGeneratorPassTests(display)
   ];
 
-  for (var i=0;i<testSuites.length;i++) {
+  function onComplete(i) {
     var testSuite = testSuites[i];
-    testSuite.run();
+    // Tally the results
     successCount += testSuite.getSuccessCount();
     errorCount += testSuite.getErrorCount();
+
+    // Run the next one
+    if (i+1<testSuites.length) {
+      i++;
+      testSuite = testSuites[i];
+      testSuite.run(function(){
+        onComplete(i);
+      });
+
+    // That was the last one, display the summary
+    } else {
+      if (errorCount === 0)
+        display.setColor(2);
+      else
+        display.setColor(4);
+      display.print((successCount+errorCount)+" tests run\n");
+      display.print(errorCount+" errors\n");
+      display.setColor(7);
+      display.sendUpdates();
+    }
   }
 
-  if (errorCount === 0)
-    display.setColor(2);
-  else
-    display.setColor(4);
-  display.print((successCount+errorCount)+" tests run\n");
-  display.print(errorCount+" errors\n");
-  display.setColor(7);
-  display.sendUpdates();
+  // Run the first test suite
+  if (testSuites.length > 0) {
+    testSuites[0].run(function(){
+      onComplete(0);
+    });
+  }
+
 }
 {{initialize_tests.js}}

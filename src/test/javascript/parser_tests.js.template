@@ -1921,10 +1921,11 @@ function ParserTests(display) {
   ];
 
   function expectationToTestFunc(expectation) {
-    return function() {
+    return function(onComplete) {
       // prepend a newline so line numbers match correctly- the parser
       // assumes it's embeeded in a <script> tag
       compiler.compile("\n"+expectation.code);
+      onComplete();
     };
   }
 

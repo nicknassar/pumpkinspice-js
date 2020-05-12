@@ -9,9 +9,11 @@ function MatchingTester(display, setup, expectations, expectationToTestFunc, exp
         description: expectations[i].description,
         run: (function(expectation) {
           var test = expectationToTestFunc(expectation);
-          return function() {
-            test();
-            checkResults(expectation, getCallLog(), getErrorLog());
+          return function(onComplete) {
+            test(function() {
+              checkResults(expectation, getCallLog(), getErrorLog());
+              onComplete();
+            });
           };
         })(expectations[i])
       });

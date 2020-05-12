@@ -1,11 +1,36 @@
 function TestingDisplayAndAudio() {
   var callLogger = SimpleCallLogger();
   var loggerWithName = callLogger.loggerWithName;
+  var inputValue = "";
+  var inputHandlerLogger = loggerWithName("setInputHandler");
+  var inputHandler =  function(){};
+
+  var getInputValueLogger = loggerWithName("getInputValue");
+
+
+  function setInputHandler(f) {
+    inputHandlerLogger(f);
+    inputHandler = f;
+  }
+
+  function getInputValue() {
+    getInputValueLogger();
+    return inputValue;
+  }
+
+  function setInputAndRunHandler(input, onComplete) {
+    inputValue = input;
+    window.setTimeout(function() {
+      inputHandler();
+      onComplete();
+    }, 0);
+  }
 
   return {
     display: {
-      getInputValue: loggerWithName("getInputValue"),
-      setInputHandler: loggerWithName("setInputHandler"),
+      _setInputAndRunHandler: setInputAndRunHandler,
+      getInputValue: getInputValue,
+      setInputHandler: setInputHandler,
       sendQuietBlockElementUpdates: loggerWithName("sendQuietBlockElementUpdates"),
       sendUpdates: loggerWithName("sendUpdates"),
       clear: loggerWithName("clear"),

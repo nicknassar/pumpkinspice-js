@@ -1,6 +1,7 @@
 function BaseTester(display, setup, tests) {
   var successCount = 0;
   var errorCount = 0;
+  var onComplete;
 
   // Failures for the CURRENT test
   var description = "";
@@ -41,24 +42,41 @@ function BaseTester(display, setup, tests) {
     display.print("\" failed\n");
   }
 
-  function check(test) {
-    failures = [];
-
-    description = test.description;
-    test.run();
+  function testComplete(i) {
     if (failures.length > 0) {
       errorCount++;
     } else {
       successCount++;
     }
+    if (tests.length > i+1) {
+      setup();
+      check(i+1);
+    } else {
+      display.sendUpdates();
+      onComplete();
+    }
   }
 
-  function run() {
-    for (var i=0;i<tests.length;i++) {
-      setup();
-      check(tests[i]);
+  function check(i) {
+    var test = tests[i];
+    failures = [];
+
+    description = test.description;
+    test.run(function() {
+      testComplete(i);
     }
-    display.sendUpdates();
+    );
+  }
+
+  function run(onCompleteFunc) {
+    onComplete = onCompleteFunc;
+    if (tests.length > 0) {
+      setup();
+      check(0);
+    } else {
+      display.sendUpdates();
+      onComplete();
+    }
   }
 
   return {

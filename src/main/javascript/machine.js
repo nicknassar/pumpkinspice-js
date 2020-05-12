@@ -14,9 +14,6 @@ function Machine(display, audio, logger) {
     }
     if (e)
       e.preventDefault();
-
-    // Scroll to the input
-    display.scroll();
   });
 
   // END Initialize integration between components
@@ -63,6 +60,7 @@ function Machine(display, audio, logger) {
   // name of variable to input into
   var inputVariable = null;
   var waitFlags = 0;
+  var halted = false;
 
   function onAudioComplete() {
     // If we're waiting for the music and it's done, it's time to go
@@ -79,9 +77,10 @@ function Machine(display, audio, logger) {
     display.print(value);
     vars[inputVariable] = value;
     inputVariable = null;
-    window.setTimeout(go,0);
     display.print("\n");
     display.clearMenu();
+    display.scroll();
+    go();
   }
 
   function nextInstruction(sub) {
@@ -149,11 +148,14 @@ function go() {
   } else if (callstack.length>0) {
     logger.error("STACK OVERFLOW. Too many subroutines calling subroutines!");
     display.sendUpdates();
+    halted = true;
   }
 
   // The program ended
-  if (callstack.length === 0)
+  if (callstack.length === 0) {
     display.sendUpdates();
+    halted = true;
+  }
 }
 
 
@@ -227,6 +229,10 @@ function go() {
     setColor: display.setColor,
     setBGColor: display.setBGColor,
     clear: display.clear,
+
+    isHalted: function() {
+      return halted;
+    },
 
     init: function(numericVars, stringVars) {
       for (var i=0;i<numericVars.length;i++) {

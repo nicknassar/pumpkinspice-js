@@ -15,12 +15,13 @@ function CodeGeneratorPassTests(display) {
   var expectations = [
     {
       description: "single global string",
-      run: function() {
+      run: function(onComplete) {
         assert(codeGeneratorPass.printString("Hello World!", true, false),
 	       "prints Hello World!");
         assert(codeGeneratorPass.finalize(), "validates");
 
 	machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -36,7 +37,7 @@ function CodeGeneratorPassTests(display) {
       // NEXT N
 
       description: "for loop",
-      run: function() {
+      run: function(onComplete) {
         assert(
           typeManager.typeForNumericExpression(
             typeManager.typeForGlobal("TOTAL")
@@ -93,6 +94,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
 	machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -113,7 +115,7 @@ function CodeGeneratorPassTests(display) {
       // PRINT STOTAL
 
       description: "for loop",
-      run: function() {
+      run: function(onComplete) {
         assert(
           typeManager.typeForNumericExpression(
             typeManager.typeForGlobal("TOTAL")
@@ -196,6 +198,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
 	machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -213,7 +216,7 @@ function CodeGeneratorPassTests(display) {
       // END IF
 
       description: "if else",
-      run: function() {
+      run: function(onComplete) {
         assert(
           typeManager.typeForStringExpression(
             typeManager.typeForGlobal("STOTAL")
@@ -257,6 +260,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
 	machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -267,7 +271,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "CINT positive",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -282,6 +286,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -292,7 +297,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "CINT negative",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -307,6 +312,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -317,7 +323,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "INT positive",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -332,6 +338,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -342,7 +349,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "INT negative",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -357,6 +364,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -367,7 +375,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "FIX positive",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -382,6 +390,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -392,7 +401,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "FIX negative",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -407,6 +416,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -417,7 +427,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "PI",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.ifStatement(
             codeGeneratorPass.boolGreaterExpression(
@@ -436,6 +446,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -445,7 +456,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "ABS",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -473,6 +484,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -484,7 +496,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "leftz",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.leftzBuiltinExpression(
@@ -499,6 +511,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -509,7 +522,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "rightz",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.rightzBuiltinExpression(
@@ -524,6 +537,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -534,7 +548,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "len",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -550,6 +564,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -560,7 +575,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "strz",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -574,6 +589,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -584,7 +600,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "val",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.printExp(
             codeGeneratorPass.strzBuiltinExpression(
@@ -603,6 +619,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -613,7 +630,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "random expression - roll the 8 sided die 10k times",
-      run: function() {
+      run: function(onComplete) {
         for (var n=1;n<=8;n++) {
           assert(
             typeManager.typeForNumericExpression(
@@ -724,6 +741,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
 
       calls: [
@@ -735,7 +753,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "while",
-      run: function() {
+      run: function(onComplete) {
         assert(
           typeManager.typeForNumericExpression(
             typeManager.typeForGlobal("N")
@@ -778,6 +796,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -788,7 +807,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "random with even chance - run test 10k times",
-      run: function() {
+      run: function(onComplete) {
         for (var n=1;n<=8;n++) {
           assert(
             typeManager.typeForNumericExpression(
@@ -880,6 +899,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -890,7 +910,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "random with chance - run test 10k times",
-      run: function() {
+      run: function(onComplete) {
         for (var n=1;n<=8;n++) {
           assert(
             typeManager.typeForNumericExpression(
@@ -982,6 +1002,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -992,7 +1013,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "call subroutine with single arg",
-      run: function() {
+      run: function(onComplete) {
         assert(codeGeneratorPass.beginSubroutine("FOO", []),
                "begin sub");
         assert(codeGeneratorPass.printString("success", false, false),
@@ -1005,6 +1026,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -1015,7 +1037,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "call subroutine with two args",
-      run: function() {
+      run: function(onComplete) {
         assert(typeManager.registerSubroutineDefinition("FOO", ["BAR", "BAZ"]),
                "register sub");
         assert(
@@ -1061,6 +1083,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -1072,7 +1095,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "call subroutine expression with two args",
-      run: function() {
+      run: function(onComplete) {
         assert(typeManager.registerSubroutineDefinition("FOO", ["BAR", "BAZ"]),
                "register sub");
         assert(
@@ -1122,6 +1145,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -1132,7 +1156,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "recursive call subroutine expression",
-      run: function() {
+      run: function(onComplete) {
         assert(typeManager.registerSubroutineDefinition("FOO", ["BAR", "TOTAL"]),
                "register sub");
         assert(
@@ -1206,6 +1230,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -1216,7 +1241,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "recursive call subroutine expression errors - too deep",
-      run: function() {
+      run: function(onComplete) {
         assert(typeManager.registerSubroutineDefinition("FOO", ["BAR", "TOTAL"]),
                "register sub");
         assert(
@@ -1290,6 +1315,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -1301,7 +1327,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "color, bgcolor, clear",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.color(codeGeneratorPass.numericLiteralExpression("7")),
           "color seven"
@@ -1317,6 +1343,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
@@ -1329,7 +1356,7 @@ function CodeGeneratorPassTests(display) {
     },
     {
       description: "play",
-      run: function() {
+      run: function(onComplete) {
         assert(
           codeGeneratorPass.play(
             codeGeneratorPass.stringLiteralExpression("ABC")
@@ -1339,10 +1366,52 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.finalize(), "validates");
 
         machine.go();
+        onComplete();
       },
       calls: [
         ["sendUpdates"],
         ["play", "ABC"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "input",
+      run: function(onComplete) {
+        assert(
+          typeManager.typeForNumericExpression(
+            typeManager.typeForGlobal("S")
+          ) !== null,
+          "set type for S"
+        );
+        assert(
+          codeGeneratorPass.input("S"),
+          "input statement"
+        );
+        assert(
+          codeGeneratorPass.printExp(
+            codeGeneratorPass.variableExpression("S"),
+            false,
+            false
+          ),
+          "print"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        display._setInputAndRunHandler("Testing 123", onComplete);
+      },
+      calls: [
+        // Initial
+        ["sendUpdates"],
+        ["sendUpdates"],
+        ["go"],
+        ["getInputValue"],
+        ["print", "Testing 123"],
+        ["print", "\n"],
+        ["clearMenu"],
+        ["scroll"],
+        ["print", "Testing 123"],
         ["sendUpdates"]
       ],
       errors: []
@@ -1362,7 +1431,7 @@ function CodeGeneratorPassTests(display) {
   }
 
   function expectationToTestFunc(expectation) {
-    return expectation.run;
+    return expectation.run
   }
 
   function expectationText(expectation) {
