@@ -1308,7 +1308,7 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: [
-        [2, "Missing END IF"]
+        [1, "IF without matching END IF"]
       ]
     },
     {
@@ -1766,6 +1766,75 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "FOR without NEXT",
+      code: "FOR N = 100 to 101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["forStatement", "N", 0, 1],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "FOR without matching NEXT"]
+      ]
+    },
+    {
+      description: "NEXT without FOR",
+      code: "NEXT N\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "NEXT without matching FOR"]
+      ]
+    },
+    {
+      description: "Nested FOR statement",
+      code: "FOR N = 100 to 101\n" +
+        "FOR M = 102 to 103\n" +
+        "PRINT\n" +
+        "NEXT M\n" +
+        "NEXT N\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["forStatement", "N", 0, 1],
+        ["numericLiteralExpression", "102"],
+        ["numericLiteralExpression", "103"],
+        ["forStatement", "M", 3, 4],
+        ["printString", "", true, false],
+        ["next", "M"],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Incorrectly nested FOR statement",
+      code: "FOR N = 100 to 101\n" +
+        "FOR M = 102 to 103\n" +
+        "PRINT\n" +
+        "NEXT N\n" +
+        "NEXT M\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["forStatement", "N", 0, 1],
+        ["numericLiteralExpression", "102"],
+        ["numericLiteralExpression", "103"],
+        ["forStatement", "M", 3, 4],
+        ["printString", "", true, false],
+        ["next", "M"],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "NEXT without matching FOR: Got N expected M"],
+        [1, "FOR without matching NEXT"]
+      ]
     },
     {
       description: "FOR statement with CALL expressions",

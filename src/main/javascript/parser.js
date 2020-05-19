@@ -220,7 +220,7 @@ function Parser(handlers,logger){
     if (tokens === null) {
       return false;
     } else {
-      parseLineTokens(tokens);
+      parseLineTokens(tokens, num);
       return true;
     }
   }
@@ -409,7 +409,7 @@ function Parser(handlers,logger){
     }
   }
 
-  function parseLineTokens(tokens) {
+  function parseLineTokens(tokens, num) {
     if (!started && tokens.length>0) {
       started = true;
       if (tokens.length>=4 && tokens[0].type===LESS && tokens[1].value==="!" && tokens[2].type===MINUS && tokens[3].type===MINUS ) {
@@ -449,6 +449,20 @@ function Parser(handlers,logger){
           if (tokens.length !== 2 || tokens[1].type !== IDENTIFIER) {
             return false;
           } else {
+            if (loopStack.length < 1) {
+              logger.error("NEXT without matching FOR");
+              return false;
+            }
+            var obj = loopStack[loopStack.length-1];
+            if (obj.type !== FOR) {
+              logger.error("NEXT without matching FOR");
+              return false;
+            }
+            if (obj.variable !== tokens[1].value) {
+              logger.error("NEXT without matching FOR: Got "+tokens[1].value+" expected "+obj.variable);
+              return false;
+            }
+            loopStack.pop();
             return handler.next(tokens[1].value);
           }
         } else if (tokens[0].value==='IF') {
@@ -466,7 +480,8 @@ function Parser(handlers,logger){
           }
           loopStack.push({
             type:IF,
-            seenElse: false
+            seenElse: false,
+            line: num
           });
           return handler.ifStatement(boolExp);
 
@@ -656,6 +671,12 @@ function Parser(handlers,logger){
             logger.error("Missing TO in FOR");
             return false;
           }
+          loopStack.push({
+            type:FOR,
+            variable: tokens[1].value,
+            line: num
+          });
+
           return handler.forStatement(tokens[1].value, expression(tokens.slice(3,pos)),
                                       expression(tokens.slice(pos+1,tokens.length)));
 
@@ -865,11 +886,16 @@ function Parser(handlers,logger){
       return true;
     else {
       for (var o=loopStack.pop();o !== undefined;o=loopStack.pop()) {
+        logger.setLineNumber(o.line);
         if (o.type === IF) {
           logger.error("IF without matching END IF");
           handler.endIf();
+        } else if (o.type === FOR) {
+          logger.error("FOR without matching NEXT");
+          handler.next(o.variable);
         }
       }
+      logger.clearLineNumber();
       return false;
     }
 
