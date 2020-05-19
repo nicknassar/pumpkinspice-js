@@ -1297,6 +1297,60 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "Simple IF statement - no END IF",
+      code: "IF \"a\" == Seven\n",
+      calls: [
+        ["stringLiteralExpression", "a"],
+        ["variableExpression", "SEVEN"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "Missing END IF"]
+      ]
+    },
+    {
+      description: "Lonely ELSE",
+      code: "ELSE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ELSE without IF"]
+      ]
+    },
+    {
+      description: "2 ELSEs",
+      code: "IF A = B\n"+
+        "ELSE\n"+
+        "ELSE\n"+
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["elseStatement"],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: [
+        [3, "extra ELSE"]
+      ]
+    },
+        {
+      description: "Lonely ENDIF",
+      code: "END IF\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Extra END IF"]
+      ]
+    },
+    {
       description: "IF statement - greater than",
       code: "IF Q > 88 THEN\n" +
         "PRINT\n" +

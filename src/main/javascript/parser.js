@@ -3,6 +3,19 @@ function Parser(handlers,logger){
   var finished = false;
   var handler;
 
+  // Block types for loop stack
+  var FOR={};
+  var IF={};
+  var RANDOM={};
+  var MENU={};
+  var ASK={};
+  var WHILE={};
+  var SUBROUTINE={};
+
+  // Private variables
+  var loopStack = [];  // Keeps track of nested loops
+
+
   // Unique identifiers for token types
 
   var STRING={};
@@ -451,6 +464,10 @@ function Parser(handlers,logger){
             logger.error("Invalid IF");
             return false;
           }
+          loopStack.push({
+            type:IF,
+            seenElse: false
+          });
           return handler.ifStatement(boolExp);
 
 	} else if (tokens[0].value==='WAIT' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[2].type === IDENTIFIER && tokens[1].value==='FOR' && tokens[2].value==='MUSIC') {
@@ -578,14 +595,32 @@ function Parser(handlers,logger){
 
         } else if (tokens[0].value==='END' && tokens.length===2 &&
                    tokens[1].type===IDENTIFIER && tokens[1].value==='IF') {
+          if (loopStack.length < 1) {
+            logger.error("END IF without matching IF");
+            return false;
+          }
+          var obj = loopStack.pop();
+          if (obj.type !== IF) {
+            logger.error("END IF without matching IF");
+            return false;
+          }
           return handler.endIf();
-
         } else if ((tokens[0].value==='WEND' && tokens.length===1) ||
                    (tokens[0].value==='END' && tokens.length===2 &&
                     tokens[1].value==='WHILE')) {
           return handler.endWhile();
 
         } else if (tokens[0].value==='ELSE' && tokens.length===1) {
+          if (loopStack.length < 1) {
+            logger.error("ELSE without IF");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== IF || obj.seenElse) {
+            logger.error("ELSE without IF");
+            return false;
+          }
+          obj.seenElse = true;
           return handler.elseStatement();
 
         } else if (tokens[0].value==='COLOR') {
@@ -824,6 +859,22 @@ function Parser(handlers,logger){
     }
     return expStack[0];
   }
+
+  function validate() {
+    if (loopStack.length === 0)
+      return true;
+    else {
+      for (var o=loopStack.pop();o !== undefined;o=loopStack.pop()) {
+        if (o.type === IF) {
+          logger.error("IF without matching END IF");
+          handler.endIf();
+        }
+      }
+      return false;
+    }
+
+  }
+
   function compileText(text) {
     var success = true;
     var lines = text.split("\r\n");
@@ -837,6 +888,7 @@ function Parser(handlers,logger){
         success = false;
       }
     }
+    success = validate() && success;
     logger.clearLineNumber();
     return success;
   }
