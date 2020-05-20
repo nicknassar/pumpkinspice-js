@@ -416,7 +416,21 @@ function Parser(handlers,logger){
         tokens = tokens.slice(4);
       }
     }
+
+    // forbid statements between BEGIN RANDOM and WITH CHANCE
     if (tokens.length>0 && !finished) {
+      if (loopStack.length > 0 &&
+          loopStack[loopStack.length-1].type === RANDOM &&
+          loopStack[loopStack.length-1].evenChance === undefined) {
+        if (!((tokens[0].type === SINGLEQUOTE) ||
+              (tokens[0].type === IDENTIFIER &&
+               (tokens[0].value === 'REM' ||
+                tokens[0].value === 'WITH')))) {
+          logger.error("No statements allowed after BEGIN RANDOM and before WITH CHANCE");
+          return null;
+        }
+      }
+
       if (tokens[0].type===IDENTIFIER) {
         if (tokens[0].value==='PRINT' || tokens[0].value==='PAUSE') {
           var pause = (tokens[0].value==='PAUSE');
@@ -488,6 +502,10 @@ function Parser(handlers,logger){
 	} else if (tokens[0].value==='WAIT' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[2].type === IDENTIFIER && tokens[1].value==='FOR' && tokens[2].value==='MUSIC') {
 	  return handler.waitForMusic();
         } else if (tokens[0].value==='BEGIN' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
+          loopStack.push({
+            type:RANDOM,
+            line: num
+          });
           return handler.beginRandom();
 
         } else if (tokens[0].value==='SUBROUTINE' && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
@@ -529,12 +547,55 @@ function Parser(handlers,logger){
           return handler.returnStatement(expression(tokens.slice(1,tokens.length)));
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
+          if (loopStack.length < 1) {
+            logger.error("END RANDOM without matching BEGIN");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== RANDOM) {
+            logger.error("END RANDOM without matching BEGIN");
+            return false;
+          }
+          loopStack.pop();
           return handler.endRandom();
 
         } else if (tokens[0].value==='WITH' && tokens.length == 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHANCE' && tokens[2].type === NUMERIC) {
+          if (loopStack.length < 1) {
+            logger.error("WITH CHANCE outside of RANDOM");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== RANDOM) {
+            logger.error("WITH CHANCE outside of RANDOM");
+            return false;
+          }
+          if (obj.evenChance === undefined)
+            obj.evenChance = false;
+          if (obj.evenChance !== false) {
+            logger.error("Mixed even CHANCE and percent CHANCE modes in RANDOM");
+            handler.withEvenChance();
+            return false;
+          }
           return handler.withChance(tokens[2].value);
 
         } else if (tokens[0].value==='WITH' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHANCE') {
+          if (loopStack.length < 1) {
+            logger.error("WITH CHANCE outside of RANDOM");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== RANDOM) {
+            logger.error("WITH CHANCE outside of RANDOM");
+            return false;
+          }
+          if (obj.evenChance === undefined)
+            obj.evenChance = true;
+          if (obj.evenChance !== true) {
+            logger.error("Mixed even CHANCE and percent CHANCE modes in RANDOM");
+            handler.withChance("0");
+            return false;
+          }
+
           return handler.withEvenChance();
 
         } else if (tokens[0].value==='ASK' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'COLOR' && tokens[2].type === NUMERIC) {
@@ -614,11 +675,12 @@ function Parser(handlers,logger){
             logger.error("END IF without matching IF");
             return false;
           }
-          var obj = loopStack.pop();
+          var obj = loopStack[loopStack.length-1];
           if (obj.type !== IF) {
             logger.error("END IF without matching IF");
             return false;
           }
+          loopStack.pop();
           return handler.endIf();
         } else if ((tokens[0].value==='WEND' && tokens.length===1) ||
                    (tokens[0].value==='END' && tokens.length===2 &&
@@ -893,6 +955,9 @@ function Parser(handlers,logger){
         } else if (o.type === FOR) {
           logger.error("FOR without matching NEXT");
           handler.next(o.variable);
+        } else if (o.type === RANDOM) {
+          logger.error("BEGIN RANDOM without matching END RANDOM");
+          handler.endRandom();
         }
       }
       logger.clearLineNumber();

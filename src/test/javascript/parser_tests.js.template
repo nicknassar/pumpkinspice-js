@@ -1871,6 +1871,90 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "RANDOM statement without END RANDOM",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE 33.3\n" +
+        "PRINT\n" +
+        "WITH CHANCE 66.7\n" +
+        "PRINT\n",
+      calls: [
+        ["beginRandom"],
+        ["withChance", "33.3"],
+        ["printString", "", true, false],
+        ["withChance", "66.7"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "BEGIN RANDOM without matching END RANDOM"]
+      ]
+    },
+    {
+      description: "Bare END RANDOM statement",
+      code: "END RANDOM\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "END RANDOM without matching BEGIN"]
+      ]
+    },
+    {
+      description: "WITH CHANCE outside of RANDOM",
+      code: "WITH CHANCE 33.3\n" +
+        "PRINT\n",
+      calls: [
+        ["printString", "", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "WITH CHANCE outside of RANDOM"]
+      ]
+    },
+    {
+      description: "RANDOM statement with mixed types of chances",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "WITH CHANCE 66.7\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "Switching between even WITH CHANCE and specific percent"]
+      ]
+    },
+    {
+      description: "RANDOM statement with mixed types of chances",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE 30\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["withChance", "30"],
+        ["printString", "", true, false],
+        ["withChance", "0"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "Switching between specific percent WITH CHANCE and even WITH CHANCE"]
+      ]
+    },
+    {
       description: "RANDOM statement with even chance",
       code: "BEGIN RANDOM\n" +
         "WITH CHANCE\n" +
@@ -1888,6 +1972,49 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: [],
+    },
+    {
+      description: "RANDOM statement with even chance and comment before WITH CHANCE",
+      code: "BEGIN RANDOM\n" +
+        "REM Even chances\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["comment", "Even chances"],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [],
+    },
+    {
+      description: "RANDOM statement with code before chance",
+      code: "BEGIN RANDOM\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "No statements allowed after BEGIN RANDOM and before WITH CHANCE"]
+      ],
     },
     {
       description: "WAIT FOR MUSIC",
