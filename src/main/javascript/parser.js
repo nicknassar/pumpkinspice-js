@@ -667,6 +667,11 @@ function Parser(handlers,logger){
             logger.error("Invalid WHILE");
             return false;
           }
+          loopStack.push({
+            type:WHILE,
+            line: num
+          });
+
           return handler.whileStatement(boolExp);
 
         } else if (tokens[0].value==='END' && tokens.length===2 &&
@@ -685,6 +690,17 @@ function Parser(handlers,logger){
         } else if ((tokens[0].value==='WEND' && tokens.length===1) ||
                    (tokens[0].value==='END' && tokens.length===2 &&
                     tokens[1].value==='WHILE')) {
+          if (loopStack.length < 1) {
+            logger.error("END WHILE without matching WHILE");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== WHILE) {
+            logger.error("END WHILE without matching WHILE");
+            return false;
+          }
+          loopStack.pop();
+
           return handler.endWhile();
 
         } else if (tokens[0].value==='ELSE' && tokens.length===1) {
@@ -958,6 +974,9 @@ function Parser(handlers,logger){
         } else if (o.type === RANDOM) {
           logger.error("BEGIN RANDOM without matching END RANDOM");
           handler.endRandom();
+        } else if (o.type === WHILE) {
+          logger.error("WHILE without matching END WHILE");
+          handler.endWhile();
         }
       }
       logger.clearLineNumber();

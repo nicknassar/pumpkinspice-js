@@ -1739,6 +1739,31 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "WHILE statement - no END",
+      code: "WHILE A = A DO\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "A"],
+        ["boolEqualExpression", 0, 1],
+        ["whileStatement", 2],
+        ["endWhile"],
+        ["finalize"],
+      ],
+      errors: [
+        [1, "WHILE WITHOUT END WHILE"]
+      ]
+    },
+    {
+      description: "Lonely WEND",
+      code: "WEND\n",
+      calls: [
+        ["finalize"],
+      ],
+      errors: [
+        [1, "END WHILE without WHILE"]
+      ]
+    },
+    {
       description: "WHILE statement 2",
       code: "WHILE A < 10\n" +
         "END WHILE\n",
