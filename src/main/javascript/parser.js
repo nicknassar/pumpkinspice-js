@@ -509,22 +509,33 @@ function Parser(handlers,logger){
           return handler.beginRandom();
 
         } else if (tokens[0].value==='SUBROUTINE' && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
+          if (loopStack.length > 0) {
+            logger.error("SUBROUTINE cannot be defined inside of another block");
+            return false;
+          }
           var args = [];
           var pos = 2;
           while (pos < tokens.length) {
             if (tokens[pos].type === IDENTIFIER)
               args.push(tokens[pos].value);
-            else
+            else {
+              logger.error("EXPECTED identifier for argument name. Got: "+tokens[pos].value);
               return false;
+            }
             pos++;
             if (pos < tokens.length) {
               if (tokens[pos].type === COMMA) {
                 pos++;
               } else {
+                logger.error("EXPECTED comma separating arguments. Got: "+tokens[pos].value);
                 return false;
               }
             }
           }
+          loopStack.push({
+            type:SUBROUTINE,
+            line: num
+          });
           return handler.beginSubroutine(tokens[1].value,args);
         } else if (tokens[0].value==='CALL' && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
           var expressionList = parseExpressionList(tokens.slice(2));
@@ -538,12 +549,44 @@ function Parser(handlers,logger){
             return handler.callSubroutine(tokens[1].value,argExps);
           }
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'SUBROUTINE') {
+          if (loopStack.length < 1) {
+            logger.error("END SUBROUTINE without matching SUBROUTINE");
+            return false;
+          }
+          var obj = loopStack[0];
+          if (obj.type !== SUBROUTINE) {
+            logger.error("END SUBROUTINE without matching SUBROUTINE");
+            return false;
+          }
+          if (loopStack.length > 1) {
+            logger.error("END SUBROUTINE inside a block");
+            return false;
+          }
+          loopStack.pop();
           return handler.endSubroutine();
 
-        } else if (tokens[0].value==='RETURN' && tokens.length === 1) {
+          } else if (tokens[0].value==='RETURN' && tokens.length === 1) {
+            if (loopStack.length < 1) {
+              logger.error("RETURN outside of subroutine");
+              return false;
+            }
+            var obj = loopStack[0];
+            if (obj.type !== SUBROUTINE) {
+              logger.error("RETURN outside of SUBROUTINE");
+              return false;
+            }
           return handler.voidReturnStatement();
 
-        } else if (tokens[0].value==='RETURN' && tokens.length >= 2) {
+          } else if (tokens[0].value==='RETURN' && tokens.length >= 2) {
+            if (loopStack.length < 1) {
+              logger.error("RETURN outside of subroutine");
+              return false;
+            }
+            var obj = loopStack[0];
+            if (obj.type !== SUBROUTINE) {
+              logger.error("RETURN outside of SUBROUTINE");
+              return false;
+            }
           return handler.returnStatement(expression(tokens.slice(1,tokens.length)));
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'RANDOM') {
@@ -977,6 +1020,9 @@ function Parser(handlers,logger){
         } else if (o.type === WHILE) {
           logger.error("WHILE without matching END WHILE");
           handler.endWhile();
+        } else if (o.type === SUBROUTINE) {
+          logger.error("SUBROUTINE without matching END SUBROUTINE");
+          handler.endSubroutine();
         }
       }
       logger.clearLineNumber();

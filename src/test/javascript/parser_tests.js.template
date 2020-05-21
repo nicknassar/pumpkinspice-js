@@ -894,6 +894,123 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "Subroutine Inside IF",
+      code: "IF A = B\n" +
+        "SUBROUTINE foo\n" +
+        "END SUBROUTINE\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "SUBROUTINE cannot be defined inside of another block"],
+        [3, "END SUBROUTINE without matching SUBROUTINE"]
+      ]
+    },
+    {
+      description: "END Subroutine Inside IF",
+      code: "SUBROUTINE foo\n" +
+        "IF A = B\n" +
+        "END SUBROUTINE\n" +
+        "END IF\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolEqualExpression", 1, 2],
+        ["ifStatement", 3],
+        ["endIf"],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: [
+        [3, "END SUBROUTINE inside a block"],
+        [1, "SUBROUTINE without matching end subroutine"]
+      ]
+    },
+    {
+      description: "Subroutine without end",
+      code: "SUBROUTINE foo\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "SUBROUTINE without END"]
+      ]
+    },
+    {
+      description: "Lonely END subroutine",
+      code: "END SUBROUTINE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "END SUBROUTINE with no matching error"]
+      ]
+    },
+    {
+      description: "RETURN OUTSIDE OF SUBROUTINE",
+      code: "RETURN\n"+
+        "RETURN 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "RETURN outside of SUBROUTINE"],
+        [2, "RETURN outside of SUBROUTINE"]
+      ]
+    },
+    {
+      description: "RETURN OUTSIDE OF SUBROUTINE IN IF",
+      code: "IF A = B\n" +
+        "RETURN\n"+
+        "RETURN 7\n" +
+        "END IF",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "RETURN outside of SUBROUTINE"],
+        [3, "RETURN outside of SUBROUTINE"],
+      ]
+    },
+    {
+      description: "Subroutine bad args",
+      code: "SUBROUTINE Bar ,,\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "EXPECTED identifier for argument name. Got: ,"],
+        [2, "END SUBROUTINE without matching SUBROUTINE"]
+      ]
+    },
+    {
+      description: "Subroutine bad args 2",
+      code: "SUBROUTINE Bar BAR BIZ\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "EXPECTED comma separating arguments. Got: BIZ"],
+        [2, "END SUBROUTINE without matching SUBROUTINE"]
+      ]
+    },
+    {
       description: "Subroutine 2",
       code: "SUBROUTINE Bar Biz\n" +
         "END SUBROUTINE\n",
