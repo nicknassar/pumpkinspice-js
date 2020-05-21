@@ -417,20 +417,33 @@ function Parser(handlers,logger){
       }
     }
 
-    // forbid statements between BEGIN RANDOM and WITH CHANCE
-    if (tokens.length>0 && !finished) {
-      if (loopStack.length > 0 &&
-          loopStack[loopStack.length-1].type === RANDOM &&
-          loopStack[loopStack.length-1].evenChance === undefined) {
-        if (!((tokens[0].type === SINGLEQUOTE) ||
-              (tokens[0].type === IDENTIFIER &&
-               (tokens[0].value === 'REM' ||
-                tokens[0].value === 'WITH')))) {
-          logger.error("No statements allowed after BEGIN RANDOM and before WITH CHANCE");
-          return null;
-        }
-      }
-
+      if (tokens.length>0 && !finished) {
+	  // forbid statements between BEGIN RANDOM and WITH CHANCE
+	if (loopStack.length > 0 &&
+            loopStack[loopStack.length-1].type === RANDOM &&
+            loopStack[loopStack.length-1].evenChance === undefined) {
+            if (!((tokens[0].type === SINGLEQUOTE) ||
+		  (tokens[0].type === IDENTIFIER &&
+		   (tokens[0].value === 'REM' ||
+                    tokens[0].value === 'WITH')))) {
+		logger.error("No statements allowed after BEGIN RANDOM and before WITH CHANCE");
+		return null;
+            }
+	}
+	// forbid statements between BEGIN MENU and CHOICE
+	if (loopStack.length > 0 &&
+            loopStack[loopStack.length-1].type === MENU &&
+            loopStack[loopStack.length-1].seenChoice === undefined) {
+            if (!((tokens[0].type === SINGLEQUOTE) ||
+		  (tokens[0].type === IDENTIFIER &&
+		   (tokens[0].value === 'REM' ||
+		    tokens[0].value === 'CHOICE' ||
+                    tokens[0].value === 'MENU')))) {
+		logger.error("No statements allowed after BEGIN MENU and before CHOICE");
+		return null;
+            }
+	}
+	
       if (tokens[0].type===IDENTIFIER) {
         if (tokens[0].value==='PRINT' || tokens[0].value==='PAUSE') {
           var pause = (tokens[0].value==='PAUSE');
@@ -669,15 +682,32 @@ function Parser(handlers,logger){
           return handler.endAsk();
 
         } else if (tokens[0].value==='BEGIN' && tokens.length > 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'MENU') {
+	  loopStack.push({
+	    type: MENU,
+            line: num
+          });
           return handler.beginMenu(expression(tokens.slice(2,tokens.length)));
 
         } else if (tokens[0].value==='MENU' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'COLOR' && tokens[2].type===NUMERIC) {
+	  if (loopStack.length < 1 || loopStack[loopStack.length-1].type !== MENU || loopStack[loopStack.length-1].seenChoice) {
+	    logger.error("MENU COLOR should be immediately after BEGIN MENU");
+	    return false
+	  }
           return handler.menuColor(tokens[2].value);
 
         } else if (tokens[0].value==='MENU' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'BGCOLOR' && tokens[2].type===NUMERIC) {
+	  if (loopStack.length < 1 || loopStack[loopStack.length-1].type !== MENU || loopStack[loopStack.length-1].seenChoice) {
+	    logger.error("MENU BGCOLOR should be immediately after BEGIN MENU");
+	    return false
+	  }
+
           return handler.menuBGColor(tokens[2].value);
 
         } else if (tokens[0].value==='MENU' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'CHOICE' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type===NUMERIC) {
+	  if (loopStack.length < 1 || loopStack[loopStack.length-1].type !== MENU || loopStack[loopStack.length-1].seenChoice) {
+	    logger.error("MENU CHOICE COLOR should be immediately after BEGIN MENU");
+	    return false
+	  }
           return handler.menuChoiceColor(tokens[3].value);
         } else if (tokens[0].value==='HIDE' && tokens.length >= 5 && tokens[1].type === IDENTIFIER && tokens[1].value === 'IF' ) {
           var boolExp = expression(tokens.slice(2,tokens.length));
@@ -688,14 +718,51 @@ function Parser(handlers,logger){
           return handler.menuHideIf(boolExp);
 
         } else if (tokens[0].value==='MENU' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'PROMPT' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type===NUMERIC) {
+	  if (loopStack.length < 1 || loopStack[loopStack.length-1].type !== MENU || loopStack[loopStack.length-1].seenChoice) {
+	    logger.error("MENU PROMPT COLOR should be immediately after BEGIN MENU");
+	    return false
+	  }
+
           return handler.menuPromptColor(tokens[3].value);
 
         } else if (tokens[0].value==='END' && tokens.length == 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'MENU') {
+	  if (loopStack.length < 1) {
+            logger.error("END MENU without matching BEGIN MENU");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== MENU) {
+            logger.error("END MENU without matching BEIGN MENU");
+            return false;
+          }
+          loopStack.pop();
           return handler.endMenu();
 
         } else if (tokens[0].value==='CHOICE' && tokens.length > 2 && tokens[1].type === IDENTIFIER) {
+	  if (loopStack.length < 1) {
+            logger.error("CHOICE outside of MENU");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== MENU) {
+            logger.error("CHOICE outside of a MENU");
+            return false;
+          }
+          obj.seenChoice = true;
+
           return handler.menuChoice(tokens[1].value,expression(tokens.slice(2,tokens.length)));
         } else if (tokens[0].value==='CHOICE' && tokens.length > 2 && tokens[1].type === NUMERIC) {
+	  if (loopStack.length < 1) {
+            logger.error("CHOICE outside of MENU");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== MENU) {
+            logger.error("CHOICE outside of a MENU");
+            return false;
+          }
+          obj.seenChoice = true;
+
           return handler.menuChoice((tokens[1].value).toString(10),expression(tokens.slice(2,tokens.length)));
 
         } else if (tokens[0].value==='WHILE') {
@@ -1023,6 +1090,9 @@ function Parser(handlers,logger){
         } else if (o.type === SUBROUTINE) {
           logger.error("SUBROUTINE without matching END SUBROUTINE");
           handler.endSubroutine();
+        } else if (o.type === MENU) {
+          logger.error("BEGIN MENU without matching END MENU");
+          handler.endMenu();
         }
       }
       logger.clearLineNumber();

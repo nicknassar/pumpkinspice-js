@@ -2269,8 +2269,98 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "CHOICE without BEGIN MENU",
+      code: "CHOICE A \"First thing first\"\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+	[1, "CHOICE outside of a menu"]
+      ]
+    },
+    {
+      description: "MENU options without BEGIN MENU",
+      code: "MENU COLOR 7\n" +
+        "MENU BGCOLOR 0\n" +
+        "MENU CHOICE COLOR 7\n" +
+        "MENU PROMPT COLOR 7\n",
+      calls: [
+	["finalize"]
+      ],
+      errors: [
+	[1, "MENU COLOR should be immediately after BEGIN MENU"],
+	[2, "MENU BGCOLOR should be immediately after BEGIN MENU"],
+	[3, "MENU CHOICE COLOR should be immediately after BEGIN MENU"],
+	[4, "MENU PROMPT COLOR should be immediately after BEGIN MENU"]
+      ]
+    },
+    {
+      description: "END MENU without BEGIN MENU",
+      code: "END MENU\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+	[1, "END MENU without matching BEGIN"]
+      ]
+    },
+    {
+      description: "MENU without END MENU",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "CHOICE A \"Last thing\"\n" +
+        "PRINT\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "A", 8],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+	[1, "BEGIN MENU without END MENU"]
+      ]
+    },
+    {
+      description: "basic MENU with code before CHOICE",
+      code: "BEGIN MENU \"Prompt\"\n" +
+	"PRINT\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+	[2, "Statement after BEGIN MENU and before first CHOICE"]
+      ]
+    },
+    {
       description: "MENU with all the options",
       code: "BEGIN MENU \"Prompt\"+A\n" +
+	"REM comment\n" +
         "MENU COLOR 7\n" +
         "MENU BGCOLOR 0\n" +
         "MENU CHOICE COLOR 7\n" +
@@ -2288,27 +2378,71 @@ function ParserTests(display) {
         ["variableExpression", "A"],
         ["additionExpression", 0, 1],
         ["beginMenu", 2],
+	["comment", "comment"],
         ["menuColor", "7"],
         ["menuBGColor", "0"],
         ["menuChoiceColor", "7"],
         ["menuPromptColor", "7"],
         ["stringLiteralExpression", "First thing first"],
-        ["menuChoice", "A", 8],
+        ["menuChoice", "A", 9],
         ["variableExpression", "X"],
         ["numericLiteralExpression", "2"],
-        ["boolEqualExpression", 10, 11],
-        ["menuHideIf", 12],
+        ["boolEqualExpression", 11, 12],
+        ["menuHideIf", 13],
         ["printString", "", true, false],
         ["stringLiteralExpression", "Next thing"],
-        ["menuChoice", "B", 15],
+        ["menuChoice", "B", 16],
         ["printString", "", true, false],
         ["stringLiteralExpression", "Last thing"],
-        ["menuChoice", "A", 18],
+        ["menuChoice", "A", 19],
         ["printString", "", true, false],
         ["endMenu"],
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "MENU with all the options after the first choice",
+      code: "BEGIN MENU \"Prompt\"+A\n" +
+        "CHOICE A \"First thing first\"\n" +
+	"MENU COLOR 7\n" +
+        "MENU BGCOLOR 0\n" +
+        "MENU CHOICE COLOR 7\n" +
+        "MENU PROMPT COLOR 7\n" +
+        "HIDE IF X == 2\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "CHOICE A \"Last thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["variableExpression", "A"],
+        ["additionExpression", 0, 1],
+        ["beginMenu", 2],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 4],
+        ["variableExpression", "X"],
+        ["numericLiteralExpression", "2"],
+        ["boolEqualExpression", 6, 7],
+        ["menuHideIf", 8],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 11],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "A", 14],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+        [3, "MENU COLOR should be immediately after BEGIN MENU"],
+	[4, "MENU BGCOLOR should be immediately after BEGIN MENU"],
+	[5, "MENU CHOICE COLOR should be immediately after BEGIN MENU"],
+	[6, "MENU PROMPT COLOR should be immediately after BEGIN MENU"]
+      ]
     }
   ];
 
