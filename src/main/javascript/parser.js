@@ -418,7 +418,7 @@ function Parser(handlers,logger){
     }
 
       if (tokens.length>0 && !finished) {
-	  // forbid statements between BEGIN RANDOM and WITH CHANCE
+	// forbid statements between BEGIN RANDOM and WITH CHANCE
 	if (loopStack.length > 0 &&
             loopStack[loopStack.length-1].type === RANDOM &&
             loopStack[loopStack.length-1].evenChance === undefined) {
@@ -430,20 +430,29 @@ function Parser(handlers,logger){
 		return null;
             }
 	}
-	// forbid statements between BEGIN MENU and CHOICE
 	if (loopStack.length > 0 &&
-            loopStack[loopStack.length-1].type === MENU &&
-            loopStack[loopStack.length-1].seenChoice === undefined) {
+            loopStack[loopStack.length-1].type === MENU) {
+          // forbid statements between BEGIN MENU and CHOICE
+          if (loopStack[loopStack.length-1].seenChoice === undefined) {
             if (!((tokens[0].type === SINGLEQUOTE) ||
 		  (tokens[0].type === IDENTIFIER &&
 		   (tokens[0].value === 'REM' ||
 		    tokens[0].value === 'CHOICE' ||
                     tokens[0].value === 'MENU')))) {
-		logger.error("No statements allowed after BEGIN MENU and before CHOICE");
+	      logger.error("No statements allowed after BEGIN MENU and before CHOICE");
 		return null;
             }
+          }
+          if (loopStack[loopStack.length-1].lastWasChoice) {
+            if (!((tokens[0].type === SINGLEQUOTE) ||
+		  (tokens[0].type === IDENTIFIER &&
+		   (tokens[0].value === 'REM' ||
+		    tokens[0].value === 'HIDE')))) {
+              loopStack[loopStack.length-1].lastWasChoice = false;
+            }
+          }
 	}
-	
+
       if (tokens[0].type===IDENTIFIER) {
         if (tokens[0].value==='PRINT' || tokens[0].value==='PAUSE') {
           var pause = (tokens[0].value==='PAUSE');
@@ -655,30 +664,168 @@ function Parser(handlers,logger){
           return handler.withEvenChance();
 
         } else if (tokens[0].value==='ASK' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'COLOR' && tokens[2].type === NUMERIC) {
+          if (loopStack.length < 1) {
+            logger.error("ASK COLOR outside of ASK");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== ASK) {
+            logger.error("ASK COLOR outside of ASK");
+            return false;
+          }
+          if (obj.seenOnYes) {
+            logger.error("ASK COLOR after ON YES");
+            return false;
+          }
+          if (obj.seenOnNo) {
+            logger.error("ASK COLOR after ON NO");
+            return false;
+          }
           return handler.askColor(tokens[2].value);
 
         } else if (tokens[0].value==='ASK' && tokens.length === 3 && tokens[1].type === IDENTIFIER && tokens[1].value === 'BGCOLOR' && tokens[2].type === NUMERIC) {
+          if (loopStack.length < 1) {
+            logger.error("ASK BGCOLOR outside of ASK");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== ASK) {
+            logger.error("ASK BGCOLOR outside of ASK");
+            return false;
+          }
+          if (obj.seenOnYes) {
+            logger.error("ASK BGCOLOR after ON YES");
+            return false;
+          }
+          if (obj.seenOnNo) {
+            logger.error("ASK BGCOLOR after ON NO");
+            return false;
+          }
+
           return handler.askBGColor(tokens[2].value);
 
         } else if (tokens[0].value==='ASK' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'PROMPT' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type === NUMERIC) {
+          if (loopStack.length < 1) {
+            logger.error("ASK PROMPT COLOR outside of ASK");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== ASK) {
+            logger.error("ASK PROMPT COLOR outside of ASK");
+            return false;
+          }
+          if (obj.seenOnYes) {
+            logger.error("ASK PROMPT COLOR after ON YES");
+            return false;
+          }
+          if (obj.seenOnNo) {
+            logger.error("ASK PROMPT COLOR after ON NO");
+            return false;
+          }
+
           return handler.askPromptColor(tokens[3].value);
 
         } else if (tokens[0].value==='ASK' && tokens.length >= 2) {
+          loopStack.push({
+            type: ASK,
+            line: num
+          });
           return handler.beginAsk(expression(tokens.slice(1,tokens.length)));
 
         } else if (tokens[0].value==='DEFAULT' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'NO') {
+          if (loopStack.length < 1) {
+            logger.error("DEFAULT NO outside of ASK");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== ASK) {
+            logger.error("DEFAULT NO outside of ASK");
+            return false;
+          }
+          if (obj.seenOnYes) {
+            logger.error("DEFAULT NO after ON YES");
+            return false;
+          }
+          if (obj.seenOnNo) {
+            logger.error("DEFAULT NO after ON NO");
+            return false;
+          }
+
           return handler.askDefault(false);
 
         } else if (tokens[0].value==='DEFAULT' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'YES') {
+          if (loopStack.length < 1) {
+            logger.error("DEFAULT YES outside of ASK");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== ASK) {
+            logger.error("DEFAULT YES outside of ASK");
+            return false;
+          }
+          if (obj.seenOnYes) {
+            logger.error("DEFAULT YES after ON YES");
+            return false;
+          }
+          if (obj.seenOnNo) {
+            logger.error("DEFAULT YES after ON NO");
+            return false;
+          }
+
           return handler.askDefault(true);
 
         } else if (tokens[0].value==='ON' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'NO') {
+          if (loopStack.length < 1) {
+            logger.error("ON NO outside of ASK");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== ASK) {
+            logger.error("ON NO outside of ASK");
+            return false;
+          }
+          if (obj.seenOnNo) {
+            logger.error("ON NO already seen");
+            return false;
+          }
+          obj.seenOnNo = true;
+
           return handler.onNo();
 
         } else if (tokens[0].value==='ON' && tokens.length === 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'YES') {
+          if (loopStack.length < 1) {
+            logger.error("ON YES outside of ASK");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== ASK) {
+            logger.error("ON YES outside of ASK");
+            return false;
+          }
+          if (obj.seenOnYes) {
+            logger.error("ON YES already seen");
+            return false;
+          }
+          obj.seenOnYes = true;
           return handler.onYes();
 
         } else if (tokens[0].value==='END' && tokens.length === 2 && tokens[1].value==='ASK') {
+          if (loopStack.length < 1) {
+            logger.error("END ASK without matching BEGIN ASK");
+            return false;
+          }
+          var obj = loopStack[loopStack.length-1];
+          if (obj.type !== ASK) {
+            logger.error("END ASK without matching BEGIN ASK");
+            return false;
+          }
+          loopStack.pop();
+          if (!(obj.seenOnNo || obj.seenOnYes)) {
+            logger.error("END ASK without either ON YES or ON NO");
+            handler.endAsk();
+            return false;
+          }
+
           return handler.endAsk();
 
         } else if (tokens[0].value==='BEGIN' && tokens.length > 2 && tokens[1].type === IDENTIFIER && tokens[1].value === 'MENU') {
@@ -710,13 +857,17 @@ function Parser(handlers,logger){
 	  }
           return handler.menuChoiceColor(tokens[3].value);
         } else if (tokens[0].value==='HIDE' && tokens.length >= 5 && tokens[1].type === IDENTIFIER && tokens[1].value === 'IF' ) {
+          if (loopStack.length < 1 || loopStack[loopStack.length-1].type !== MENU || !loopStack[loopStack.length-1].lastWasChoice) {
+	    logger.error("HIDE IF should be after CHOICE");
+	    return false
+	  }
+
           var boolExp = expression(tokens.slice(2,tokens.length));
           if (boolExp === null) {
             logger.error("Invalid HIDE IF");
             return false;
           }
           return handler.menuHideIf(boolExp);
-
         } else if (tokens[0].value==='MENU' && tokens.length === 4 && tokens[1].type === IDENTIFIER && tokens[1].value === 'PROMPT' && tokens[2].type === IDENTIFIER && tokens[2].value === 'COLOR' && tokens[3].type===NUMERIC) {
 	  if (loopStack.length < 1 || loopStack[loopStack.length-1].type !== MENU || loopStack[loopStack.length-1].seenChoice) {
 	    logger.error("MENU PROMPT COLOR should be immediately after BEGIN MENU");
@@ -749,6 +900,7 @@ function Parser(handlers,logger){
             return false;
           }
           obj.seenChoice = true;
+          obj.lastWasChoice = true;
 
           return handler.menuChoice(tokens[1].value,expression(tokens.slice(2,tokens.length)));
         } else if (tokens[0].value==='CHOICE' && tokens.length > 2 && tokens[1].type === NUMERIC) {
@@ -762,6 +914,7 @@ function Parser(handlers,logger){
             return false;
           }
           obj.seenChoice = true;
+          obj.lastWasChoice = true;
 
           return handler.menuChoice((tokens[1].value).toString(10),expression(tokens.slice(2,tokens.length)));
 
@@ -1093,6 +1246,9 @@ function Parser(handlers,logger){
         } else if (o.type === MENU) {
           logger.error("BEGIN MENU without matching END MENU");
           handler.endMenu();
+        } else if (o.type === ASK) {
+          logger.error("BEGIN ASK without matching END ASK");
+          handler.endAsk();
         }
       }
       logger.clearLineNumber();

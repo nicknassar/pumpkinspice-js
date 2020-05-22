@@ -2188,6 +2188,101 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "simple ASK without END",
+      code: "ASK \"Will you?\"\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n",
+      calls: [
+        ["stringLiteralExpression", "Will you?"],
+        ["beginAsk", 0],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "BEGIN ASK without matching END ASK"]
+      ]
+    },
+    {
+      description: "lonely END ASK",
+      code: "END ASK\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "END ASK without BEGIN"]
+      ]
+    },
+    {
+      description: "lonely DEFAULT YES",
+      code: "DEFAULT YES\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "DEFAULT YES outside of ASK"]
+      ]
+    },
+    {
+      description: "lonely DEFAULT NO",
+      code: "DEFAULT NO\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "DEFAULT NO outside of ASK"]
+      ]
+    },
+    {
+      description: "lonely ASK COLOR",
+      code: "ASK COLOR 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ASK COLOR outside of ASK"]
+      ]
+    },
+    {
+      description: "lonely ASK BGCOLOR",
+      code: "ASK BGCOLOR 0\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ASK BGCOLOR outside of ASK"]
+      ]
+    },
+    {
+      description: "lonely ASK PROMPT COLOR",
+      code: "ASK PROMPT COLOR 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ASK PROMPT COLOR without ASK"]
+      ]
+    },
+    {
+      description: "ASK with no ON section",
+      code: "ASK \"?\"\n"+
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "?"],
+        ["beginAsk", 0],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "END ASK without either ON YES or ON NO"]
+      ]
+    },
+    {
       description: "ASK with default and string expression",
       code: "ASK \"Are you \"+ NAME +\"?\"\n" +
         "DEFAULT YES\n" +
@@ -2402,14 +2497,39 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "MENU with invalid HIDE IF",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "HIDE IF X == 2\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "HIDE IF should be immediately after CHOICE"]
+      ]
+    },
+    {
       description: "MENU with all the options after the first choice",
       code: "BEGIN MENU \"Prompt\"+A\n" +
         "CHOICE A \"First thing first\"\n" +
+        "HIDE IF X == 2\n" +
 	"MENU COLOR 7\n" +
         "MENU BGCOLOR 0\n" +
         "MENU CHOICE COLOR 7\n" +
         "MENU PROMPT COLOR 7\n" +
-        "HIDE IF X == 2\n" +
         "PRINT\n" +
         "CHOICE B \"Next thing\"\n" +
         "PRINT\n" +
@@ -2438,10 +2558,10 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: [
-        [3, "MENU COLOR should be immediately after BEGIN MENU"],
-	[4, "MENU BGCOLOR should be immediately after BEGIN MENU"],
-	[5, "MENU CHOICE COLOR should be immediately after BEGIN MENU"],
-	[6, "MENU PROMPT COLOR should be immediately after BEGIN MENU"]
+        [4, "MENU COLOR should be immediately after BEGIN MENU"],
+	[5, "MENU BGCOLOR should be immediately after BEGIN MENU"],
+	[6, "MENU CHOICE COLOR should be immediately after BEGIN MENU"],
+	[7, "MENU PROMPT COLOR should be immediately after BEGIN MENU"]
       ]
     }
   ];
