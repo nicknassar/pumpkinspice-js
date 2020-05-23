@@ -19,9 +19,11 @@ BUILD_RESOURCE_DIR := $(BUILD_DIR)/resources
 
 TEST_SOURCE_DIR := $(SRC_DIR)/test/javascript
 TEST_BUILD_DIR := $(BUILD_DIR)/test
+EXAMPLE_SOURCE_DIR := examples
 
 CLOSURE_COMPILER_JAR := $(wildcard lib/closure-compiler-v[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].jar)
 OUTPUT_JAR := $(DIST_DIR)/pumpkinspice2html-v$(BUILD_VERSION).jar
+EXAMPLE_DIST_DIR := $(DIST_DIR)/examples
 
 ifdef JAVA_HOME
 JAVAC := $(JAVA_HOME)/bin/javac
@@ -44,6 +46,7 @@ vpath %.js.template $(JAVASCRIPT_SOURCE_DIR) $(TEST_SOURCE_DIR)
 vpath %.js $(JAVASCRIPT_SOURCE_DIR) $(BUILD_RESOURCE_DIR)  $(TEST_SOURCE_DIR) $(TEST_BUILD_DIR)
 vpath %.optimized.js $(BUILD_RESOURCE_DIR)
 vpath %.html.template $(BUILD_RESOURCE_DIR)
+vpath %.pumpkinspice $(EXAMPLE_SOURCE_DIR)
 vpath %.html $(DIST_DIR)
 vpath %.java $(TOOLS_SOURCE_DIR) $(PUMPKINSPICE2HTML_SOURCE_DIR)
 vpath %.class $(PUMPKINSPICE2HTML_BUILD_DIR) $(TOOLS_BUILD_DIR)
@@ -60,13 +63,16 @@ JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js 
 TEST_SOURCES := run_tests.js.template initialize_tests.js base_tester.js matching_tester.js parser_tests.js.template type_manager_tests.js.template testing_compiler_pass.js testing_display_and_audio.js testing_logger.js type_generator_pass_tests.js.template code_generator_pass_tests.js.template testing_type_manager.js simple_call_logger.js parser.js display.js legacy.js global_utilities.js parser.js type_manager.js type_generator_pass.js code_generator_pass.js
 
 .PHONY: all
-all: test.html test.debug.html pumpkinspice2html
+all: pumpkinspice2html examples
 
 .PHONY: test
 test: $(TEST_OUTPUT)
 
 .PHONY: pumpkinspice2html
 pumpkinspice2html: $(DIST_DIR)/pumpkinspice2html $(DIST_DIR)/pumpkinspice2html.bat
+
+.PHONY: examples
+examples: examples/01-variables.html examples/99-stress-test.html
 
 .PHONY: clean
 clean:
@@ -83,6 +89,8 @@ $(BUILD_RESOURCE_DIR):
 $(DIST_DIR):
 	-$(MKDIR) -p $@
 $(TEST_BUILD_DIR):
+	-$(MKDIR) -p $@
+$(EXAMPLE_DIST_DIR):
 	-$(MKDIR) -p $@
 
 .PHONY: closure_compiler
@@ -126,11 +134,11 @@ pumpkinspice.optimized.js: pumpkinspice.js | $(BUILD_RESOURCE_DIR) closure_compi
 %.html.template: $(RESOURCE_DIR)/%.html.template | $(BUILD_RESOURCE_DIR)
 	cp $< "$(BUILD_RESOURCE_DIR)/$@"
 
-%.html: %.pumpkinspice $(JAVA_BUILD_CLASSES) $(OPTIMIZED_RESOURCES)
-	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder $<
+%.html: %.pumpkinspice $(JAVA_BUILD_CLASSES) $(OPTIMIZED_RESOURCES) | $(EXAMPLE_DIST_DIR)
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder $< "$(DIST_DIR)/$@"
 
 %.debug.html: %.pumpkinspice $(JAVA_BUILD_CLASSES) $(DEBUG_RESOURCES)
-	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --debug $<
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --debug $< "$(DIST_DIR)/$@"
 
 $(OUTPUT_JAR): $(DEBUG_RESOURCES) $(OPTIMIZED_RESOURCES) com/nicknassar/pumpkinspice/Builder.class | $(DIST_DIR)
 	$(JAR) cfe $@ com.nicknassar.pumpkinspice.Builder -C $(PUMPKINSPICE2HTML_BUILD_DIR) . -C $(BUILD_RESOURCE_DIR) .

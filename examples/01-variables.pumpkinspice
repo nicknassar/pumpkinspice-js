@@ -1,0 +1,118 @@
+' Welcome to Pumpkin Spice
+
+' This is the first in a series of examples
+' meant to explain the language
+
+' Lines that start with apostrophes are comments
+' Comments are ignored by the computer
+' 
+' They are here to help other humans understand what the code is
+' meant to do
+
+REM   Also, comments can start with REM
+
+' Lesson 1 - Variables store data
+
+' Variables store data
+
+' A variable can store either a number or some text
+' Just give it a name.
+
+' You can't switch between the two types. Once
+' a variable is used for numbers, it's always for
+' numbers
+
+' Text goes in double quotes
+
+REM You assign to a variable with equals
+
+NAME = "Sailor Moon"
+DOLLARS = 100
+
+' You can add, subtract, multiply, and divide numbers
+
+' Addtion is +
+MORE = DOLLARS + 3.50
+
+' Subtraction is -
+FOUR = 7-3
+
+' Multiplication is *
+SIX_TIMES_SEVEN = 6 * 7
+
+' Division is /
+HALF = DOLLARS / 2
+
+' You can uses parentheses in your math
+
+' This sets UNO to 1
+UNO = (1+0)*(3-2)
+
+' You can print to the screen with PRINT
+PRINT "HELLO World!"
+
+' If you put an apostrophe at the end of a PRINT
+' it doesn't start a new line
+PRINT "This is my";
+PRINT " first program"
+
+' You can combine text with plus
+PRINT NAME+" is my favorite"
+
+' You can print numbers by making them text
+' with STR$()
+PRINT "I have "+ STR$(DOLLARS) +" dollars"
+
+' You can change colors with COLOR
+' It takes a number from 0 to 15
+COLOR 13
+
+' There is also a background color
+BGCOLOR 1
+
+PRINT "WOW! This computer does color!"
+
+COLOR 7
+BGCOLOR 0
+PRINT "BORING AGAIN"
+
+
+' You can wait for a sec with PAUSE
+PAUSE "Press ENTER to continue"
+
+' CLS CLears the Screan
+CLS
+
+' INPUT puts whatever someone types into a variable
+PRINT
+PRINT "What is your name? ";
+INPUT NAME
+
+PRINT "HELLO "+NAME
+
+' You can also do numbers, but you have to use
+' VAL to convert
+PRINT "On a scale of 1 to 10, how cool are you? ";
+INPUT COOLNESS_TEXT
+
+COOLNESS = VAL(COOLNESS_TEXT)
+
+' You can use IF to do different things
+IF COOLNESS > 10 THEN
+   PRINT "No one is that cool."
+   COOLNESS = 10
+ELSE
+  PRINT "Let's shout it "+STR$(COOLNESS)+" times"
+END IF
+PRINT
+
+COLOR 13
+' FOR loops do something a certain number of times
+FOR COUNTER = 1 TO COOLNESS
+   PRINT NAME+" is cool!"
+NEXT COUNTER
+
+COLOR 15
+PRINT
+PRINT "That's the first lesson"
+print "Have fun!"
