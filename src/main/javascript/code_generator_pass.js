@@ -46,15 +46,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
     // referenced in the expression, then returns function that
     // evaluates the expression
     function expressionToFunction(exp) {
-      function stringToFunction(expr) {
-        // Actually convert a JS expression string to a function
-        // Put it in a list to work around bug in some older browsers
-        // evaluating a function expression directly
-        var text = '[(function(){return '+expr+';})]';
-        var listFunc = eval(text);
-        return listFunc[0];
-      };
-
       for (var i=0;i<exp.subs.length;i++) {
         callSubroutine(exp.subs[i].name,exp.subs[i].args);
         // wrap in function tocreate new temp for each iteration
@@ -66,47 +57,22 @@ function CodeGeneratorPass(typeManager, machine, logger){
           });})();
       }
 
-      return stringToFunction(exp.value);
+      return exp.value;
     }
-
-    // Hack to get variable names from optimised code by stringifying a
-    // function definition This let's us fully optimize and still eval()
-    // code
-    //
-    // Typical Usage: nameFromFunctionString(function{NAME}.toString())
-    function nameFromFunctionString(o) {
-      var start = o.indexOf('{')+1;
-
-      // Some old Firefoxen insert whitespace in the stringified function
-      while (o[start] < o.length && o[start]===' ' || o[start]==='\n' || o[start]==='\r' || o[start]==='\t')
-        start++;
-
-      //  Some old Firefoxen insert semicolons
-      var end = o.indexOf(';');
-      if (end === -1)
-        end = o.indexOf('}');
-      return o.substr(start,end-start);
-    };
 
     // find name of a variable in the machine
     function variableName(name) {
-      /** @suppress {uselessCode} */
-      var vname = (function(){machine.getGlobal}).toString();
-      vname = nameFromFunctionString(vname);
-
-      var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
-      return vname+'(\''+escaped+'\')';
+      return function() {
+        return machine.getGlobal(name);
+      };
     };
 
     // Find name of local variable in the machine
     function localVariableName(name) {
-      /** @suppress {uselessCode} */
-      var vname = (function(){machine.getLocal}).toString();
-      vname = nameFromFunctionString(vname);
-
-      var escaped = name.replace("\\","\\\\").replace("'","\\'").replace('"','\\"').replace('\n','\\n').replace('\r','\\r')
-      return vname+'(\''+escaped+'\')';
-    };
+      return function() {
+        return machine.getLocal(name);
+      };
+    }
 
 /***********************************************************************
   BEGIN Code Gen functions
@@ -140,10 +106,15 @@ function CodeGeneratorPass(typeManager, machine, logger){
     }
 
     function printExp(exp,newline,pause) {
+      var text;
+      exp = expressionToFunction(exp);
       if (newline) {
-        exp.value = exp.value+"+\"\\n\"";
+        text = (function() {
+          return exp()+"\n";
+        });
+      } else {
+        text = exp;
       }
-      var text = expressionToFunction(exp);
       if (pause) {
         pushInstruction(function() {
           machine.printMenu([text],[""],
@@ -975,7 +946,8 @@ function CodeGeneratorPass(typeManager, machine, logger){
       // operator precendence.
 
       function numericLiteralExpression(value) {
-        return numericExpressionWithSubs(value,[]);
+        value = Number(value);
+        return numericExpressionWithSubs(function() {return value;},[]);
       }
 
       function numericExpressionWithSubs(value, subs) {
@@ -988,7 +960,29 @@ function CodeGeneratorPass(typeManager, machine, logger){
             (exp2.resultType !== NUMERIC_TYPE)) {
           return null;
         }
-        return numericExpressionWithSubs(exp1.value+op+exp2.value,exp1.subs.concat(exp2.subs));
+        var f1 = exp1.value;
+        var f2 = exp2.value;
+        var newExp;
+        if (op === '+') {
+          newExp = (function() {
+            return f1()+f2();
+          });
+        } else if (op === '-') {
+          newExp = (function() {
+            return f1()-f2();
+          });
+        } else if (op === '*') {
+          newExp = (function() {
+            return f1()*f2();
+          });
+        } else if (op === '/') {
+          newExp = (function() {
+            return f1()/f2();
+          });
+        } else {
+          return null;
+        }
+        return numericExpressionWithSubs(newExp,exp1.subs.concat(exp2.subs));
       }
 
       function stringExpression(value) {
@@ -1003,23 +997,62 @@ function CodeGeneratorPass(typeManager, machine, logger){
       function boolBinaryExpression(op,exp1,exp2) {
         if (!exp1 || !exp2)
           return null;
-        return boolExpressionWithSubs(exp1.value+op+exp2.value,exp1.subs.concat(exp2.subs));
+        var f1 = exp1.value;
+        var f2 = exp2.value;
+        var newExp;
+        if (op === '===') {
+          newExp = (function() {
+            return f1()===f2();
+          });
+        } else if (op === '!==') {
+          newExp = (function() {
+            return f1()!==f2();
+          });
+        } else if (op === '>') {
+          newExp = (function() {
+            return f1()>f2();
+          });
+        } else if (op === '<') {
+          newExp = (function() {
+            return f1()<f2();
+          });
+        } else if (op === '>=') {
+          newExp = (function() {
+            return f1()>=f2();
+          });
+        } else if (op === '<=') {
+          newExp = (function() {
+            return f1()<=f2();
+          });
+        } else if (op === '&&') {
+          newExp = (function() {
+            return f1()&&f2();
+          });
+        } else if (op === '||') {
+          newExp = (function() {
+            return f1()||f2();
+          });
+        } else {
+          return null;
+        }
+        return boolExpressionWithSubs(newExp,exp1.subs.concat(exp2.subs));
       }
 
       function stringLiteralExpression(value) {
-        return stringExpression(JSON.stringify(value));
+        value = value.toString();
+        return stringExpression(function() { return value; });
       }
 
       function randomBuiltinExpression(l,h){
-        // Hack to find name of variable, so optimizers can do their work
-        /** @suppress {uselessCode} */
-        var rndname = (function(){machine.random}).toString();
-        rndname = nameFromFunctionString(rndname);
-        return numericExpressionWithSubs(rndname+'('+l.value+','+h.value+')',l.subs.concat(h.subs));
+        var f1 = l.value;
+        var f2 = h.value;
+        return numericExpressionWithSubs(function() {
+          return machine.random(f1(),f2())
+        },l.subs.concat(h.subs));
       }
 
       function piBuiltinExpression() {
-        return numericLiteralExpression('Math.PI');
+        return numericLiteralExpression(Math.PI);
       }
 
       function variableExpression(name) {
@@ -1028,13 +1061,13 @@ function CodeGeneratorPass(typeManager, machine, logger){
           if (typeManager.localHasStringType(currentSub, name))
             return stringExpression(localVariableName(name));
           else if (typeManager.localHasNumericType(currentSub, name))
-            return numericLiteralExpression(localVariableName(name));
+            return numericExpressionWithSubs(localVariableName(name),[]);
 
         } else { // It's a plain old global variable
           if (typeManager.globalHasStringType(name))
             return stringExpression(variableName(name));
           else if (typeManager.globalHasNumericType(name))
-            return numericLiteralExpression(variableName(name));
+            return numericExpressionWithSubs(variableName(name),[]);
         }
 
         // Fall through if the varible doesn't have a type
@@ -1042,43 +1075,52 @@ function CodeGeneratorPass(typeManager, machine, logger){
       }
 
       function cintBuiltinExpression(p) {
-        return numericExpressionWithSubs('Math.ceil('+p.value+')',p.subs);
+        var f = p.value;
+        return numericExpressionWithSubs(function(){return Math.ceil(f());},p.subs);
       }
       function intBuiltinExpression(p) {
-        return numericExpressionWithSubs('Math.floor('+p.value+')',p.subs);
+        var f = p.value;
+        return numericExpressionWithSubs(function(){return Math.floor(f());},p.subs);
       }
       function fixBuiltinExpression(p) {
-        return numericExpressionWithSubs('Math.trunc('+p.value+')',p.subs);
+        var f = p.value;
+        return numericExpressionWithSubs(function(){return Math.trunc(f());},p.subs);
       }
       function absBuiltinExpression(p) {
-        return numericExpressionWithSubs('Math.abs('+p.value+')',p.subs);
+        var f = p.value;
+        return numericExpressionWithSubs(function(){return Math.abs(f());},p.subs);
       }
       function strzBuiltinExpression(p) {
-        return stringExpressionWithSubs('('+p.value+').toString(10)',p.subs);
+        var f = p.value;
+        return stringExpressionWithSubs(function(){return f().toString(10);},p.subs);
       }
       function leftzBuiltinExpression(p,n) {
-        return stringExpressionWithSubs('('+p.value+').substring(0,'+n.value+')',p.subs.concat(n.subs));
+        var f1 = p.value;
+        var f2 = n.value;
+        return stringExpressionWithSubs((function(){
+          return f1().substring(0,f2());
+        }),
+                                        p.subs.concat(n.subs));
       }
       function rightzBuiltinExpression(p,n) {
-        return stringExpressionWithSubs('('+p.value+').substring(('+p.value+').length-'+n.value+',('+p.value+').length)',p.subs.concat(n.subs));
+        var f1 = p.value;
+        var f2 = n.value;
+        return stringExpressionWithSubs((function(){
+          var s = f1();
+          return s.substring(s.length-f2());
+        }),
+                                        p.subs.concat(n.subs));
       }
       function valBuiltinExpression(p) {
-        return numericExpressionWithSubs('Number('+p.value+')',p.subs);
+        var f1 = p.value;
+        return numericExpressionWithSubs(function() {return Number(f1());},p.subs);
       }
       function lenBuiltinExpression(p) {
-        return numericExpressionWithSubs('('+p.value+').length',p.subs);
+        var f1 = p.value;
+        return numericExpressionWithSubs(function(){return f1().length;},p.subs);
       }
       function parenExpression(inner) {
-        if (!inner)
-          return null;
-        if (inner.resultType === NUMERIC_TYPE)
-          return numericExpressionWithSubs('('+inner.value+')',inner.subs);
-        else if (inner.resultType === STRING_TYPE)
-          return stringExpressionWithSubs('('+inner.value+')',inner.subs);
-        else if (inner.resultType === BOOL_TYPE)
-          return boolExpressionWithSubs('('+inner.value+')', inner.subs);
-        else
-          return null;
+        return inner;
       }
       function boolOrExpression(exp1,exp2) {
         return boolBinaryExpression('||',exp1,exp2);
@@ -1087,16 +1129,20 @@ function CodeGeneratorPass(typeManager, machine, logger){
         return boolBinaryExpression('&&',exp1,exp2);
       }
       function boolNotExpression(exp1) {
-        if (!exp1)
+        if (exp1 === null)
           return null;
-        return boolExpressionWithSubs('!'+exp1.value,exp1.subs);
+        var f = exp1.value;
+        return boolExpressionWithSubs(function(){return !f();},exp1.subs);
       }
       function boolEqualExpression(exp1,exp2) {
         if (exp1 === null || exp2 === null)
           return null;
         if (exp1.resultType === STRING_TYPE) { // && exp2.resultType === STRING_TYPE
-          exp1.value = '('+exp1.value+').toUpperCase()';
-          exp2.value = '('+exp2.value+').toUpperCase()';
+          var f1 = exp1.value;
+          var f2 = exp2.value;
+
+          exp1.value = function() {return f1().toUpperCase();};
+          exp2.value = function() {return f2().toUpperCase();};
         }
         return boolBinaryExpression('===',exp1,exp2);
       }
@@ -1116,8 +1162,11 @@ function CodeGeneratorPass(typeManager, machine, logger){
         if (exp1 === null || exp2 === null)
           return null;
         if (exp1.resultType === STRING_TYPE) { // && exp2.resultType === STRING_TYPE
-          exp1.value = '('+exp1.value+').toUpperCase()';
-          exp2.value = '('+exp2.value+').toUpperCase()';
+          var f1 = exp1.value;
+          var f2 = exp2.value;
+
+          exp1.value = function() {return f1().toUpperCase();};
+          exp2.value = function() {return f2().toUpperCase();};
         }
         return boolBinaryExpression('!==',exp1,exp2);
       }
@@ -1143,7 +1192,9 @@ function CodeGeneratorPass(typeManager, machine, logger){
       function additionExpression(a,b) {
 	if (a.resultType === STRING_TYPE && b.resultType === STRING_TYPE) {
 	  // Silently truncate long strings
-          return stringExpressionWithSubs('('+a.value+'+'+b.value+').slice(0,255)',a.subs.concat(b.subs));
+          var f1 = a.value;
+          var f2 = b.value;
+          return stringExpressionWithSubs(function(){return (f1()+f2()).slice(0,255);},a.subs.concat(b.subs));
         } else {
           return numericBinaryExpression('+',a,b);
         }
