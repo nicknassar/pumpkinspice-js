@@ -28,6 +28,7 @@ OUTPUT_JAR := $(PACKAGE_DIR)/pumpkinspice2html-v$(BUILD_VERSION).jar
 EXAMPLE_DIST_DIR := $(PACKAGE_DIR)/examples
 TARBALL := $(PACKAGE_NAME).tar.gz
 ZIPFILE := $(PACKAGE_NAME).zip
+TEXTFILES := $(PACKAGE_DIR)/README.md $(PACKAGE_DIR)/COPYING $(PACKAGE_DIR)/LICENSE
 
 ifdef JAVA_HOME
 JAVAC := $(JAVA_HOME)/bin/javac
@@ -125,6 +126,13 @@ $(PACKAGE_DIR)/pumpkinspice2html: $(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.sh $(OU
 $(PACKAGE_DIR)/pumpkinspice2html.bat: $(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.bat $(OUTPUT_JAR)
 	cat "$(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.bat" "$(OUTPUT_JAR)" > "$@"
 
+$(PACKAGE_DIR)/README.md: README.md
+	cp README.md $(PACKAGE_DIR)
+$(PACKAGE_DIR)/COPYING: COPYING
+	cp COPYING $(PACKAGE_DIR)
+$(PACKAGE_DIR)/LICENSE: LICENSE
+	cp LICENSE $(PACKAGE_DIR)
+
 run-tests.html: $(TEST_RESOURCES) $(JAVA_BUILD_CLASSES) | $(DIST_DIR)
 	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --title "Pumpkin Spice Tests" --javascript $(TEST_BUILD_DIR)/run_tests.js --nocode "$(PACKAGE_DIR)/run-tests.html"
 
@@ -154,8 +162,8 @@ pumpkinspice.optimized.js: pumpkinspice.js | $(BUILD_RESOURCE_DIR) closure_compi
 $(OUTPUT_JAR): $(DEBUG_RESOURCES) $(OPTIMIZED_RESOURCES) com/nicknassar/pumpkinspice/Builder.class | $(PACKAGE_DIR)
 	$(JAR) cfe $@ com.nicknassar.pumpkinspice.Builder -C $(PUMPKINSPICE2HTML_BUILD_DIR) . -C $(BUILD_RESOURCE_DIR) .
 
-$(TARBALL): pumpkinspice2html examples test
+$(TARBALL): pumpkinspice2html examples test $(TEXTFILES)
 	$(TAR) czf $@ -C $(DIST_DIR) $(PACKAGE_NAME)
 
-$(ZIPFILE): pumpkinspice2html examples test
+$(ZIPFILE): pumpkinspice2html examples test $(TEXTFILES)
 	cd $(DIST_DIR) && $(ZIP) -9 $@ -r $(PACKAGE_NAME)

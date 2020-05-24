@@ -5,9 +5,7 @@ applications. It is designed to enable entertaining applications which
 are small, fast, and safe.
 
 Pumpkin Spice is a love letter to old school computing, to a time when
-computing was young and memory was scarce. It celebrates the miracle
-that there can be a high level language on systems with as little as
-4k RAM.
+computing was young and memory was scarce.
 
 Pumpkin Spice is designed to be very usable by people who are not
 professional computer programmers. It should require skills similar to
@@ -25,17 +23,24 @@ web browser and a text editor.  The simplest way to get started is to
 load an existing Pumpkin Spice .html file into a text editor, and
 alter the Pumpkin Spice code within the `<script>` tag.
 
-This package provides a tool called `pumpkinspice2html` that inserts a
-file with Pumpkin Spice code into a .html template for running the
-code.
+This package provides a tool called `pumpkinspice2html` that builds a
+single page app containing all of the necessary HTML and
+JavaScript. It is a launcher for a Java jar file, so the `JAVA_HOME`
+environment variable must be set or the `java` binary must be in your
+`PATH` for it to function.
 
-You can build a single page app containing all of the necessary HTML
-and JavaScript by running the following. It is a launcher for a Java
-jar file, so the `JAVA_HOME` environment variable must be set or the
-`java` binary must be in your `PATH` for it to function.
+On Linux or Mac, you can run it something like this
 
-```bash
-pumpkinspice2html [--debug] [--title "Page Title"] filename.pumpkinspice [<filename.html>]
+```
+$ tar xfz pumpkinspice-js-v0.0.1.tar.gz
+$ cd pumpkinspice-js-v0.0.1
+$ ./pumpkinspice2html MyProgram.pumpkinspice
+```
+
+For Windows users, there's a batch file
+```
+C:\Users\username>cd pumpkinspice-js-v0.0.1
+C:\Users\username\pumpkinspice-js-v0.0.1>pumpkinspice2html MyProgram.pumpkinspice
 ```
 
 By default, this will run the JavaScript code through an optimizer.
@@ -44,9 +49,8 @@ Passing in the `--debug` option will include the JavaScript directly.
 The `pumpkinspice2html` "binary" is a hack that combines the platform
 specific launcher and the jar file into a single file. It takes
 advantage of the fact that .jar files have thier index at the end,
-while shell scripts and batch files start at the beginning.  There's a
-UNIX shell version of the launcher without an extension, as well as a
-Windows `.bat` version of the launcher.
+while shell scripts and batch files start at the beginning.  The
+Windows `.bat` version of the launcher is the same.
 
 ## Building
 
