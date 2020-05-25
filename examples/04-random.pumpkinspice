@@ -1,0 +1,67 @@
+' Pumpkin Spice example 4
+' RANDOM
+
+' In the last example, we introduced the
+' RANDOM(low, high) function for generating
+' random numbers. Sometimes you want to run
+' random code
+
+PRINT "Ask the Magic 8 Ball a ""Yes or No"" question:"
+INPUT QUESTION
+
+PRINT "The Magic 8 Ball says";
+SLEEP 400
+PRINT ".";
+SLEEP 400
+PRINT ".";
+SLEEP 400
+PRINT "."
+
+' Each WITH CHANCE section has an equal chance of being run
+BEGIN RANDOM
+WITH CHANCE
+  PRINT "It is certain"
+WITH CHANCE
+  PRINT "Without a doubt"
+WITH CHANCE
+  PRINT "You may rely on it"
+WITH CHANCE
+  PRINT "Yes definitely"
+WITH CHANCE
+  PRINT "It is decidedly so"
+WITH CHANCE
+  PRINT "As I see it, yes"
+WITH CHANCE
+  PRINT "Most likely"
+WITH CHANCE
+  PRINT "Yes"
+WITH CHANCE
+  PRINT "Outlook good"
+WITH CHANCE
+  PRINT "Signs point to yes"
+
+WITH CHANCE
+  PRINT "Reply hazy try again"
+WITH CHANCE
+  PRINT "Better not tell you now"
+WITH CHANCE
+  PRINT "Ask again later"
+WITH CHANCE
+  PRINT "Cannot predict now"
+WITH CHANCE
+  PRINT "Concentrate and ask again"
+
+WITH CHANCE
+  PRINT "Don’t count on it"
+WITH CHANCE
+  PRINT "Outlook not so good"
+WITH CHANCE
+  PRINT "My sources say no"
+WITH CHANCE
+  PRINT "Very doubtful"
+WITH CHANCE
+  PRINT "My reply is no"
+END RANDOM
+
+PRINT
+PRINT "Reload the page to try again"

@@ -82,7 +82,7 @@ test: $(TEST_OUTPUT)
 pumpkinspice2html: $(PACKAGE_DIR)/pumpkinspice2html $(PACKAGE_DIR)/pumpkinspice2html.bat
 
 .PHONY: examples
-examples: examples/01-variables.html examples/99-stress-test.html
+examples: examples/01-variables.html $(EXAMPLE_DIST_DIR)/01-variables.pumpkinspice examples/99-stress-test.html  $(EXAMPLE_DIST_DIR)/99-stress-test.pumpkinspice examples/02-if-and-for.html  $(EXAMPLE_DIST_DIR)/02-if-and-for.pumpkinspice examples/03-while.html  $(EXAMPLE_DIST_DIR)/03-while.pumpkinspice  examples/04-random.html  $(EXAMPLE_DIST_DIR)/04-random.pumpkinspice
 
 .PHONY: clean
 clean:
@@ -132,6 +132,16 @@ $(PACKAGE_DIR)/COPYING: COPYING
 	cp COPYING $(PACKAGE_DIR)
 $(PACKAGE_DIR)/LICENSE: LICENSE
 	cp LICENSE $(PACKAGE_DIR)
+$(EXAMPLE_DIST_DIR)/01-variables.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/01-variables.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/02-if-and-for.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/02-if-and-for.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/03-while.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/03-while.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/04-random.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/03-random.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/99-stress-test.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/99-stress-test.pumpkinspice
+	cp  $< $@
 
 run-tests.html: $(TEST_RESOURCES) $(JAVA_BUILD_CLASSES) | $(DIST_DIR)
 	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --title "Pumpkin Spice Tests" --javascript $(TEST_BUILD_DIR)/run_tests.js --nocode "$(PACKAGE_DIR)/run-tests.html"

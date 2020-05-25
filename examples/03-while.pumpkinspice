@@ -1,0 +1,44 @@
+' Pumpkin Spice Example 3
+' WHILE statements
+
+' A FOR loop is nice, but it always repeats a fixed number of times
+
+' Sometimes you want to loop until a condition is true
+' Here's a simple game
+
+PLAYING = "Y"
+
+' The game repeats as long as PLAYING has the text "Y"
+WHILE PLAYING = "Y"
+  ATTEMPT = 0
+
+  ' RANDOM is a built in function that returns a random number
+  ' in a given range
+
+  MY_NUMBER = RANDOM(1,10)
+  GUESS = ""
+
+  PRINT "I'm thinking of a number 1 to 10"
+  PRINT "What is it?"
+
+  ' The user keeps guessing until they get it right
+  WHILE VAL(GUESS) != MY_NUMBER
+    ATTEMPT = ATTEMPT + 1
+    INPUT GUESS
+
+    IF VAL(GUESS) < MY_NUMBER
+      PRINT "Higher"
+    END IF
+    IF VAL(GUESS) > MY_NUMBER
+      PRINT "Lower"
+    END IF
+  END WHILE
+
+  PRINT "You got it!"
+  PRINT "It only took you "+STR$(ATTEMPT)+" tries"
+  PRINT
+  PRINT "Type ""Y"" to play again";
+  INPUT PLAYING
+END WHILE
+
+PRINT "Reload the page to play again"

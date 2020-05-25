@@ -5,7 +5,7 @@
 
 ' Lines that start with apostrophes are comments
 ' Comments are ignored by the computer
-' 
+'
 ' They are here to help other humans understand what the code is
 ' meant to do
 
@@ -16,7 +16,7 @@ REM   Also, comments can start with REM
 ' Variables store data
 
 ' A variable can store either a number or some text
-' Just give it a name.
+' Just give it a name and assign a value with equals
 
 ' You can't switch between the two types. Once
 ' a variable is used for numbers, it's always for
@@ -24,10 +24,11 @@ REM   Also, comments can start with REM
 
 ' Text goes in double quotes
 
-REM You assign to a variable with equals
-
-NAME = "Sailor Moon"
+NAME = "George Washington"
 DOLLARS = 100
+
+' You can combine text with +
+FULL_TITLE = "President "+NAME
 
 ' You can add, subtract, multiply, and divide numbers
 
@@ -51,12 +52,12 @@ UNO = (1+0)*(3-2)
 ' You can print to the screen with PRINT
 PRINT "HELLO World!"
 
-' If you put an apostrophe at the end of a PRINT
+' If you put a semicolon at the end of a PRINT
 ' it doesn't start a new line
 PRINT "This is my";
 PRINT " first program"
 
-' You can combine text with plus
+' You can use text expressions in a print statement
 PRINT NAME+" is my favorite"
 
 ' You can print numbers by making them text
@@ -77,7 +78,7 @@ BGCOLOR 0
 PRINT "BORING AGAIN"
 
 
-' You can wait for a sec with PAUSE
+' You can wait for the user with PAUSE
 PAUSE "Press ENTER to continue"
 
 ' CLS CLears the Screan
@@ -90,29 +91,21 @@ INPUT NAME
 
 PRINT "HELLO "+NAME
 
-' You can also do numbers, but you have to use
-' VAL to convert
-PRINT "On a scale of 1 to 10, how cool are you? ";
-INPUT COOLNESS_TEXT
+' You can also do numbers
+PRINT "What's the temperature today?";
+INPUT TEMPERATURE_TEXT
 
-COOLNESS = VAL(COOLNESS_TEXT)
+' Convert the text to a number
+TEMPERATURE = VAL(TEMPERATURE_TEXT)
 
-' You can use IF to do different things
-IF COOLNESS > 10 THEN
-   PRINT "No one is that cool."
-   COOLNESS = 10
-ELSE
-  PRINT "Let's shout it "+STR$(COOLNESS)+" times"
-END IF
-PRINT
+' Perform a numeric calculation
+TEMPERATURE_CELSIUS = (TEMPERATURE-32)/1.8
+' Convert the result to text
+TEMPERATURE_CELSIUS_TEXT = STR$(TEMPERATURE_CELSIUS)
 
-COLOR 13
-' FOR loops do something a certain number of times
-FOR COUNTER = 1 TO COOLNESS
-   PRINT NAME+" is cool!"
-NEXT COUNTER
+' Print the reults
+PRINT TEMPERATURE_TEXT + "°F is "+TEMPERATURE_CELSIUS_TEXT+"°C"
 
-COLOR 15
 PRINT
 PRINT "That's the first lesson"
-print "Have fun!"
+print "Reload this page to run it again"
