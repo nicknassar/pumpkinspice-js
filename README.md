@@ -23,6 +23,8 @@ web browser and a text editor.  The simplest way to get started is to
 load an existing Pumpkin Spice .html file into a text editor, and
 alter the Pumpkin Spice code within the `<script>` tag.
 
+Look through the examples folder to get started.
+
 This package provides a tool called `pumpkinspice2html` that builds a
 single page app containing all of the necessary HTML and
 JavaScript. It is a launcher for a Java jar file, so the `JAVA_HOME`
@@ -62,6 +64,9 @@ prerequisites for building `pumpkinspice2html` from scratch:
 * Java Development Kit for Java 8 or later
 * The Google Closure Compiler
 
+Get the latest source code from
+https://github.com/nicknassar/pumpkinspice-js
+
 Install Make and the JDK in the usual way for your system: XCode
 and/or homebrew on macOS, `apt-get` on Debian/Ubuntu Linuxes, `yum` on
 RedHat/CentOS Linuxes.  Windows has been tested with Make from
@@ -70,10 +75,5 @@ mingw/msys.
 You can download a .zip of the Closure Compiler here:
 https://developers.google.com/closure/compiler/docs/gettingstarted_app
 
-Put the jar file for the Closure Compiler in `lib`, then run `make` or
-`gmake` to build pumpkinspice2html.
-
-The `Makefile` knows how to build html from a .pumpkinspice file, so
-if you put `foo.pumpkinspice` in this folder, you can run `make
-foo.html` or `make foo.debug.html` to generate a web page based on
-that code.
+Put the jar file for the Closure Compiler in `lib`, then run `make` to
+build pumpkinspice2html.

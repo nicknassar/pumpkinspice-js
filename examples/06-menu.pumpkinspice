@@ -1,0 +1,75 @@
+' Pumpkin Spice example 6
+' MENU block
+
+' Here's a simple game that uses a MENU block to present the user with
+' a multiple choice question
+
+' You need to find a treasure on a 5 by 5 grid
+
+' Place the user and the treasure are on the grid
+TREASURE_NORTH = RANDOM(1,5)
+TREASURE_EAST = RANDOM(1,5)
+USER_NORTH = RANDOM(1,5)
+USER_EAST = RANDOM(1,5)
+
+MOVES = 0
+
+COLOR 13
+PRINT "Find the Treasure"
+COLOR 7
+PRINT
+
+' Keep asking for a direction until the user and treasure are in the
+' same place
+WHILE TREASURE_NORTH != USER_NORTH OR TREASURE_EAST != USER_EAST DO
+  ' Increment the number of moves
+  MOVES = MOVES + 1
+
+  ' Here's the multiple choice menu command
+  BEGIN MENU "Which direction would you like to go?"
+  MENU COLOR 11
+  MENU BGCOLOR 0
+  MENU CHOICE COLOR 10
+  MENU PROMPT COLOR 11
+  CHOICE N "(N)orth"
+    IF USER_NORTH < 5
+      PRINT "You move one step north"
+      USER_NORTH = USER_NORTH + 1
+    ELSE
+      PRINT "You hit a wall"
+    END IF
+  CHOICE S "(S)outh"
+    IF USER_NORTH > 1
+      PRINT "You move one step south"
+      USER_NORTH = USER_NORTH - 1
+    ELSE
+      PRINT "You hit a wall"
+    END IF
+  CHOICE E "(E)ast"
+    IF USER_EAST < 5
+      PRINT "You move one step east"
+      USER_EAST = USER_EAST + 1
+    ELSE
+      PRINT "You hit a wall"
+    END IF
+  CHOICE W "(W)est"
+    IF USER_EAST > 1
+      PRINT "You move one step west"
+      USER_EAST = USER_EAST - 1
+    ELSE
+      PRINT "You hit a wall"
+    END IF
+  END MENU
+  PRINT
+END WHILE
+
+COLOR 9
+IF MOVES = 0
+  PRINT "You got lucky! You started on the treasure!"
+ELSE
+  IF MOVES = 1
+    PRINT "You found the treasure in 1 MOVE!"
+  ELSE
+    PRINT "You found the treasure in "+STR$(MOVES)+" MOVES!"
+  END IF
+END IF

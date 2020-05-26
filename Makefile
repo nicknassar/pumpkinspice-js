@@ -82,7 +82,7 @@ test: $(TEST_OUTPUT)
 pumpkinspice2html: $(PACKAGE_DIR)/pumpkinspice2html $(PACKAGE_DIR)/pumpkinspice2html.bat
 
 .PHONY: examples
-examples: examples/01-variables.html $(EXAMPLE_DIST_DIR)/01-variables.pumpkinspice examples/99-stress-test.html  $(EXAMPLE_DIST_DIR)/99-stress-test.pumpkinspice examples/02-if-and-for.html  $(EXAMPLE_DIST_DIR)/02-if-and-for.pumpkinspice examples/03-while.html  $(EXAMPLE_DIST_DIR)/03-while.pumpkinspice  examples/04-random.html  $(EXAMPLE_DIST_DIR)/04-random.pumpkinspice
+examples: examples/01-variables.html $(EXAMPLE_DIST_DIR)/01-variables.pumpkinspice examples/02-if-and-for.html  $(EXAMPLE_DIST_DIR)/02-if-and-for.pumpkinspice examples/03-while.html  $(EXAMPLE_DIST_DIR)/03-while.pumpkinspice examples/04-random.html $(EXAMPLE_DIST_DIR)/04-random.pumpkinspice examples/05-ask.html $(EXAMPLE_DIST_DIR)/05-ask.pumpkinspice examples/06-menu.html $(EXAMPLE_DIST_DIR)/06-menu.pumpkinspice examples/07-subroutine.html $(EXAMPLE_DIST_DIR)/07-subroutine.pumpkinspice examples/08-play.html $(EXAMPLE_DIST_DIR)/08-play.pumpkinspice examples/99-stress-test.html  $(EXAMPLE_DIST_DIR)/99-stress-test.pumpkinspice
 
 .PHONY: clean
 clean:
@@ -138,7 +138,15 @@ $(EXAMPLE_DIST_DIR)/02-if-and-for.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/02-if-and-
 	cp  $< $@
 $(EXAMPLE_DIST_DIR)/03-while.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/03-while.pumpkinspice
 	cp  $< $@
-$(EXAMPLE_DIST_DIR)/04-random.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/03-random.pumpkinspice
+$(EXAMPLE_DIST_DIR)/04-random.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/04-random.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/05-ask.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/05-ask.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/06-menu.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/06-menu.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/07-subroutine.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/07-subroutine.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/08-play.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/08-play.pumpkinspice
 	cp  $< $@
 $(EXAMPLE_DIST_DIR)/99-stress-test.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/99-stress-test.pumpkinspice
 	cp  $< $@

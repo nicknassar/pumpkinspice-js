@@ -1,0 +1,23 @@
+' Pumpkin Spice example 7
+' SUBROUTINE block
+
+' Subroutines are blocks of code that can be called
+' over and over
+SUBROUTINE GREET NAME
+  PRINT "Hello "+NAME
+END SUBROUTINE
+
+SUBROUTINE INCREMENT value
+  RETURN value + 1
+END SUBROUTINE
+
+PRINT "What is your name?"
+INPUT NAME
+
+PRINT "How old are you?"
+INPUT AGE_TEXT
+AGE = VAL(AGE_TEXT)
+OLDER = CALL INCREMENT AGE
+
+CALL GREET NAME
+PRINT "Next year you will be "+STR$(OLDER)
