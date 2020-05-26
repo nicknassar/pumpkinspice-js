@@ -1,0 +1,28 @@
+' Pumpkin Spice example 5
+' ASK block
+
+' Sometimes you want to ask a Yes/No question
+
+COLOR 2
+PRINT "Greeting Profressor Falken."
+
+ASK "Would you like to play Global Thermonuclear War?"
+' Specify colors here
+ASK COLOR 2
+ASK BGCOLOR 0
+ASK PROMPT COLOR 2
+' You may specify a default response to the question with
+' DEFAULT YES
+'  or
+' DEFAULT NO
+ON YES
+  ' This runs when the users picks Yes
+  PRINT "A strange game."
+  SLEEP 400
+  PRINT "The only winning move is not to play."
+  SLEEP 400
+  PRINT "You lose"
+ON NO
+  ' This runs when the users picks No
+  PRINT "You're no fun."
+END ASK

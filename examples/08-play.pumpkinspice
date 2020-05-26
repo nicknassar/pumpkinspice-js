@@ -1,0 +1,34 @@
+' Pumpkin Spice example 8
+' PLAY statement
+
+' Pumpkin Spice supports playing music
+
+' Notes are written in ABC notation
+' https://abcnotation.com/
+
+' This pre-release version of Pumpkin Spice only supports
+' a subset of ABC
+
+COLOR 11
+PRINT "Music!"
+
+BEGIN MENU "Choose a song"
+CHOICE C "(C)amptown races"
+  PLAY "ddBdedB2BA3BA3"
+  PLAY "ddBdedB2AABAG4"
+  PLAY "G3/2G/Bdg4e3/2e/ged4"
+  PLAY "ddB/B/d/d/edB2AABAG4"
+CHOICE T "(T)winkle Twinkle Little Star"
+  PLAY "C2C2G2G2A2A2G4F2F2E2E2D2D2C4"
+  PLAY "G2G2F2F2E2E2D4G2G2F2F2E2E2D4"
+  PLAY "C2C2G2G2A2A2G4F2F2E2E2D2D2C4"
+CHOICE J "(J)ingle Bells"
+  PLAY "G/2G/2GedcG3G/2G/2GedcA3z/2A/2BfedB3z/2B/2"
+  PLAY "ggfde3G/2G/2GedcG3G/2G/2GedcA3z/2A/2Bfed"
+  PLAY "ggg3/2g/2agfdc3geee2eee2egc3/2d/2e3zfff3/2f/2"
+  PLAY "feee/2e/2edded2g2eee2eee2egc3/2d/2e3z"
+  PLAY "fff3/2f/2feee/2e/2ggfdc3"
+END MENU
+
+PRINT
+PRINT "Enjoy!"

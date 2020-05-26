@@ -1,0 +1,637 @@
+function TypeManagerTests(display) {
+  // globals reset for each test
+  var typeManager;
+  var logger;
+
+  var tests = [
+    // BEGIN tests for global variables
+    {
+      description: "single global string",
+      run: function(onComplete) {
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("NAME")) !== null,
+               "type was generated");
+        assert(typeManager.validate(), "validates");
+
+        assert(typeManager.globalHasStringType("NAME"),
+               "string type is set");
+        assert(!typeManager.globalHasNumericType("NAME"),
+               "numeric type is not set");
+        assert(typeManager.getStringGlobals().length === 1 &&
+               typeManager.getStringGlobals().indexOf("NAME") === 0,
+               "global is reported");
+        assert(typeManager.getNumericGlobals().length === 0,
+               "no other global variables found");
+        assert(logger.getLog().length === 0,
+               "Errors found: "+logger.getLog().join(", "));
+        onComplete();
+      }
+    },
+    {
+      description: "single global number",
+      run: function(onComplete) {
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("NUM")) !== null,
+               "type was generated");
+        assert(typeManager.validate(), "validates");
+
+        assert(typeManager.globalHasNumericType("NUM"),
+               "numeric type is set");
+        assert(!typeManager.globalHasStringType("NUM"),
+               "string type is not set");
+        assert(typeManager.getNumericGlobals().length === 1 &&
+               typeManager.getNumericGlobals().indexOf("NUM") === 0,
+               "global is reported")
+        assert(typeManager.getStringGlobals().length === 0,
+               "no other global variables found");
+        assert(logger.getLog().length === 0,
+               "Errors found: "+logger.getLog().join(", "));
+
+        onComplete();
+      }
+    },
+    {
+      description: "ambiguous global - number then string",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("AMBIGUOUS")) !== null,
+               "first type generates no errors");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("AMBIGUOUS")) === null,
+               "second type generates a null");
+        logger.setLineNumber(3);
+        assert(!typeManager.validate(), "does not validate");
+        assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 2,
+               "expected error message is set on correct line");
+
+        onComplete();
+      }
+    },
+    {
+      description: "ambiguous global - string then number",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("AMBIGUOUS")) !== null,
+               "first type generates no errors");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("AMBIGUOUS")) === null,
+               "second type generates a null");
+        logger.setLineNumber(3);
+        assert(!typeManager.validate(), "does not validate");
+        assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 2,
+               "expected error message is set on correct line");
+
+        onComplete();
+      }
+    },
+    {
+      description: "ambiguous global - combined expression",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("TXT")) !== null,
+               "first type generates no errors");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("NUM")) !== null,
+               "second type generates no errors");
+        logger.setLineNumber(3);
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("NUM"),
+                                                     typeManager.typeForGlobal("TXT")) === null,
+               "combined type generates errors");
+        logger.setLineNumber(4);
+        assert(!typeManager.validate(), "does not validate");
+        assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 3,
+               "expected error message is set on correct line");
+
+        onComplete();
+      }
+    },
+    {
+      description: "boolean global",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForBoolExpression(typeManager.typeForGlobal("NUM")) === null,
+               "setting global to bool type generates errors");
+        logger.setLineNumber(2);
+        assert(!typeManager.validate(), "does not validate");
+        assert(logger.getLog().length === 1 && logger.getLog()[0][0] === 1,
+               "expected error message is set on correct line");
+
+        onComplete();
+      }
+    },
+    {
+      description: "indirect typing",
+      run: function(onComplete) {
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("D"),
+                                                     typeManager.typeForGlobal("E")) !== null,
+               "no problem generating types for pair D,E");
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
+                                                     typeManager.typeForGlobal("C")) !== null,
+               "no problem generating types for pair B,C");
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.typeForGlobal("B")) !== null,
+               "no problem generating types for pair A,B");
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("C"),
+                                                     typeManager.typeForGlobal("D")) !== null,
+               "no problem generating types for pair C,D");
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("A")) !== null,
+               "no problem setting numeric type for A");
+
+        assert(typeManager.validate(), "validates");
+        assert(typeManager.globalHasNumericType("A"),
+               "numeric type is set for A");
+        assert(typeManager.globalHasNumericType("B"),
+               "numeric type is set for B");
+        assert(typeManager.globalHasNumericType("C"),
+               "numeric type is set for C");
+        assert(typeManager.globalHasNumericType("D"),
+               "numeric type is set for D");
+        assert(typeManager.globalHasNumericType("E"),
+               "numeric type is set for E");
+        assert(typeManager.getNumericGlobals().length === 5 &&
+               typeManager.getNumericGlobals().indexOf("A") !== -1 &&
+               typeManager.getNumericGlobals().indexOf("B") !== -1 &&
+               typeManager.getNumericGlobals().indexOf("C") !== -1 &&
+               typeManager.getNumericGlobals().indexOf("D") !== -1 &&
+               typeManager.getNumericGlobals().indexOf("E") !== -1,
+               "globals are reported")
+        assert(typeManager.getStringGlobals().length === 0,
+               "no other global variables found");
+        assert(logger.getLog().length === 0,
+               "Errors found: "+logger.getLog().join(", "));
+
+        onComplete();
+      }
+    },
+    {
+      description: "indirect typing with error",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
+                                                     typeManager.typeForGlobal("C")) !== null,
+               "no problem generating types for pair B,C");
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.typeForGlobal("B")) !== null,
+               "no problem generating types for pair A,B");
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("C"),
+                                                     typeManager.typeForGlobal("D")) !== null,
+               "no problem generating types for pair C,D");
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("D"),
+                                                     typeManager.typeForGlobal("E")) !== null,
+               "no problem generating types for pair D,E");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("A")) !== null,
+               "no problem setting numeric type for A");
+        logger.setLineNumber(3);
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("E")) === null,
+               "problem setting string type for E");
+        logger.setLineNumber(4);
+        assert(!typeManager.validate(), "does not validate");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 3,
+               "error is logged");
+
+        onComplete();
+      }
+    },
+    {
+      description: "indirect typing with error #2",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForNumericExpression(typeManager.typeForGlobal("A")) !== null,
+               "no problem setting numeric type for A");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForStringExpression(typeManager.typeForGlobal("E")) !== null,
+               "no problem setting string type for E");
+        logger.setLineNumber(3);
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
+                                                     typeManager.typeForGlobal("C")) !== null,
+               "no problem generating types for pair B,C");
+        logger.setLineNumber(4);
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.typeForGlobal("B")) !== null,
+               "no problem generating types for pair A,B");
+        logger.setLineNumber(5);
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("C"),
+                                                     typeManager.typeForGlobal("D")) !== null,
+               "no problem generating types for pair C,D");
+        logger.setLineNumber(6);
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("D"),
+                                                     typeManager.typeForGlobal("E")) === null,
+               "problem generating types for pair D,E");
+        logger.setLineNumber(7);
+        assert(!typeManager.validate(), "does not validate");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 6,
+               "error is logged");
+
+        onComplete();
+      }
+    },
+    {
+      description: "dead code variable",
+      run: function(onComplete) {
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.typeForGlobal("A")) !== null,
+               "no problem generating types for pair A,A");
+
+        assert(typeManager.validate(), "validates");
+        assert(logger.getLog().length === 0,
+               "no errors");
+        assert(typeManager.getNumericGlobals().length === 0,
+               "no numeric global variables");
+        assert(typeManager.getStringGlobals().length === 0,
+               "no string global variables");
+        assert(logger.getLog().length === 0,
+               "no errors");
+
+        // Maybe we should provide a list of dead variables and semantics
+        onComplete();
+      }
+    },
+    // END tests for global variables
+    // BEGIN tests for subroutines
+    {
+      description: "subroutine with no args",
+      run: function(onComplete) {
+        assert(typeManager.registerSubroutineDefinition("RUNME", []),
+               "registration succsessful");
+        assert(typeManager.typeForVoidReturnStatement("RUNME") !== null,
+               "void return type");
+        assert(typeManager.typeForCallSubroutine("RUNME", []) !== null,
+               "called successfully");
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasVoidReturnType("RUNME"),
+               "sub has void return");
+        assert(!(typeManager.subHasStringReturnType("RUNME") ||
+                 typeManager.subHasNumericReturnType("RUNME")),
+               "sub does not have a string or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 0,
+               "sub has no args");
+        assert(logger.getLog().length === 0,
+               "no errors");
+
+        onComplete();
+      }
+    },
+    {
+      description: "subroutine with no args called before defined",
+      run: function(onComplete) {
+        var callType = typeManager.typeForCallSubroutine("RUNME", []);
+        assert(callType !== null &&
+               typeManager.typeForPair(typeManager.stringType(),callType) !== null,
+               "called successfully");
+        assert(typeManager.registerSubroutineDefinition("RUNME", []),
+               "registration succsessful");
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.stringType()) !== null,
+               "void return type");
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasStringReturnType("RUNME"),
+               "sub has void return");
+        assert(!(typeManager.subHasVoidReturnType("RUNME") ||
+                 typeManager.subHasNumericReturnType("RUNME")),
+               "sub does not have a string or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 0,
+               "sub has no args");
+        assert(logger.getLog().length === 0,
+               "no errors");
+
+        onComplete();
+      }
+    },
+    {
+      description: "subroutine with one arg",
+      run: function(onComplete) {
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1"]),
+               "registration succsessful");
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG1"),
+                                                     typeManager.stringType()) !== null,
+               "arg successfully set to string");
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.stringType()) !== null,
+               "string return type");
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.stringType()]), typeManager.stringType()) !== null,
+               "called")
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasStringReturnType("RUNME"),
+               "sub has string return type");
+        assert(!(typeManager.subHasVoidReturnType("RUNME") ||
+                 typeManager.subHasNumericReturnType("RUNME")),
+               "sub does not have a void or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 1 &&
+               typeManager.getSubArgNames("RUNME")[0] === "ARG1",
+               "sub has an arg");
+        assert(typeManager.localVariableDefined("RUNME","ARG1") &&
+               typeManager.localHasStringType("RUNME","ARG1"),
+               "arg1 has string type");
+        assert(!typeManager.localHasNumericType("RUNME","ARG1"),
+               "arg1 is not numeric");
+        assert(logger.getLog().length === 0,
+               "no errors");
+
+        onComplete();
+      }
+    },
+    {
+      description: "subroutine with two args",
+      run: function(onComplete) {
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2"]),
+               "registration succsessful");
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG1"),
+                                                     typeManager.numericType()) !== null,
+               "arg1 successfully set to number");
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
+                                                     typeManager.stringType()) !== null,
+               "arg2 successfully set to string");
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.numericType()) !== null,
+               "string return type");
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.numericType(), typeManager.stringType()]), typeManager.numericType()) !== null,
+               "called")
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasNumericReturnType("RUNME"),
+               "sub has string return type");
+        assert(!(typeManager.subHasVoidReturnType("RUNME") ||
+                 typeManager.subHasStringReturnType("RUNME")),
+               "sub does not have a void or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 2 &&
+               typeManager.getSubArgNames("RUNME")[0] === "ARG1" &&
+               typeManager.getSubArgNames("RUNME")[1] === "ARG2",
+               "sub has 2 args");
+        assert(typeManager.localVariableDefined("RUNME","ARG1") &&
+               typeManager.localHasNumericType("RUNME","ARG1"),
+               "arg1 has numeric type");
+        assert(!typeManager.localHasStringType("RUNME","ARG1"),
+               "arg1 is not string");
+        assert(typeManager.localVariableDefined("RUNME","ARG2") &&
+               typeManager.localHasStringType("RUNME","ARG2"),
+               "arg2 has string type");
+        assert(!typeManager.localHasNumericType("RUNME","ARG2"),
+               "arg2 does not have numeric type");
+        assert(logger.getLog().length === 0,
+               "no errors");
+
+        onComplete();
+      }
+    },
+    {
+      description: "subroutine with three args",
+      run: function(onComplete) {
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
+               "registration succsessful");
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
+                                                     typeManager.numericType()) !== null,
+               "arg2 successfully set to number");
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG3"),
+                                                     typeManager.stringType()) !== null,
+               "arg3 successfully set to string");
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.numericType()) !== null,
+               "string return type");
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.typeForGlobal("FIRST"), typeManager.numericType(), typeManager.stringType()]), typeManager.numericType()) !== null,
+               "called")
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasNumericReturnType("RUNME"),
+               "sub has string return type");
+        assert(!(typeManager.subHasVoidReturnType("RUNME") ||
+                 typeManager.subHasStringReturnType("RUNME")),
+               "sub does not have a void or numeric return type");
+        assert(typeManager.getSubArgNames("RUNME").length === 3 &&
+               typeManager.getSubArgNames("RUNME")[0] === "ARG1" &&
+               typeManager.getSubArgNames("RUNME")[1] === "ARG2" &&
+               typeManager.getSubArgNames("RUNME")[2] === "ARG3",
+               "sub has 3 args");
+        assert(typeManager.localVariableDefined("RUNME","ARG1") &&
+               !(typeManager.localHasNumericType("RUNME","ARG1") ||
+                 typeManager.localHasStringType("RUNME","ARG1")),
+               "arg1 has no type");
+        assert(typeManager.localVariableDefined("RUNME","ARG2") &&
+               typeManager.localHasNumericType("RUNME","ARG2"),
+               "arg2 has numeric type");
+        assert(!typeManager.localHasStringType("RUNME","ARG2"),
+               "arg2 does not have string type");
+        assert(typeManager.localVariableDefined("RUNME","ARG3") &&
+               typeManager.localHasStringType("RUNME","ARG3"),
+               "arg3 has string type");
+        assert(!typeManager.localHasNumericType("RUNME","ARG3"),
+               "arg3 does not have numeric type");
+        assert(logger.getLog().length === 0,
+               "no errors");
+
+        onComplete();
+      }
+    },
+    {
+      description: "subroutine with mismatched arg",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
+               "registration succsessful");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
+                                                     typeManager.numericType()) !== null,
+               "arg2 successfully set to number");
+        logger.setLineNumber(3);
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG3"),
+                                                     typeManager.stringType()) !== null,
+               "arg3 successfully set to string");
+        logger.setLineNumber(4);
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.numericType()) !== null,
+               "string return type");
+        logger.setLineNumber(5);
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.typeForGlobal("FIRST"), typeManager.stringType(), typeManager.stringType()]), typeManager.numericType()) === null,
+               "called")
+        logger.setLineNumber(6);
+        assert(!typeManager.validate(),
+               "does not validate");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 5,
+               "error is logged");
+
+        onComplete();
+      }
+    },
+    {
+      description: "subroutine with mismatched arg called before definition",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForPair(typeManager.typeForCallSubroutine("RUNME", [typeManager.typeForGlobal("FIRST"), typeManager.stringType(), typeManager.stringType()]), typeManager.numericType()) !== null,
+               "called")
+        logger.setLineNumber(2);
+        assert(typeManager.registerSubroutineDefinition("RUNME", ["ARG1", "ARG2", "ARG3"]),
+               "registration succsessful");
+        logger.setLineNumber(3);
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG2"),
+                                                     typeManager.numericType()) === null,
+               "arg2 cannot be set to number");
+        logger.setLineNumber(4);
+        assert(typeManager.typeForPair(typeManager.typeForLocal("RUNME","ARG3"),
+                                                     typeManager.stringType()) !== null,
+               "arg3 successfully set to string");
+        logger.setLineNumber(5);
+        assert(typeManager.typeForReturnStatement("RUNME", typeManager.numericType()) !== null,
+               "string return type");
+        logger.setLineNumber(6);
+        assert(!typeManager.validate(),
+               "does not validate");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 3,
+               "error is logged");
+
+        onComplete();
+      }
+    },
+    {
+      description: "infer type from subroutine with subroutine expression arg",
+      run: function(onComplete) {
+        assert(typeManager.registerSubroutineDefinition("ONEARG", ["ARG1"]),
+               "registration succsessful");
+        assert(typeManager.typeForReturnStatement("ONEARG", typeManager.typeForLocal("ONEARG","ARG1")) !== null,
+               "returns argument");
+
+        assert(typeManager.registerSubroutineDefinition("NOARG", []),
+               "registration succsessful");
+        assert(typeManager.typeForReturnStatement("NOARG", typeManager.typeForGlobal("B")) !== null,
+               "returns global without a type");
+
+        assert(typeManager.typeForPair(
+          typeManager.typeForCallSubroutine("ONEARG", [typeManager.typeForCallSubroutine("NOARG",[])]),
+          typeManager.typeForGlobal("A")) !== null,
+               "called")
+
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.stringType()) !== null,
+               "set A to string type");
+        assert(typeManager.validate(),
+               "validates");
+        assert(typeManager.subHasStringReturnType("ONEARG"),
+               "onearg sub has string return type");
+        assert(typeManager.subHasStringReturnType("NOARG"),
+               "noarg sub has string return type");
+        assert(!(typeManager.subHasVoidReturnType("ONEARG") ||
+                 typeManager.subHasNumericReturnType("ONEARG")),
+               "one arg sub does not have a void or numeric return type");
+        assert(!(typeManager.subHasVoidReturnType("NOARG") ||
+                 typeManager.subHasNumericReturnType("NOARG")),
+               "no arg sub does not have a void or numeric return type");
+        assert(typeManager.getSubArgNames("ONEARG").length === 1 &&
+               typeManager.getSubArgNames("ONEARG")[0] === "ARG1",
+               "one arg sub has an arg");
+        assert(typeManager.getSubArgNames("NOARG").length === 0,
+               "no arg sub has no arg");
+        assert(typeManager.localVariableDefined("ONEARG","ARG1") &&
+               typeManager.localHasStringType("ONEARG","ARG1"),
+               "arg1 has string type");
+        assert(!typeManager.localHasNumericType("ONEARG","ARG1"),
+               "arg1 is not numeric");
+        assert(typeManager.globalHasStringType("A"),
+               "string type is set for A");
+        assert(!typeManager.globalHasNumericType("A"),
+               "numeric type is not set for A");
+        assert(typeManager.globalHasStringType("B"),
+               "string type is set for B");
+        assert(!typeManager.globalHasNumericType("B"),
+               "numeric type is not set for B");
+        assert(typeManager.getNumericGlobals().length === 0,
+               "no numeric globals reported");
+        assert(typeManager.getStringGlobals().length === 2 &&
+               typeManager.getStringGlobals().indexOf("A") !== -1 &&
+               typeManager.getStringGlobals().indexOf("B") !== -1,
+               "string globals reported");
+
+        assert(logger.getLog().length === 0,
+               "no errors");
+
+        onComplete();
+      }
+    },
+    {
+      description: "infer type conflict from subroutine with subroutine expression arg",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.registerSubroutineDefinition("ONEARG", ["ARG1"]),
+               "registration succsessful");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForReturnStatement("ONEARG", typeManager.typeForLocal("ONEARG","ARG1")) !== null,
+               "returns argument");
+        logger.setLineNumber(3);
+        assert(typeManager.registerSubroutineDefinition("NOARG", []),
+               "registration succsessful");
+        logger.setLineNumber(4);
+        assert(typeManager.typeForReturnStatement("NOARG", typeManager.typeForGlobal("B")) !== null,
+               "returns global without type");
+        logger.setLineNumber(5);
+        assert(typeManager.typeForPair(
+          typeManager.typeForCallSubroutine("ONEARG", [typeManager.typeForCallSubroutine("NOARG",[])]),
+          typeManager.typeForGlobal("A")) !== null,
+               "called");
+        logger.setLineNumber(6);
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("B"),
+                                                     typeManager.numericType()) !== null,
+              "set B to numeric type");
+        logger.setLineNumber(7);
+        assert(typeManager.typeForPair(typeManager.typeForGlobal("A"),
+                                                     typeManager.stringType()) === null,
+               "set A to string type fails");
+        logger.setLineNumber(8);
+        assert(!typeManager.validate(),
+               "does not validate");
+
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 7,
+               "no errors");
+
+        onComplete();
+      }
+    },
+    {
+      description: "subroutine with same name as global",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.typeForGlobal("A") !== null,
+               "create global");
+        logger.setLineNumber(2);
+        assert(!typeManager.registerSubroutineDefinition("A",[]),
+               "register subroutine fails");
+        logger.setLineNumber(3);
+        assert(!typeManager.validate(),
+               "validation fails");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 2,
+               "logged error");
+
+        onComplete();
+      }
+    },
+    {
+      description: "global with same name as subroutine",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.registerSubroutineDefinition("A",[]),
+               "register subroutine");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForGlobal("A") === null,
+               "create global fails");
+        logger.setLineNumber(3);
+        assert(!typeManager.validate(),
+               "validation fails");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 2,
+               "logged error");
+
+        onComplete();
+      }
+    }
+    // END tests for subroutines
+  ];
+
+  function setup() {
+    logger = TestingLogger();
+    typeManager = TypeManager(logger);
+  }
+
+  var tester = BaseTester(display, setup, tests);
+  var assert = tester.assert;
+
+  return tester;
+}

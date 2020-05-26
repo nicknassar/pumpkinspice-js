@@ -1,0 +1,68 @@
+// Pumpkin Spice tests
+
+function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, inputFormElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam){
+
+{{legacy.js}}
+{{global_utilities.js}}
+{{display.js}}
+{{type_manager.js}}
+{{base_tester.js}}
+{{matching_tester.js}}
+{{simple_call_logger.js}}
+
+{{parser_tests.js.template}}
+{{type_manager_tests.js.template}}
+{{type_generator_pass_tests.js.template}}
+{{code_generator_pass_tests.js.template}}
+{{testing_logger.js}}
+
+  var successCount = 0;
+  var errorCount = 0;
+
+  var display = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
+  display.print("TESTING...\n");
+  display.sendUpdates();
+
+  var testSuites = [
+    ParserTests(display),
+    TypeManagerTests(display),
+    TypeGeneratorPassTests(display),
+    CodeGeneratorPassTests(display)
+  ];
+
+  function onComplete(i) {
+    var testSuite = testSuites[i];
+    // Tally the results
+    successCount += testSuite.getSuccessCount();
+    errorCount += testSuite.getErrorCount();
+
+    // Run the next one
+    if (i+1<testSuites.length) {
+      i++;
+      testSuite = testSuites[i];
+      testSuite.run(function(){
+        onComplete(i);
+      });
+
+    // That was the last one, display the summary
+    } else {
+      if (errorCount === 0)
+        display.setColor(2);
+      else
+        display.setColor(4);
+      display.print((successCount+errorCount)+" tests run\n");
+      display.print(errorCount+" errors\n");
+      display.setColor(7);
+      display.sendUpdates();
+    }
+  }
+
+  // Run the first test suite
+  if (testSuites.length > 0) {
+    testSuites[0].run(function(){
+      onComplete(0);
+    });
+  }
+
+}
+{{initialize_tests.js}}

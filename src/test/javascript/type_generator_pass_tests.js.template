@@ -1,0 +1,1449 @@
+function TypeGeneratorPassTests(display) {
+  {{type_generator_pass.js}}
+  {{testing_type_manager.js}}
+
+  // variables reset for each run
+  var logger;
+  var typeManager;
+  var typeGeneratorPass;
+  function setup() {
+    logger = TestingLogger();
+    typeManager = TestingTypeManager();
+    typeGeneratorPass = TypeGeneratorPass(typeManager, logger);
+  }
+
+  // List of objects with description, function to run, the expected
+  // calls into the type manager, and the expected errors
+
+  // The testing type manager returns the number of
+  // an expression. The values that are from expressions
+  // refer to the order in which handler functions were called
+  var expectations = [
+    {
+      description: "Hello World",
+      run: function(onComplete) {
+        typeGeneratorPass.printString("Hello World!", true, false);
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT paren expression",
+      run: function(onComplete) {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.parenExpression(
+            typeGeneratorPass.stringLiteralExpression("somestring")), true, false);
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT double paren expression",
+      run: function(onComplete) {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.parenExpression(
+            typeGeneratorPass.parenExpression(
+              typeGeneratorPass.stringLiteralExpression("somestring"))), true, false);
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string concatenation expression",
+      run: function(onComplete) {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.stringLiteralExpression("string"),
+            typeGeneratorPass.stringLiteralExpression("string")
+          ),
+          true,
+          false);
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["stringType"],
+        ["typeForPair", 0, 1],
+        ["typeForStringExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string multi concatenation expression",
+      run: function(onComplete) {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.stringLiteralExpression("string"),
+            typeGeneratorPass.stringLiteralExpression("string")
+          ),
+          true,
+          false);
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["stringType"],
+        ["typeForPair", 0, 1],
+        ["typeForStringExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT variable",
+      run: function(onComplete) {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.variableExpression("VARIABLE"),
+          true,
+          false);
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "VARIABLE"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT variable+literal",
+      run: function(onComplete) {
+        typeGeneratorPass.printExp(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.variableExpression("VARIABLE"),
+            typeGeneratorPass.stringLiteralExpression("Literally")
+          ),
+          true,
+          false);
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "VARIABLE"],
+        ["stringType"],
+        ["typeForPair", 0, 1],
+        ["typeForStringExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Comment",
+      run: function(onComplete) {
+        typeGeneratorPass.comment("comment text");
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "COLOR statement",
+      run: function(onComplete) {
+        typeGeneratorPass.color(
+          typeGeneratorPass.numericLiteralExpression("7"));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "COLOR statement with expression",
+      run: function(onComplete) {
+        typeGeneratorPass.color(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.numericLiteralExpression("7"),
+            typeGeneratorPass.variableExpression("X")
+          ));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForGlobal", "X"],
+        ["typeForPair", 0, 1],
+        ["typeForNumericExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+
+    },
+    {
+      description: "BGCOLOR statement",
+      run: function(onComplete) {
+        typeGeneratorPass.bgColor(
+          typeGeneratorPass.numericLiteralExpression("7"));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "BGCOLOR statement with expression",
+      run: function(onComplete) {
+        typeGeneratorPass.bgColor(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.numericLiteralExpression("7"),
+            typeGeneratorPass.variableExpression("X")
+          ));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForGlobal","X"],
+        ["typeForPair", 0, 1],
+        ["typeForNumericExpression", 2],
+        ["validate"]
+      ],
+      errors: []
+
+    },
+    {
+      description: "CLEAR statement",
+      run: function(onComplete) {
+        typeGeneratorPass.clear();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "INPUT statement",
+      run: function(onComplete) {
+        typeGeneratorPass.input("Q");
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "Q"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "PLAY statement",
+      run: function(onComplete) {
+        typeGeneratorPass.play(typeGeneratorPass.stringLiteralExpression("ABC"));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Sleep statement",
+      run: function(onComplete) {
+        typeGeneratorPass.sleep(typeGeneratorPass.numericLiteralExpression(7));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.variableExpression("B"));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "B"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from string literal",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.stringLiteralExpression("B"));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from numeric literal",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.numericLiteralExpression("1"));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from numeric addition",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.additionExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("2"))
+                                       );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from string addition",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.additionExpression(
+                                         typeGeneratorPass.stringLiteralExpression("Foo"),
+                                         typeGeneratorPass.stringLiteralExpression("Bar"))
+                                       );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["stringType"],
+        ["typeForPair", 0, 1],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from subtraction",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.subtractionExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("2"))
+                                       );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["typeForPair", 2, 3],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from multiplication",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.multiplicationExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("2"))
+                                       );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["typeForPair", 2, 3],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from division",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.divisionExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("2"))
+                                       );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["typeForPair", 2, 3],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from ABS",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.absBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from CINT",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.cintBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from FIX",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.fixBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from INT",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.intBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from LEFT$",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.leftzBuiltinExpression(
+                                         typeGeneratorPass.stringLiteralExpression("something"),
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["numericType"],
+        ["typeForStringExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from RIGHT$",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.rightzBuiltinExpression(
+                                         typeGeneratorPass.stringLiteralExpression("something"),
+                                         typeGeneratorPass.numericLiteralExpression("1"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["numericType"],
+        ["typeForStringExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from LEN",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.lenBuiltinExpression(
+                                         typeGeneratorPass.stringLiteralExpression("something"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from STR$",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.strzBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1001"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from VAL",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.valBuiltinExpression(
+                                         typeGeneratorPass.stringLiteralExpression("100"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from RANDOM",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.randomBuiltinExpression(
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.numericLiteralExpression("100"))
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 4, 5],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from PI",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.piBuiltinExpression()
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine declaration",
+      run: function(onComplete) {
+        typeGeneratorPass.beginSubroutine("FOO", []);
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", []],
+        ["typeForVoidReturnStatement", "FOO"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine declaration with void return",
+      run: function(onComplete) {
+        typeGeneratorPass.beginSubroutine("FOO", []);
+        typeGeneratorPass.voidReturnStatement();
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", []],
+        ["typeForVoidReturnStatement", "FOO"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with variable return",
+      run: function(onComplete) {
+        typeGeneratorPass.beginSubroutine("FOO", ["BIZ", "BANG"]);
+        typeGeneratorPass.returnStatement(
+          typeGeneratorPass.variableExpression("BAR")
+        );
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", ["BIZ", "BANG"]],
+        ["localVariableDefined", "FOO", "BAR"],
+        ["typeForGlobal", "BAR"],
+        ["typeForReturnStatement", "FOO", 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with string return",
+      run: function(onComplete) {
+        typeGeneratorPass.beginSubroutine("FOO", ["BAR", "BIZ", "BAZ"]);
+        typeGeneratorPass.returnStatement(
+          typeGeneratorPass.stringLiteralExpression("BAR")
+        );
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", ["BAR", "BIZ", "BAZ"]],
+        ["stringType"],
+        ["typeForReturnStatement", "FOO", 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with numeric return",
+      run: function(onComplete) {
+        typeGeneratorPass.beginSubroutine("FOO", ["BAR"]);
+        typeGeneratorPass.returnStatement(
+          typeGeneratorPass.numericLiteralExpression("700")
+        );
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", ["BAR"]],
+        ["numericType"],
+        ["typeForReturnStatement", "FOO", 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call statement",
+      run: function(onComplete) {
+        typeGeneratorPass.callSubroutine("FOO", []);
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForCallSubroutine", "FOO", []],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call statement with variable expression",
+      run: function(onComplete) {
+        typeGeneratorPass.callSubroutine("FOO",
+                                         [typeGeneratorPass.variableExpression("NONE")]
+                                        );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "NONE"],
+        ["typeForCallSubroutine", "FOO", [0]],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call statement with multiple literal parameters",
+      run: function(onComplete) {
+        typeGeneratorPass.callSubroutine("FOO",
+                                         [
+                                           typeGeneratorPass.numericLiteralExpression("12"),
+                                           typeGeneratorPass.stringLiteralExpression("bar")
+                                         ]
+                                        );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["stringType"],
+        ["typeForCallSubroutine", "FOO", [0, 1]],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call expression",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.callSubroutineExpression("FOO", [])
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForCallSubroutine", "FOO", []],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call expression with variable param",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.callSubroutineExpression("FOO", [
+                                         typeGeneratorPass.variableExpression("BAR")
+                                       ])
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "BAR"],
+        ["typeForCallSubroutine", "FOO", [0]],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 1, 2],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Call expression with two params",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement("A",
+                                       typeGeneratorPass.callSubroutineExpression("FOO", [
+                                         typeGeneratorPass.numericLiteralExpression("1"),
+                                         typeGeneratorPass.stringLiteralExpression("bar")
+                                       ])
+                                      );
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["stringType"],
+        ["typeForCallSubroutine", "FOO", [0, 1]],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 2, 3],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with Call expressions",
+      run: function(onComplete) {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolNotExpression(
+            typeGeneratorPass.boolNotEqualExpression(
+              typeGeneratorPass.callSubroutineExpression(
+                "PLUSONE",
+                typeGeneratorPass.parenExpression(
+                  typeGeneratorPass.callSubroutineExpression(
+                    "PLUSONE",
+                    typeGeneratorPass.numericLiteralExpression("1")
+                  ))),
+              typeGeneratorPass.callSubroutineExpression(
+                "PLUSONE",
+                typeGeneratorPass.numericLiteralExpression(2)
+              ))));
+        typeGeneratorPass.elseStatement();
+        typeGeneratorPass.printString("", true, false);
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["typeForCallSubroutine", "PLUSONE", 0],
+        ["typeForCallSubroutine", "PLUSONE", 1],
+        ["numericType"],
+        ["typeForCallSubroutine", "PLUSONE", 3],
+        ["typeForPair", 2, 4],
+        ["boolType"],
+        ["typeForBoolExpression", 6],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of multiply, then add",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement(
+          "A",
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.numericLiteralExpression("88"),
+            typeGeneratorPass.multiplicationExpression(
+              typeGeneratorPass.numericLiteralExpression("66"),
+              typeGeneratorPass.numericLiteralExpression("77")
+            )));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 1],
+        ["typeForNumericExpression", 2],
+        ["typeForPair", 3, 4],
+        ["typeForPair", 0, 5],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 6, 7],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of divide, then subtract",
+      run: function(onComplete) {
+        typeGeneratorPass.letStatement(
+          "A",
+          typeGeneratorPass.subtractionExpression(
+            typeGeneratorPass.divisionExpression(
+              typeGeneratorPass.numericLiteralExpression("66"),
+              typeGeneratorPass.numericLiteralExpression("77")
+            ),
+            typeGeneratorPass.numericLiteralExpression("88")
+          ));
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["typeForPair", 2, 3],
+        ["numericType"],
+        ["typeForNumericExpression", 4],
+        ["typeForNumericExpression", 5],
+        ["typeForPair", 6, 7],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 8, 9],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with string comparision",
+      run: function(onComplete) {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolEqualExpression(
+            typeGeneratorPass.stringLiteralExpression("a"),
+            typeGeneratorPass.variableExpression("SEVEN")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForGlobal", "SEVEN"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with greater than comparision",
+      run: function(onComplete) {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolGreaterExpression(
+            typeGeneratorPass.variableExpression("Q"),
+            typeGeneratorPass.numericLiteralExpression("77")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "Q"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with less than comparision",
+      run: function(onComplete) {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolLessExpression(
+            typeGeneratorPass.variableExpression("Q"),
+            typeGeneratorPass.variableExpression("Z")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "Q"],
+        ["typeForGlobal", "Z"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with greater than or equal comparision",
+      run: function(onComplete) {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolGreaterOrEqualExpression(
+            typeGeneratorPass.variableExpression("Q"),
+            typeGeneratorPass.numericLiteralExpression("77")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "Q"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with less than or equal comparision",
+      run: function(onComplete) {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolLessOrEqualExpression(
+            typeGeneratorPass.numericLiteralExpression("33"),
+            typeGeneratorPass.numericLiteralExpression("44")
+          ));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF with boolean OR and AND",
+      run: function(onComplete) {
+        typeGeneratorPass.ifStatement(
+          typeGeneratorPass.boolOrExpression(
+            typeGeneratorPass.boolGreaterExpression(
+              typeGeneratorPass.additionExpression(
+                typeGeneratorPass.numericLiteralExpression("66"),
+                typeGeneratorPass.numericLiteralExpression("77")
+              ),
+              typeGeneratorPass.subtractionExpression(
+                typeGeneratorPass.numericLiteralExpression("66"),
+                typeGeneratorPass.numericLiteralExpression("77")
+              )
+            ),
+            typeGeneratorPass.boolAndExpression(
+              typeGeneratorPass.boolGreaterExpression(
+                typeGeneratorPass.multiplicationExpression(
+                  typeGeneratorPass.numericLiteralExpression("88"),
+                  typeGeneratorPass.numericLiteralExpression("99")
+                ),
+                typeGeneratorPass.divisionExpression(
+                  typeGeneratorPass.numericLiteralExpression("88"),
+                  typeGeneratorPass.numericLiteralExpression("99")
+                )
+              ),
+              typeGeneratorPass.boolGreaterOrEqualExpression(
+                typeGeneratorPass.variableExpression("A"),
+                typeGeneratorPass.variableExpression("B")
+              )
+            )));
+        typeGeneratorPass.endIf();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 3],
+        ["typeForNumericExpression", 4],
+        ["typeForPair", 5, 6],
+        ["typeForPair", 2, 7],
+        ["boolType"],
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 10],
+        ["typeForNumericExpression", 11],
+        ["typeForPair", 12, 13],
+        ["numericType"],
+        ["numericType"],
+        ["typeForNumericExpression", 15],
+        ["typeForNumericExpression", 16],
+        ["typeForPair", 17, 18],
+        ["typeForPair", 14, 19],
+        ["boolType"],
+        ["typeForGlobal", "A"],
+        ["typeForGlobal", "B"],
+        ["typeForPair", 22, 23],
+        ["boolType"],
+        ["typeForBoolExpression", 21],
+        ["typeForBoolExpression", 25],
+        ["typeForPair", 26, 27],
+        ["typeForBoolExpression", 9],
+        ["typeForBoolExpression", 28],
+        ["typeForPair", 29, 30],
+        ["validate"]
+      ],
+      errors:[]
+    },
+    {
+      description: "While statement",
+      run: function(onComplete) {
+        typeGeneratorPass.whileStatement(
+          typeGeneratorPass.boolEqualExpression(
+            typeGeneratorPass.variableExpression("A"),
+            typeGeneratorPass.variableExpression("A")
+          )
+        );
+        typeGeneratorPass.endWhile();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "A"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "While statement 2",
+      run: function(onComplete) {
+        typeGeneratorPass.whileStatement(
+          typeGeneratorPass.boolLessExpression(
+            typeGeneratorPass.variableExpression("A"),
+            typeGeneratorPass.numericLiteralExpression("10")
+          )
+        );
+        typeGeneratorPass.endWhile();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["typeForGlobal", "A"],
+        ["numericType"],
+        ["typeForPair", 0, 1],
+        ["boolType"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "FOR statement",
+      run: function(onComplete) {
+        typeGeneratorPass.forStatement(
+          "N",
+          typeGeneratorPass.numericLiteralExpression("1"),
+          typeGeneratorPass.numericLiteralExpression("10")
+        );
+        typeGeneratorPass.printString("", true, false);
+        typeGeneratorPass.next("N");
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["numericType"],
+        ["numericType"],
+        ["typeForGlobal", "N"],
+        ["typeForNumericExpression", 2],
+        ["typeForNumericExpression", 0],
+        ["typeForNumericExpression", 1],
+        ["validate"],
+      ],
+      errors: []
+    },
+    {
+      description: "RANDOM statement",
+      run: function(onComplete) {
+        typeGeneratorPass.beginRandom();
+        typeGeneratorPass.withChance("33.3");
+        typeGeneratorPass.printString("win", true, false);
+        typeGeneratorPass.withChance("66.7");
+        typeGeneratorPass.printString("lose", true, false);
+        typeGeneratorPass.endRandom();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "RANDOM with even chance statement",
+      run: function(onComplete) {
+        typeGeneratorPass.beginRandom();
+        typeGeneratorPass.withEvenChance();
+        typeGeneratorPass.printString("win", true, false);
+        typeGeneratorPass.withEvenChance();
+        typeGeneratorPass.printString("lose", true, false);
+        typeGeneratorPass.endRandom();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "WAIT FOR MUSIC",
+      run: function(onComplete) {
+        typeGeneratorPass.waitForMusic();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "simple ask",
+      run: function(onComplete) {
+        typeGeneratorPass.beginAsk(
+          typeGeneratorPass.stringLiteralExpression("Will you?")
+        );
+        typeGeneratorPass.onNo();
+        typeGeneratorPass.printString("no", true, false);
+        typeGeneratorPass.onYes();
+        typeGeneratorPass.printString("yes", true, false);
+        typeGeneratorPass.endAsk();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK with default and string expression",
+      run: function(onComplete) {
+        typeGeneratorPass.beginAsk(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.additionExpression(
+              typeGeneratorPass.stringLiteralExpression("Are you "),
+              typeGeneratorPass.variableExpression("NAME")
+            ),
+            typeGeneratorPass.stringLiteralExpression("?")
+          ));
+        typeGeneratorPass.askDefault(true);
+        typeGeneratorPass.onNo();
+        typeGeneratorPass.printString("no", true, false);
+        typeGeneratorPass.onYes();
+        typeGeneratorPass.printString("yes", true, false);
+        typeGeneratorPass.endAsk();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForGlobal", "NAME"],
+        ["typeForPair", 0, 1],
+        ["stringType"],
+        ["typeForPair", 2, 3],
+        ["typeForStringExpression", 4],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK with all the extras",
+      run: function(onComplete) {
+        typeGeneratorPass.beginAsk(
+          typeGeneratorPass.stringLiteralExpression("Won't you?")
+        );
+        typeGeneratorPass.askDefault(false);
+        typeGeneratorPass.askColor("7");
+        typeGeneratorPass.askBGColor("0");
+        typeGeneratorPass.askPromptColor("4");
+        typeGeneratorPass.onNo();
+        typeGeneratorPass.printString("no", true, false);
+        typeGeneratorPass.onYes();
+        typeGeneratorPass.printString("yes", true, false);
+        typeGeneratorPass.endAsk();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "simple menu",
+      run: function(onComplete) {
+        typeGeneratorPass.beginMenu(
+          typeGeneratorPass.stringLiteralExpression("prompt")
+        );
+        typeGeneratorPass.menuChoice(
+          "A",
+          typeGeneratorPass.stringLiteralExpression("First thing")
+        );
+        typeGeneratorPass.printString("", true, false);
+        typeGeneratorPass.menuChoice(
+          "B",
+          typeGeneratorPass.stringLiteralExpression("Next thing")
+        );
+        typeGeneratorPass.printString("", true, false);
+        typeGeneratorPass.menuChoice(
+          "C",
+          typeGeneratorPass.stringLiteralExpression("Last thing")
+        );
+        typeGeneratorPass.printString("", true, false);
+        typeGeneratorPass.endMenu();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForStringExpression", 0],
+        ["stringType"],
+        ["typeForStringExpression", 2],
+        ["stringType"],
+        ["typeForStringExpression", 4],
+        ["stringType"],
+        ["typeForStringExpression", 6],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "menu with everything",
+      run: function(onComplete) {
+        typeGeneratorPass.beginMenu(
+          typeGeneratorPass.additionExpression(
+            typeGeneratorPass.stringLiteralExpression("prompt"),
+            typeGeneratorPass.variableExpression("A")
+          ));
+
+        typeGeneratorPass.menuColor("7");
+        typeGeneratorPass.menuBGColor("0");
+        typeGeneratorPass.menuChoiceColor("7");
+        typeGeneratorPass.menuPromptColor("7");
+        typeGeneratorPass.menuChoice(
+          "A",
+          typeGeneratorPass.stringLiteralExpression("First thing")
+        );
+        typeGeneratorPass.menuHideIf(
+          typeGeneratorPass.boolEqualExpression(
+            typeGeneratorPass.variableExpression("X"),
+            typeGeneratorPass.numericLiteralExpression("2")
+          ));
+        typeGeneratorPass.printString("", true, false);
+        typeGeneratorPass.menuChoice(
+          "B",
+          typeGeneratorPass.stringLiteralExpression("Next thing")
+        );
+        typeGeneratorPass.printString("", true, false);
+        typeGeneratorPass.menuChoice(
+          "C",
+          typeGeneratorPass.stringLiteralExpression("Last thing")
+        );
+        typeGeneratorPass.printString("", true, false);
+        typeGeneratorPass.endMenu();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["stringType"],
+        ["typeForGlobal", "A"],
+        ["typeForPair", 0, 1],
+        ["typeForStringExpression", 2],
+        ["stringType"],
+        ["typeForStringExpression", 4],
+        ["typeForGlobal", "X"],
+        ["numericType"],
+        ["typeForPair", 6, 7],
+        ["boolType"],
+        ["stringType"],
+        ["typeForStringExpression", 10],
+        ["stringType"],
+        ["typeForStringExpression", 12],
+        ["validate"]
+      ],
+      errors: []
+    }
+  ];
+
+
+  function expectationToTestFunc(expectation) {
+    return expectation.run;
+  }
+
+  function expectationText(expectation) {
+    return expectation.run.toString();
+  }
+
+  function getCallLog() {
+    return typeManager.getLog();
+  }
+
+  function getErrorLog() {
+    return logger.getLog();
+  }
+
+
+  var tester = MatchingTester(display, setup, expectations, expectationToTestFunc, expectationText, getCallLog, getErrorLog);
+  return tester;
+}

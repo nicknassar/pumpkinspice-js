@@ -19,19 +19,23 @@ class Builder {
     }
     private static class BuilderConfig {
 	public boolean debug;
+        public boolean noCode;
 	public String source;
 	public String destination;
 	public String title;
+        public String javascriptFilename;
 
 	BuilderConfig() {
+            noCode = false;
 	    debug = false;
 	    source = null;
 	    destination = null;
 	    title = null;
+            javascriptFilename = null;
 	}
-	
+
 	boolean isValid() {
-	    return source != null && destination != null && title != null;
+	    return (noCode || source != null) && destination != null && title != null;
 	}
 
 	static BuilderConfig parseArgs(String args[]) {
@@ -40,11 +44,17 @@ class Builder {
 	    for (String arg: args) {
 		if (previousArg != null && previousArg.equals("--title")) {
 		    config.title = arg;
+                } else if (previousArg != null && previousArg.equals("--javascript")) {
+		    config.javascriptFilename = arg;
 		} else if ("--debug".equals(arg) || "-g".equals(arg)) {
 		    config.debug = true;
+		} else if ("--nocode".equals(arg)) {
+		    config.noCode = true;
 		} else if ("--title".equals(arg)) {
 		    // pass
-		} else if (config.source == null) {
+		} else if ("--javascript".equals(arg)) {
+		    // pass
+		} else if (config.source == null && !config.noCode) {
 		    config.source = arg;
 		} else if (config.destination == null) {
 		    config.destination = arg;
@@ -64,7 +74,7 @@ class Builder {
 		    } else {
 			config.destination = config.source+".html";
 		    }
-		}		
+		}
 	    }
 	    if (config.title == null) {
 		config.title = config.source;
@@ -104,12 +114,17 @@ class Builder {
     public void run() throws Error {
 	try {
 	    out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(config.destination), Charset.forName("UTF-8").newEncoder()));
-	    code = new BufferedReader(new InputStreamReader(new FileInputStream(config.source), Charset.forName("UTF-8").newDecoder()));
+            if (config.noCode)
+                code = null;
+            else
+                code = new BufferedReader(new InputStreamReader(new FileInputStream(config.source), Charset.forName("UTF-8").newDecoder()));
 	    template = new BufferedReader(new InputStreamReader(getResourceAsStream("index.html.template"), Charset.forName("UTF-8").newDecoder()));
-	    if (config.debug)
-		js = new BufferedReader(new InputStreamReader(getResourceAsStream("compiler.js"), Charset.forName("UTF-8").newDecoder()));
+            if (config.javascriptFilename != null) {
+                js = new BufferedReader(new InputStreamReader(new FileInputStream(config.javascriptFilename), Charset.forName("UTF-8").newDecoder()));
+            } else if (config.debug)
+		js = new BufferedReader(new InputStreamReader(getResourceAsStream("pumpkinspice.js"), Charset.forName("UTF-8").newDecoder()));
 	    else
-		js = new BufferedReader(new InputStreamReader(getResourceAsStream("compiler.optimized.js"), Charset.forName("UTF-8").newDecoder()));
+		js = new BufferedReader(new InputStreamReader(getResourceAsStream("pumpkinspice.optimized.js"), Charset.forName("UTF-8").newDecoder()));
 	} catch (FileNotFoundException e) {
 	    throw new Error(e);
 	}
@@ -118,7 +133,7 @@ class Builder {
 
     private void fillTemplate() throws Error {
 	try {
-	    
+
 	    String line = template.readLine();
 	    while (line != null) {
 		fillLine(line);
@@ -129,7 +144,7 @@ class Builder {
 	    throw new Error(e);
 	}
     }
-    
+
     private InputStream getResourceAsStream(String name) {
 	ClassLoader cl = this.getClass().getClassLoader();
 	if (cl==null) {
@@ -148,7 +163,8 @@ class Builder {
 		dump(js);
 	    } else if (line.substring(match, match+8).equals("{{CODE}}")) {
 		start = match+8;
-		dump(code);
+                if (code != null)
+                    dump(code);
 	    } else if (line.substring(match, match+9).equals("{{TITLE}}")) {
 		start = match+9;
 		out.write(config.title
@@ -181,4 +197,4 @@ class Builder {
 		out.newLine();
 	}
     }
-}  
+}

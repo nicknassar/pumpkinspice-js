@@ -1,0 +1,2592 @@
+function ParserTests(display) {
+  {{parser.js}}
+  {{testing_compiler_pass.js}}
+
+  // variables reset for each run
+  var logger;
+  var handler;
+  var compiler;
+  function setup() {
+    logger = TestingLogger();
+    handler = TestingCompilerPass();
+    compiler = Parser([handler], logger);
+  }
+
+  // List of code to parse, the expected calls into the handler,
+  // and the expected errors
+
+  // The testing compiler pass returns the number of
+  // an expression. The values that are from expressions
+  // refer to the order in which handler functions were called
+  var expectations = [
+    {
+      description: "Hello World",
+      code: "PRINT \"Hello World!\"\n",
+      calls: [
+        ["printString", "Hello World!", true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bare PRINT",
+      code: "PRINT\n",
+      calls: [
+        ["printString", "", true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT No newline",
+      code: "PRINT \"No newline\";\n",
+      calls: [
+        ["printString", "No newline", false, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PRINT No Op",
+      code: "PRINT;\n",
+      calls: [
+        ["printString", "", false, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PAUSE statement",
+      code: "PAUSE \"Press any key\"\n",
+      calls: [
+        ["printString", "Press any key", true, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PAUSE newline",
+      code: "PAUSE\n",
+      calls: [
+        ["printString", "", true, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PAUSE no newline",
+      code: "PAUSE \"Press any key\";\n",
+      calls: [
+        ["printString", "Press any key", false, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      // Test simple print statements
+      description: "PAUSE print nothing",
+      code: "PAUSE;\n",
+      calls: [
+        ["printString", "", false, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "REM Comment",
+      code: "REM this is a comment\n",
+      calls: [
+        ["comment","this is a comment"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Apostrophe comment",
+      code: "' comment 2\n",
+      calls: [
+        ["comment","comment 2"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Empty REM comment",
+      code: "REM\n",
+      calls: [
+        ["comment",""],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Empty Apostrophe comment",
+      code: "'\n",
+      calls: [
+        ["comment",""],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Tokenizer Errors",
+      code: "PRINT\n" +
+            "PRINT \"\n" +
+            "PRINT \"\"\"\n" +
+            "% invalid line\n" +
+            "PRINT \"good\"",
+      calls: [
+        ["printString", "", true, false],
+        ["printString", "good", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "unterminated string"],
+        [3, "unterminated string"],
+        [4, "unrecognized character"]
+      ]
+    },
+    {
+      description: "PRINT paren expression 1",
+      code: "PRINT (\"parens\")\n",
+      calls: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["printExp", 1, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT paren expression 2",
+      code: "PRINT (\"parens\");\n",
+      calls: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["printExp", 1, false, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PAUSE paren expression 1",
+      code: "PAUSE (\"parens\")\n",
+      calls: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["printExp", 1, true, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PAUSE paren expression 2",
+      code: "PAUSE (\"parens\");\n",
+      calls: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["printExp", 1, false, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string concatenation expression 1",
+      code: "PRINT \"string\" + \"concatenation\"\n",
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string concatenation expression 2",
+      code: "PRINT \"string\"+\"concatenation\";\n",
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, false, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PAUSE string concatenation expression 1",
+      code: "PAUSE \"string\" + \"concatenation\"\n",
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, true, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PAUSE string concatenation expression 2",
+      code: "PAUSE \"string\"+\"concatenation\";\n",
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, false, true],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string multi concatenation expression",
+      code: "PRINT \"multi\" + \"string\" + \"concatenation\"\n" ,
+      calls: [
+        ["stringLiteralExpression", "multi"],
+        ["stringLiteralExpression", "string"],
+        ["additionExpression", 0, 1],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 2, 3],
+        ["printExp", 4, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string multi parents expression",
+      code: "PRINT ((\"parens\"))\n",
+      calls: [
+        ["stringLiteralExpression", "parens"],
+        ["parenExpression", 0],
+        ["parenExpression", 1],
+        ["printExp", 2, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string parens concatenation expression",
+      code: "PRINT (\"string\" + \"concatenation\")\n" ,
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["stringLiteralExpression", "concatenation"],
+        ["additionExpression", 0, 1],
+        ["parenExpression", 2],
+        ["printExp", 3, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string variable expression",
+      code: "PRINT variable\n" ,
+      calls: [
+        ["variableExpression", "VARIABLE"],
+        ["printExp", 0, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string variable expression concatenation",
+      code: "PRINT variable+\"literal\"\n" ,
+      calls: [
+        ["variableExpression", "VARIABLE"],
+        ["stringLiteralExpression", "literal"],
+        ["additionExpression", 0, 1],
+        ["printExp", 2, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string parens variable expression",
+      code: "PRINT (variable)\n" ,
+      calls: [
+        ["variableExpression", "VARIABLE"],
+        ["parenExpression", 0],
+        ["printExp", 1, true, false],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT string expression errors",
+      code: "PRINT >\n" +
+        "PRINT (>)\n" +
+        "PRINT (\"mismatch\"",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid expression"],
+        [2, "Invalid expression"],
+        [3, "Invalid expression"]
+      ]
+    },
+    {
+      description: "COLOR statement",
+      code: "COLOR 7\n",
+      calls: [
+        ["numericLiteralExpression", "7"],
+        ["color", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "COLOR statement with expression",
+      code: "COLOR X+7\n",
+      calls: [
+        ["variableExpression", "X"],
+        ["numericLiteralExpression", "7"],
+        ["additionExpression", 0, 1],
+        ["color", 2],
+        ["finalize"]
+      ],
+      errors: [
+      ]
+    },
+    {
+      description: "BGCOLOR statement",
+      code: "BGCOLOR 7\n",
+      calls: [
+        ["numericLiteralExpression", "7"],
+        ["bgColor", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "BGCOLOR statement with expression",
+      code: "BGCOLOR X+7\n",
+      calls: [
+        ["variableExpression", "X"],
+        ["numericLiteralExpression", "7"],
+        ["additionExpression", 0, 1],
+        ["bgColor", 2],
+        ["finalize"]
+      ],
+      errors: [
+      ]
+    },
+    {
+      description: "CLEAR statement",
+      code: "CLS\n",
+      calls: [
+        ["clear"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "INPUT statement",
+      code: "INPUT Q\n",
+      calls: [
+        ["input", "Q"],
+        ["finalize"]
+      ],
+      errors:[]
+    },
+    {
+      description: "INPUT statement with string param",
+      code: "INPUT Q+\"Q\"\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors:[
+        [1, "Invalid INPUT statement"]
+      ]
+    },
+    {
+      description: "PLAY statement",
+      code: "PLAY \"ABC\"\n",
+      calls: [
+        ["stringLiteralExpression", "ABC"],
+        ["play", 0],
+        ["finalize"]
+      ],
+      errors:[]
+    },
+    {
+      description: "SLEEP statement",
+      code: "SLEEP 7\n",
+      calls: [
+        ["numericLiteralExpression", "7"],
+        ["sleep", 0],
+        ["finalize"]
+      ],
+      errors:[]
+    },
+    {
+      description: "Assignment from variable",
+      code: "A = B\n",
+      calls: [
+        ["variableExpression","B"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from numeric literal",
+      code: "C = 7\n",
+      calls: [
+        ["numericLiteralExpression", "7"],
+        ["letStatement", "C", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment from string literal",
+      code: "D = \"string\"\n",
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["letStatement", "D", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of numeric addition expression",
+      code: "A = 100+101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of subtraction expression",
+      code: "A = 100-101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["subtractionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of multiplication expression",
+      code: "A = 100*101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["multiplicationExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of division expression",
+      code: "A = 100/101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["divisionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal integer preceeded by plus",
+      code: "A = +7\n",
+      calls: [
+        ["numericLiteralExpression", "7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal integer preceeded by minus",
+      code: "A = -7\n",
+      calls: [
+        ["numericLiteralExpression", "-7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal starting with decimal point",
+      code: "A = .7\n",
+      calls: [
+        ["numericLiteralExpression", ".7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal starting with plus decimal point",
+      code: "A = +.7\n",
+      calls: [
+        ["numericLiteralExpression", ".7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal starting with minus decimal point",
+      code: "A = -.7\n",
+      calls: [
+        ["numericLiteralExpression", "-.7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal with decimal",
+      code: "A = 7.7\n",
+      calls: [
+        ["numericLiteralExpression", "7.7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal with decimal preceeded by minus",
+      code: "A = -7.7\n",
+      calls: [
+        ["numericLiteralExpression", "-7.7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal with decimal preceeded by plus",
+      code: "A = +7.7\n",
+      calls: [
+        ["numericLiteralExpression", "7.7"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal addition preceeded by plus",
+      code: "A = +1 +1\n",
+      calls: [
+        ["numericLiteralExpression", "1"],
+        ["numericLiteralExpression", "1"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal addition preceeded by minus",
+      code: "A = -1 +1\n",
+      calls: [
+        ["numericLiteralExpression", "-1"],
+        ["numericLiteralExpression", "1"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+
+      description: "Numeric literal addition with parens on first",
+      code: "A = (7)+1\n",
+      calls: [
+        ["numericLiteralExpression", "7"],
+        ["parenExpression", 0],
+        ["numericLiteralExpression", "1"],
+        ["additionExpression", 1, 2],
+        ["letStatement", "A", 3],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal addition double plus",
+      code: "A = +1++1\n",
+      calls: [
+        ["numericLiteralExpression", "1"],
+        ["numericLiteralExpression", "1"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal subtraction double minus",
+      code: "A = -1--1\n",
+      calls: [
+        ["numericLiteralExpression", "-1"],
+        ["numericLiteralExpression", "-1"],
+        ["subtractionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal subtraction with plus",
+      code: "A = -1-+1\n",
+      calls: [
+        ["numericLiteralExpression", "-1"],
+        ["numericLiteralExpression", "1"],
+        ["subtractionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Numeric literal addition with minus",
+      code: "A = +1+-1\n",
+      calls: [
+        ["numericLiteralExpression", "1"],
+        ["numericLiteralExpression", "-1"],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of subtraction after parens",
+      code: "A = (100)-101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["parenExpression", 0],
+        ["numericLiteralExpression", "101"],
+        ["subtractionExpression", 1, 2],
+        ["letStatement", "A", 3],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of multiplication expression after parens",
+      code: "A = (100)*101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["parenExpression", 0],
+        ["numericLiteralExpression", "101"],
+        ["multiplicationExpression", 1, 2],
+        ["letStatement", "A", 3],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of division expression after parens",
+      code: "A = (100)/101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["parenExpression", 0],
+        ["numericLiteralExpression", "101"],
+        ["divisionExpression", 1, 2],
+        ["letStatement", "A", 3],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment ABS",
+      code: "A = ABS(100)\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["absBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of CINT",
+      code: "A = CINT(100)\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["cintBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of FIX",
+      code: "A = FIX(100)\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["fixBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of INT",
+      code: "A = INT(100)\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["intBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of LEFT$",
+      code: "A = LEFT$(\"string\", 100)\n",
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["numericLiteralExpression", "100"],
+        ["leftzBuiltinExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of RIGHT$",
+      code: "A = RIGHT$(\"string\", 100)\n",
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["numericLiteralExpression", "100"],
+        ["rightzBuiltinExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of LEN",
+      code: "A = LEN(\"string\")\n",
+      calls: [
+        ["stringLiteralExpression", "string"],
+        ["lenBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of STR$",
+      code: "A = STR$(100)\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["strzBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of VAL",
+      code: "A = VAL(\"100\")\n",
+      calls: [
+        ["stringLiteralExpression", "100"],
+        ["valBuiltinExpression", 0],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of RANDOM",
+      code: "A = RANDOM(100, 200)\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "200"],
+        ["randomBuiltinExpression", 0, 1],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of PI",
+      code: "A = PI\n",
+      calls: [
+        ["piBuiltinExpression"],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Builtin Expression errors",
+      code: "A = ABS()\n" +
+        "A = ABS\n" +
+        "A = ABS(\n" +
+        "A = ABS)\n" +
+        "A = ABS 7\n" +
+        "A = RANDOM()\n" +
+        "A = RANDOM(,)\n" +
+        "A = RANDOM(100,)\n" +
+        "A = RANDOM(100)\n" +
+        "A = RANDOM(,100)\n" +
+        "A = ABS(77)FROG",
+
+      calls: [
+        // ABS(77)
+        ["numericLiteralExpression", "77"],
+        ["absBuiltinExpression", 0],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Missing param"],
+        [2, "Missing param"],
+        [3, "Missing param"],
+        [4, "Missing param"],
+        [5, "Missing param"],
+        [6, "Missing first param"],
+        [6, "Missing second param"],
+        [7, "Missing first param"],
+        [7, "Missing second param"],
+        [8, "Missing second param"],
+        [9, "Missing second param"],
+        [10, "Missing first param"],
+        [11, "Invalid expression"]
+      ]
+    },
+    {
+      description: "Numeric expression errors",
+      code: "A = +\n" +
+        "A = +\"a\"\n" +
+        "A = -\n" +
+        "A = -\"a\"\n" +
+        "42\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Number expected"],
+        [2, "Number expected"],
+        [3, "Number expected"],
+        [4, "Number expected"],
+        [5, "Number not expected"]
+      ]
+    },
+    {
+      description: "Subroutine 1",
+      code: "SUBROUTINE foo\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine Inside IF",
+      code: "IF A = B\n" +
+        "SUBROUTINE foo\n" +
+        "END SUBROUTINE\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "SUBROUTINE cannot be defined inside of another block"],
+        [3, "END SUBROUTINE without matching SUBROUTINE"]
+      ]
+    },
+    {
+      description: "END Subroutine Inside IF",
+      code: "SUBROUTINE foo\n" +
+        "IF A = B\n" +
+        "END SUBROUTINE\n" +
+        "END IF\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolEqualExpression", 1, 2],
+        ["ifStatement", 3],
+        ["endIf"],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: [
+        [3, "END SUBROUTINE inside a block"],
+        [1, "SUBROUTINE without matching end subroutine"]
+      ]
+    },
+    {
+      description: "Subroutine without end",
+      code: "SUBROUTINE foo\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "SUBROUTINE without END"]
+      ]
+    },
+    {
+      description: "Lonely END subroutine",
+      code: "END SUBROUTINE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "END SUBROUTINE with no matching error"]
+      ]
+    },
+    {
+      description: "RETURN OUTSIDE OF SUBROUTINE",
+      code: "RETURN\n"+
+        "RETURN 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "RETURN outside of SUBROUTINE"],
+        [2, "RETURN outside of SUBROUTINE"]
+      ]
+    },
+    {
+      description: "RETURN OUTSIDE OF SUBROUTINE IN IF",
+      code: "IF A = B\n" +
+        "RETURN\n"+
+        "RETURN 7\n" +
+        "END IF",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "RETURN outside of SUBROUTINE"],
+        [3, "RETURN outside of SUBROUTINE"],
+      ]
+    },
+    {
+      description: "Subroutine bad args",
+      code: "SUBROUTINE Bar ,,\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "EXPECTED identifier for argument name. Got: ,"],
+        [2, "END SUBROUTINE without matching SUBROUTINE"]
+      ]
+    },
+    {
+      description: "Subroutine bad args 2",
+      code: "SUBROUTINE Bar BAR BIZ\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "EXPECTED comma separating arguments. Got: BIZ"],
+        [2, "END SUBROUTINE without matching SUBROUTINE"]
+      ]
+    },
+    {
+      description: "Subroutine 2",
+      code: "SUBROUTINE Bar Biz\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "BAR", ["BIZ"]],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine 3",
+      code: "SUBROUTINE BOO BAA, bee\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "BOO", ["BAA", "BEE"]],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with empty return",
+      code: "SUBROUTINE BOO BAA, bee\n" +
+        "RETURN\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "BOO", ["BAA", "BEE"]],
+        ["voidReturnStatement"],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with variable return",
+      code: "SUBROUTINE FOO\n" +
+        "RETURN BAR\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["variableExpression", "BAR"],
+        ["returnStatement", 1],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with string return",
+      code: "SUBROUTINE FOO\n" +
+        "RETURN \"BAR\"\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["stringLiteralExpression", "BAR"],
+        ["returnStatement", 1],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with numeric return",
+      code: "SUBROUTINE BOO BAA, bee\n" +
+        "RETURN 7\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "BOO", ["BAA", "BEE"]],
+        ["numericLiteralExpression","7"],
+        ["returnStatement", 1],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with numeric expression return",
+      code: "SUBROUTINE BOO BAA, bee\n" +
+        "RETURN 7+BAR\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "BOO", ["BAA", "BEE"]],
+        ["numericLiteralExpression","7"],
+        ["variableExpression","BAR"],
+        ["additionExpression", 1, 2],
+        ["returnStatement", 3],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL statement 1",
+      code: "CALL Foo\n",
+      calls: [
+        ["callSubroutine", "FOO", []],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL statement 2",
+      code: "CALL BAR None\n",
+      calls: [
+        ["variableExpression", "NONE"],
+        ["callSubroutine", "BAR", [0]],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL statement 3",
+      code: "CALL boo 12, \"boo\"\n",
+      calls: [
+        ["numericLiteralExpression", "12"],
+        ["stringLiteralExpression", "boo"],
+        ["callSubroutine", "BOO", [0, 1]],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL statement error",
+      code: "CALL Foo OR SOMETHING\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Extra junk"]
+      ]
+    },
+    {
+      description: "CALL expression 1",
+      code: "A = CALL Foo\n",
+      calls: [
+        ["callSubroutineExpression", "FOO", []],
+        ["letStatement", "A", 0],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression 2",
+      code: "A = CALL bar None\n",
+      calls: [
+        ["variableExpression", "NONE"],
+        ["callSubroutineExpression", "BAR", [0]],
+        ["letStatement", "A", 1],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression 3",
+      code: "A = CALL Boo 12, \"boo\"\n",
+      calls: [
+        ["numericLiteralExpression", "12"],
+        ["stringLiteralExpression", "boo"],
+        ["callSubroutineExpression", "BOO", [0, 1]],
+        ["letStatement", "A", 2],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "PRINT CALL expression",
+      code: "PRINT CALL Foo\n",
+      calls: [
+	["callSubroutineExpression", "FOO", []],
+	["printExp", 0, true, false],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assign CALL with numeric arg",
+      code: "A = CALL FOO+77\n",
+      calls: [
+	["numericLiteralExpression", "77"],
+	["callSubroutineExpression", "FOO", [0]],
+	["letStatement", "A", 1],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assign CALL with negative arg",
+      code: "A = CALL foo-88\n",
+      calls: [
+	["numericLiteralExpression", "-88"],
+	["callSubroutineExpression", "FOO", [0]],
+	["letStatement", "A", 1],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assign subtraction of CALL expression",
+      code: "A = CALL foo(77)-88\n",
+      calls: [
+	["numericLiteralExpression", "77"],
+	["parenExpression", 0],
+	["numericLiteralExpression", "88"],
+	["subtractionExpression", 1, 2],
+	["callSubroutineExpression", "FOO", [3]],
+        ["letStatement", "A", 4],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Assignment of subtraction of CALL expression, two args",
+      code: "A = CALL foo(77)-88,bar\n",
+      calls: [
+	["numericLiteralExpression", "77"],
+	["parenExpression", 0],
+	["numericLiteralExpression", "88"],
+	["subtractionExpression", 1, 2],
+	["variableExpression", "BAR"],
+	["callSubroutineExpression", "FOO", [3, 4]],
+	["letStatement", "A", 5],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expressions with two complex args",
+      code: "A = CALL foo(77)-88,bar+99\n",
+      calls: [
+	["numericLiteralExpression", "77"],
+	["parenExpression", 0],
+	["numericLiteralExpression", "88"],
+	["subtractionExpression", 1, 2],
+	["variableExpression", "BAR"],
+	["numericLiteralExpression", "99"],
+	["additionExpression", 4, 5],
+	["callSubroutineExpression", "FOO", [3, 6]],
+	["letStatement", "A", 7],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression string param variable param",
+      code: "A = CALL foo(\"biz\"),boz\n",
+      calls: [
+	["stringLiteralExpression", "biz"],
+	["parenExpression", 0],
+	["variableExpression", "BOZ"],
+	["callSubroutineExpression", "FOO", [1, 2]],
+	["letStatement", "A", 3],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression with three params",
+      code: "PRINT CALL FOO bar, \"biz\", (baz)*2\n",
+      calls: [
+	["variableExpression", "BAR"],
+	["stringLiteralExpression", "biz"],
+	["variableExpression", "BAZ"],
+	["parenExpression", 2],
+	["numericLiteralExpression", "2"],
+	["multiplicationExpression", 3, 4],
+	["callSubroutineExpression", "FOO", [0, 1, 5]],
+	["printExp", 6, true, false],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CALL expression in parens, followed by addition",
+      code: "PRINT (CALL FOO \"a\"+\"b\")+\"c\"\n",
+      calls: [
+	["stringLiteralExpression", "a"],
+	["stringLiteralExpression", "b"],
+	["additionExpression", 0, 1],
+	["callSubroutineExpression", "FOO", [2]],
+	["parenExpression", 3],
+	["stringLiteralExpression", "c"],
+	["additionExpression", 4, 5],
+	["printExp", 6, true, false],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Nested CALL expressions",
+      code: "IF CALL PLUSONE (CALL PLUSONE 1) != CALL PLUSONE 2 THEN\n"+
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "1"],
+        ["callSubroutineExpression", "PLUSONE", [0]],
+        ["parenExpression", 1],
+        ["callSubroutineExpression", "PLUSONE", [2]],
+        ["numericLiteralExpression", "2"],
+        ["callSubroutineExpression", "PLUSONE", [4]],
+        ["boolNotEqualExpression", 3, 5],
+        ["ifStatement", 6],
+        ["endIf"],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "numeric infix operator precedence add, multiply",
+      code: "A = 88+66*77\n",
+      calls: [
+	["numericLiteralExpression", "88"],
+	["numericLiteralExpression", "66"],
+	["numericLiteralExpression", "77"],
+	["multiplicationExpression", 1, 2],
+	["additionExpression", 0, 3],
+	["letStatement", "A", 4],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "numeric infix operator precedence multiply, add",
+      code: "A = 66*77+88\n",
+      calls: [
+	["numericLiteralExpression", "66"],
+	["numericLiteralExpression", "77"],
+	["multiplicationExpression", 0, 1],
+        ["numericLiteralExpression", "88"],
+	["additionExpression", 2, 3],
+	["letStatement", "A", 4],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "numeric infix operator precedence subtract, divide",
+      code: "A = 88-66/77\n",
+      calls: [
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["divisionExpression", 1, 2],
+        ["subtractionExpression", 0, 3],
+        ["letStatement", "A", 4],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "numeric infix operator precedence - complex",
+      code: "A = 44-55+66/77*88-99+33\n",
+      calls: [
+        ["numericLiteralExpression", "44"],
+        ["numericLiteralExpression", "55"],
+        ["subtractionExpression", 0, 1],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["divisionExpression", 3, 4],
+        ["numericLiteralExpression", "88"],
+        ["multiplicationExpression", 5, 6],
+        ["additionExpression", 2, 7],
+        ["numericLiteralExpression", "99"],
+        ["subtractionExpression", 8, 9],
+        ["numericLiteralExpression", "33"],
+        ["additionExpression", 10, 11],
+        ["letStatement", "A", 12],
+	["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Simple numeric IF statement",
+      code: "IF 77 = 88\n" +
+        "PRINT\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Simple string IF statement",
+      code: "IF \"a\" == Seven\n" +
+        "PRINT\n" +
+        "END IF\n",
+      calls: [
+        ["stringLiteralExpression", "a"],
+        ["variableExpression", "SEVEN"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Simple IF statement - no END IF",
+      code: "IF \"a\" == Seven\n",
+      calls: [
+        ["stringLiteralExpression", "a"],
+        ["variableExpression", "SEVEN"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "IF without matching END IF"]
+      ]
+    },
+    {
+      description: "Lonely ELSE",
+      code: "ELSE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ELSE without IF"]
+      ]
+    },
+    {
+      description: "2 ELSEs",
+      code: "IF A = B\n"+
+        "ELSE\n"+
+        "ELSE\n"+
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["elseStatement"],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: [
+        [3, "extra ELSE"]
+      ]
+    },
+        {
+      description: "Lonely ENDIF",
+      code: "END IF\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Extra END IF"]
+      ]
+    },
+    {
+      description: "IF statement - greater than",
+      code: "IF Q > 88 THEN\n" +
+        "PRINT\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "Q"],
+        ["numericLiteralExpression", "88"],
+        ["boolGreaterExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF statement less than",
+      code: "IF 77 < Z\n" +
+        "PRINT\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "77"],
+        ["variableExpression", "Z"],
+        ["boolLessExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF statement greater or equal",
+      code: "IF 77 >= 88\n" +
+        "PRINT\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolGreaterOrEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF statement less or equal",
+      code: "IF 77 <= 88\n" +
+        "PRINT\n" +
+        "ELSE\n" +
+        "PRINT\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolLessOrEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["elseStatement"],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "IF statement not equal",
+      code: "IF 77 <> 88\n" +
+        "PRINT\n" +
+        "ELSE\n" +
+        "PRINT\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolNotEqualExpression", 0, 1],
+        ["ifStatement", 2],
+        ["printString", "", true, false],
+        ["elseStatement"],
+        ["printString", "", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean comparison operator precedence - multiplication and addition",
+      code: "IF 7*8 > 7+8 THEN\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["multiplicationExpression", 0, 1],
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["additionExpression", 3, 4],
+        ["boolGreaterExpression", 2, 5],
+        ["ifStatement", 6],
+        ["endIf"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean comparison operator precedence - addition and multiplication with variables",
+      code: "IF SIX+42 > 7*EIGHTYEIGHT THEN\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "SIX"],
+        ["numericLiteralExpression", "42"],
+        ["additionExpression", 0, 1],
+        ["numericLiteralExpression", "7"],
+        ["variableExpression", "EIGHTYEIGHT"],
+        ["multiplicationExpression", 3, 4],
+        ["boolGreaterExpression", 2, 5],
+        ["ifStatement", 6],
+        ["endIf"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean comparison operator precedence -  complicated numeric",
+      code: "IF 6+7*8 > 7*8+9 THEN\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "6"],
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["multiplicationExpression", 1, 2],
+        ["additionExpression", 0, 3],
+        ["numericLiteralExpression", "7"],
+        ["numericLiteralExpression", "8"],
+        ["multiplicationExpression", 5, 6],
+        ["numericLiteralExpression", "9"],
+        ["additionExpression", 7, 8],
+        ["boolGreaterExpression", 4, 9],
+        ["ifStatement", 10],
+        ["endIf"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean comparison operator precedence - string expressions",
+      code: "IF A+B+\"C\" = \"a\"+\"A\"+\"a\" THEN\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["additionExpression", 0, 1],
+        ["stringLiteralExpression", "C"],
+        ["additionExpression", 2, 3],
+        ["stringLiteralExpression", "a"],
+        ["stringLiteralExpression", "A"],
+        ["additionExpression", 5, 6],
+        ["stringLiteralExpression", "a"],
+        ["additionExpression", 7, 8],
+        ["boolEqualExpression", 4, 9],
+        ["ifStatement", 10],
+        ["endIf"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean OR operator",
+      code: "If 66 > 77 OR 88 > 99 THEN\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["boolGreaterExpression", 0, 1],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["boolGreaterExpression", 3, 4],
+        ["boolOrExpression", 2, 5],
+        ["ifStatement", 6],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean AND operator",
+      code: "If 66 > 77 AND 88 > 99 THEN\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["boolGreaterExpression", 0, 1],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["boolGreaterExpression", 3, 4],
+        ["boolAndExpression", 2 ,  5],
+        ["ifStatement", 6],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "OR operator with numeric expressions",
+      code: "If 66+77 > 66-77 OR 88*99 > 88/99 THEN\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["additionExpression", 0 , 1 ],
+        ["numericLiteralExpression", "66"],
+        ["numericLiteralExpression", "77"],
+        ["subtractionExpression", 3 , 4 ],
+        ["boolGreaterExpression", 2 , 5 ],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["multiplicationExpression", 7, 8],
+        ["numericLiteralExpression", "88"],
+        ["numericLiteralExpression", "99"],
+        ["divisionExpression", 10, 11],
+        ["boolGreaterExpression", 9, 12],
+        ["boolOrExpression", 6, 13],
+        ["ifStatement", 14],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean AND and OR operator precedence - OR first",
+      code: "If A < B OR C >= D AND E >= F\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolLessExpression", 0, 1],
+        ["variableExpression", "C"],
+        ["variableExpression", "D"],
+        ["boolGreaterOrEqualExpression", 3, 4],
+        ["variableExpression", "E"],
+        ["variableExpression", "F"],
+        ["boolGreaterOrEqualExpression", 6, 7],
+        ["boolAndExpression", 5, 8],
+        ["boolOrExpression", 2, 9],
+        ["ifStatement", 10],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Boolean AND and OR operator precedence - AND first",
+      code: "If A <= B AND C != D OR E == F\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "B"],
+        ["boolLessOrEqualExpression", 0, 1],
+        ["variableExpression", "C"],
+        ["variableExpression", "D"],
+        ["boolNotEqualExpression", 3, 4],
+        ["boolAndExpression", 2, 5],
+        ["variableExpression", "E"],
+        ["variableExpression", "F"],
+        ["boolEqualExpression", 7, 8],
+        ["boolOrExpression", 6, 9],
+        ["ifStatement", 10],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Simple Bool expression with NOT",
+      code: "IF NOT 77=88\n" +
+        "END IF\n",
+      calls: [
+        ["numericLiteralExpression", "77"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 0, 1],
+        ["boolNotExpression", 2],
+        ["ifStatement", 3],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bool expression - NOT of parens",
+      code: "IF NOT (A=77 OR B=88)\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 0, 1],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 3, 4],
+        ["boolOrExpression", 2, 5],
+        ["parenExpression", 6],
+        ["boolNotExpression", 7],
+        ["ifStatement", 8],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bool expression with NOT parens",
+      code:
+        "IF NOT (A=77) OR B=88\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 0, 1],
+        ["parenExpression", 2],
+        ["boolNotExpression", 3],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 5, 6],
+        ["boolOrExpression", 4, 7],
+        ["ifStatement", 8],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bool expression with NOT after OR",
+      code:
+        "IF A=77 OR NOT B=88\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 0, 1],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 3, 4],
+        ["boolNotExpression", 5],
+        ["boolOrExpression", 2, 6],
+        ["ifStatement", 7],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Bool expressions with NOT, OR and AND",
+      code:
+        "IF NOT A=77 OR B=88 AND C=99\n" +
+        "END IF\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "77"],
+        ["boolEqualExpression", 0, 1],
+        ["boolNotExpression", 2],
+        ["variableExpression", "B"],
+        ["numericLiteralExpression", "88"],
+        ["boolEqualExpression", 4, 5],
+        ["variableExpression", "C"],
+        ["numericLiteralExpression", "99"],
+        ["boolEqualExpression", 7, 8],
+        ["boolAndExpression", 6, 9],
+        ["boolOrExpression", 3, 10],
+        ["ifStatement", 11],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "WHILE statement 1",
+      code: "WHILE A = A DO\n" +
+        "WEND\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "A"],
+        ["boolEqualExpression", 0, 1],
+        ["whileStatement", 2],
+        ["endWhile"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "WHILE statement - no END",
+      code: "WHILE A = A DO\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["variableExpression", "A"],
+        ["boolEqualExpression", 0, 1],
+        ["whileStatement", 2],
+        ["endWhile"],
+        ["finalize"],
+      ],
+      errors: [
+        [1, "WHILE WITHOUT END WHILE"]
+      ]
+    },
+    {
+      description: "Lonely WEND",
+      code: "WEND\n",
+      calls: [
+        ["finalize"],
+      ],
+      errors: [
+        [1, "END WHILE without WHILE"]
+      ]
+    },
+    {
+      description: "WHILE statement 2",
+      code: "WHILE A < 10\n" +
+        "END WHILE\n",
+      calls: [
+        ["variableExpression", "A"],
+        ["numericLiteralExpression", "10"],
+        ["boolLessExpression", 0, 1],
+        ["whileStatement", 2],
+        ["endWhile"],
+        ["finalize"],
+      ],
+      errors: []
+    },
+    {
+      description: "FOR statement",
+      code: "FOR N = 100 to 101\n" +
+        "PRINT\n" +
+        "NEXT N",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["forStatement", "N", 0, 1],
+        ["printString", "", true, false],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "FOR without NEXT",
+      code: "FOR N = 100 to 101\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["forStatement", "N", 0, 1],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "FOR without matching NEXT"]
+      ]
+    },
+    {
+      description: "NEXT without FOR",
+      code: "NEXT N\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "NEXT without matching FOR"]
+      ]
+    },
+    {
+      description: "Nested FOR statement",
+      code: "FOR N = 100 to 101\n" +
+        "FOR M = 102 to 103\n" +
+        "PRINT\n" +
+        "NEXT M\n" +
+        "NEXT N\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["forStatement", "N", 0, 1],
+        ["numericLiteralExpression", "102"],
+        ["numericLiteralExpression", "103"],
+        ["forStatement", "M", 3, 4],
+        ["printString", "", true, false],
+        ["next", "M"],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Incorrectly nested FOR statement",
+      code: "FOR N = 100 to 101\n" +
+        "FOR M = 102 to 103\n" +
+        "PRINT\n" +
+        "NEXT N\n" +
+        "NEXT M\n",
+      calls: [
+        ["numericLiteralExpression", "100"],
+        ["numericLiteralExpression", "101"],
+        ["forStatement", "N", 0, 1],
+        ["numericLiteralExpression", "102"],
+        ["numericLiteralExpression", "103"],
+        ["forStatement", "M", 3, 4],
+        ["printString", "", true, false],
+        ["next", "M"],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "NEXT without matching FOR: Got N expected M"],
+        [1, "FOR without matching NEXT"]
+      ]
+    },
+    {
+      description: "FOR statement with CALL expressions",
+      code: "FOR N = CALL start to CALL end\n" +
+        "PRINT\n" +
+        "NEXT N",
+      calls: [
+        ["callSubroutineExpression", "START", []],
+        ["callSubroutineExpression", "END", []],
+        ["forStatement", "N", 0, 1],
+        ["printString", "", true, false],
+        ["next", "N"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "RANDOM statement",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE 33.3\n" +
+        "PRINT\n" +
+        "WITH CHANCE 66.7\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["withChance", "33.3"],
+        ["printString", "", true, false],
+        ["withChance", "66.7"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "RANDOM statement without END RANDOM",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE 33.3\n" +
+        "PRINT\n" +
+        "WITH CHANCE 66.7\n" +
+        "PRINT\n",
+      calls: [
+        ["beginRandom"],
+        ["withChance", "33.3"],
+        ["printString", "", true, false],
+        ["withChance", "66.7"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "BEGIN RANDOM without matching END RANDOM"]
+      ]
+    },
+    {
+      description: "Bare END RANDOM statement",
+      code: "END RANDOM\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "END RANDOM without matching BEGIN"]
+      ]
+    },
+    {
+      description: "WITH CHANCE outside of RANDOM",
+      code: "WITH CHANCE 33.3\n" +
+        "PRINT\n",
+      calls: [
+        ["printString", "", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "WITH CHANCE outside of RANDOM"]
+      ]
+    },
+    {
+      description: "RANDOM statement with mixed types of chances",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "WITH CHANCE 66.7\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "Switching between even WITH CHANCE and specific percent"]
+      ]
+    },
+    {
+      description: "RANDOM statement with mixed types of chances",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE 30\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["withChance", "30"],
+        ["printString", "", true, false],
+        ["withChance", "0"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "Switching between specific percent WITH CHANCE and even WITH CHANCE"]
+      ]
+    },
+    {
+      description: "RANDOM statement with even chance",
+      code: "BEGIN RANDOM\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [],
+    },
+    {
+      description: "RANDOM statement with even chance and comment before WITH CHANCE",
+      code: "BEGIN RANDOM\n" +
+        "REM Even chances\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["comment", "Even chances"],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [],
+    },
+    {
+      description: "RANDOM statement with code before chance",
+      code: "BEGIN RANDOM\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "WITH CHANCE\n" +
+        "PRINT\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["withEvenChance"],
+        ["printString", "", true, false],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "No statements allowed after BEGIN RANDOM and before WITH CHANCE"]
+      ],
+    },
+    {
+      description: "WAIT FOR MUSIC",
+      code: "WAIT FOR MUSIC\n",
+      calls: [
+        ["waitForMusic"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "simple ASK",
+      code: "ASK \"Will you?\"\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "Will you?"],
+        ["beginAsk", 0],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "simple ASK without END",
+      code: "ASK \"Will you?\"\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n",
+      calls: [
+        ["stringLiteralExpression", "Will you?"],
+        ["beginAsk", 0],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "BEGIN ASK without matching END ASK"]
+      ]
+    },
+    {
+      description: "lonely END ASK",
+      code: "END ASK\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "END ASK without BEGIN"]
+      ]
+    },
+    {
+      description: "lonely DEFAULT YES",
+      code: "DEFAULT YES\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "DEFAULT YES outside of ASK"]
+      ]
+    },
+    {
+      description: "lonely DEFAULT NO",
+      code: "DEFAULT NO\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "DEFAULT NO outside of ASK"]
+      ]
+    },
+    {
+      description: "lonely ASK COLOR",
+      code: "ASK COLOR 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ASK COLOR outside of ASK"]
+      ]
+    },
+    {
+      description: "lonely ASK BGCOLOR",
+      code: "ASK BGCOLOR 0\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ASK BGCOLOR outside of ASK"]
+      ]
+    },
+    {
+      description: "lonely ASK PROMPT COLOR",
+      code: "ASK PROMPT COLOR 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ASK PROMPT COLOR without ASK"]
+      ]
+    },
+    {
+      description: "ASK with no ON section",
+      code: "ASK \"?\"\n"+
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "?"],
+        ["beginAsk", 0],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "END ASK without either ON YES or ON NO"]
+      ]
+    },
+    {
+      description: "ASK with default and string expression",
+      code: "ASK \"Are you \"+ NAME +\"?\"\n" +
+        "DEFAULT YES\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "Are you "],
+        ["variableExpression", "NAME"],
+        ["additionExpression", 0, 1],
+        ["stringLiteralExpression", "?"],
+        ["additionExpression", 2, 3],
+        ["beginAsk", 4],
+        ["askDefault", true],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK with all the customizations",
+      code: "ASK \"Won't you?\"\n" +
+        "DEFAULT NO\n" +
+        "ASK COLOR 7\n" +
+        "ASK BGCOLOR 0\n" +
+        "ASK PROMPT COLOR 4\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "Won't you?"],
+        ["beginAsk", 0],
+        ["askDefault", false],
+        ["askColor", "7"],
+        ["askBGColor", "0"],
+        ["askPromptColor", "4"],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "basic MENU",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "CHOICE A \"Last thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "A", 8],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "CHOICE without BEGIN MENU",
+      code: "CHOICE A \"First thing first\"\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+	[1, "CHOICE outside of a menu"]
+      ]
+    },
+    {
+      description: "MENU options without BEGIN MENU",
+      code: "MENU COLOR 7\n" +
+        "MENU BGCOLOR 0\n" +
+        "MENU CHOICE COLOR 7\n" +
+        "MENU PROMPT COLOR 7\n",
+      calls: [
+	["finalize"]
+      ],
+      errors: [
+	[1, "MENU COLOR should be immediately after BEGIN MENU"],
+	[2, "MENU BGCOLOR should be immediately after BEGIN MENU"],
+	[3, "MENU CHOICE COLOR should be immediately after BEGIN MENU"],
+	[4, "MENU PROMPT COLOR should be immediately after BEGIN MENU"]
+      ]
+    },
+    {
+      description: "END MENU without BEGIN MENU",
+      code: "END MENU\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+	[1, "END MENU without matching BEGIN"]
+      ]
+    },
+    {
+      description: "MENU without END MENU",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "CHOICE A \"Last thing\"\n" +
+        "PRINT\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "A", 8],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+	[1, "BEGIN MENU without END MENU"]
+      ]
+    },
+    {
+      description: "basic MENU with code before CHOICE",
+      code: "BEGIN MENU \"Prompt\"\n" +
+	"PRINT\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+	[2, "Statement after BEGIN MENU and before first CHOICE"]
+      ]
+    },
+    {
+      description: "MENU with all the options",
+      code: "BEGIN MENU \"Prompt\"+A\n" +
+	"REM comment\n" +
+        "MENU COLOR 7\n" +
+        "MENU BGCOLOR 0\n" +
+        "MENU CHOICE COLOR 7\n" +
+        "MENU PROMPT COLOR 7\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "HIDE IF X == 2\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "CHOICE A \"Last thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["variableExpression", "A"],
+        ["additionExpression", 0, 1],
+        ["beginMenu", 2],
+	["comment", "comment"],
+        ["menuColor", "7"],
+        ["menuBGColor", "0"],
+        ["menuChoiceColor", "7"],
+        ["menuPromptColor", "7"],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 9],
+        ["variableExpression", "X"],
+        ["numericLiteralExpression", "2"],
+        ["boolEqualExpression", 11, 12],
+        ["menuHideIf", 13],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 16],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "A", 19],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "MENU with invalid HIDE IF",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "HIDE IF X == 2\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "HIDE IF should be immediately after CHOICE"]
+      ]
+    },
+    {
+      description: "MENU with all the options after the first choice",
+      code: "BEGIN MENU \"Prompt\"+A\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "HIDE IF X == 2\n" +
+	"MENU COLOR 7\n" +
+        "MENU BGCOLOR 0\n" +
+        "MENU CHOICE COLOR 7\n" +
+        "MENU PROMPT COLOR 7\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "CHOICE A \"Last thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["variableExpression", "A"],
+        ["additionExpression", 0, 1],
+        ["beginMenu", 2],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 4],
+        ["variableExpression", "X"],
+        ["numericLiteralExpression", "2"],
+        ["boolEqualExpression", 6, 7],
+        ["menuHideIf", 8],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 11],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "A", 14],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "MENU COLOR should be immediately after BEGIN MENU"],
+	[5, "MENU BGCOLOR should be immediately after BEGIN MENU"],
+	[6, "MENU CHOICE COLOR should be immediately after BEGIN MENU"],
+	[7, "MENU PROMPT COLOR should be immediately after BEGIN MENU"]
+      ]
+    }
+  ];
+
+  function expectationToTestFunc(expectation) {
+    return function(onComplete) {
+      // prepend a newline so line numbers match correctly- the parser
+      // assumes it's embeeded in a <script> tag
+      compiler.compile("\n"+expectation.code);
+      onComplete();
+    };
+  }
+
+  function expectationText(expectation) {
+    return expectation.code;
+  }
+
+  function getCallLog() {
+    return handler.getLog();
+  }
+
+  function getErrorLog() {
+    return logger.getLog();
+  }
+
+  var tester = MatchingTester(display, setup, expectations, expectationToTestFunc, expectationText, getCallLog, getErrorLog);
+  return tester;
+}

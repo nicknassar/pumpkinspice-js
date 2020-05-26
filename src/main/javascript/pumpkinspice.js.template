@@ -1,0 +1,51 @@
+// Pumpkin Spice interpretter main entry point
+
+// The code is wrapped inside a function to protect namespaces
+// It's initialized with HTML elements needed for display
+
+// programText - string with the program to run
+// inputTextElement - The input text area
+// inputSubmitElement - The input form submit button
+// inputFormElement - the form associated with the inppad
+// cursorElement - that which must be blinked
+// quietBlockElement - text which is displayed but not to be read by a screen reader
+// historyBlockElement - text which has already been displayed
+// latestBlockElement - text which should be read by a screen reader
+// displayBlockElement - scrollable area where text is displayed
+
+function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitElementParam, inputFormElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam){
+
+{{legacy.js}}
+{{global_utilities.js}}
+
+{{display.js}}
+{{logger.js}}
+{{audio.js}}
+{{machine.js}}
+{{type_manager.js}}
+{{type_generator_pass.js}}
+{{code_generator_pass.js}}
+{{parser.js}}
+
+  var globalDisplay = Display(inputFormElementParam, inputTextElementParam, inputSubmitElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam);
+  var globalLogger = Logger(globalDisplay);
+  var globalAudio = Audio(globalLogger);
+  var globalMachine = Machine(globalDisplay, globalAudio, globalLogger);
+
+  var globalTypeManager = TypeManager(globalLogger);
+  var handler1 = TypeGeneratorPass(globalTypeManager, globalLogger);
+  var handler2 = CodeGeneratorPass(globalTypeManager, globalMachine, globalLogger);
+
+  // parser + handlers = compiler
+  var compiler = Parser([handler1, handler2],globalLogger);
+
+
+  if (!compiler.compile(programTextParam)) {
+    // Compilation failed
+  }
+
+  globalMachine.go();
+}
+
+
+{{initialize.js}}

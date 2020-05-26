@@ -1,44 +1,108 @@
 SHELL = /bin/sh
 .SUFFIXES:
-.SUFFIXES: .pumpkinspice .html .debug.html .java .class .jar .template .js
-BUILD_VERSION := 0.0.0
+.SUFFIXES: .pumpkinspice .html .debug.html .java .class .js .optimized.js .js.template .html.template
+BUILD_VERSION := 0.0.1
 BUILD_DIR := build
 SRC_DIR := src
-BUILD_SOURCE_DIR := $(SRC_DIR)/build/java
-BUILD_OUTPUT_DIR := $(BUILD_DIR)/classes
-RESOURCE_DIR := $(SRC_SIR)/resources
+DIST_DIR := dist
+PACKAGE_NAME := pumpkinspice-js-v$(BUILD_VERSION)
+PACKAGE_DIR := $(DIST_DIR)/$(PACKAGE_NAME)
+
+PUMPKINSPICE2HTML_SOURCE_DIR := $(SRC_DIR)/pumpkinspice2html/java
+PUMPKINSPICE2HTML_RESOURCE_DIR := $(SRC_DIR)/pumpkinspice2html/resources
+PUMPKINSPICE2HTML_BUILD_DIR := $(BUILD_DIR)/pumpkinspice2html/classes
+
+TOOLS_SOURCE_DIR := $(SRC_DIR)/tools/java
+TOOLS_BUILD_DIR := $(BUILD_DIR)/tools/classes
+
+JAVASCRIPT_SOURCE_DIR := $(SRC_DIR)/main/javascript
+RESOURCE_DIR := $(SRC_DIR)/main/resources
 BUILD_RESOURCE_DIR := $(BUILD_DIR)/resources
+
+TEST_SOURCE_DIR := $(SRC_DIR)/test/javascript
+TEST_BUILD_DIR := $(BUILD_DIR)/test
+EXAMPLE_SOURCE_DIR := examples
+
 CLOSURE_COMPILER_JAR := $(wildcard lib/closure-compiler-v[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].jar)
-OUTPUT_JAR := pumpkinspice2html-v$(BUILD_VERSION).jar
-JFLAGS := -sourcepath $(BUILD_SOURCE_DIR) -d $(BUILD_OUTPUT_DIR)
+OUTPUT_JAR := $(PACKAGE_DIR)/pumpkinspice2html-v$(BUILD_VERSION).jar
+EXAMPLE_DIST_DIR := $(PACKAGE_DIR)/examples
+TARBALL := $(PACKAGE_NAME).tar.gz
+ZIPFILE := $(PACKAGE_NAME).zip
+TEXTFILES := $(PACKAGE_DIR)/README.md $(PACKAGE_DIR)/COPYING $(PACKAGE_DIR)/LICENSE
+
+ifdef JAVA_HOME
+JAVAC := $(JAVA_HOME)/bin/javac
+JAVA := $(JAVA_HOME)/bin/java
+JAR := $(JAVA_HOME)/bin/jar
+else
 JAVAC := javac
 JAVA := java
 JAR := jar
+endif
 MKDIR := mkdir
+TAR := tar
+ZIP := zip
+
 ifeq ($(OS),Windows_NT)
   PATH_SEPARATOR := ;
 else
   PATH_SEPARATOR := :
 endif
-vpath %.html.template $(RESOURCE_DIR)
-vpath %.java $(BUILD_SOURCE_DIR)
-vpath %.class $(BUILD_OUTPUT_DIR)
-JAVA_CLASSES := com/nicknassar/pumpkinspice/Builder.class
 
-OPTIMIZED_RESOURCES := $(BUILD_RESOURCE_DIR)/compiler.optimized.js $(BUILD_RESOURCE_DIR)/index.html.template
-DEBUG_RESOURCES := $(BUILD_RESOURCE_DIR)/compiler.js $(BUILD_RESOURCE_DIR)/index.html.template
+vpath %.js.template $(JAVASCRIPT_SOURCE_DIR) $(TEST_SOURCE_DIR)
+vpath %.js $(JAVASCRIPT_SOURCE_DIR) $(BUILD_RESOURCE_DIR)  $(TEST_SOURCE_DIR) $(TEST_BUILD_DIR)
+vpath %.optimized.js $(BUILD_RESOURCE_DIR)
+vpath %.html.template $(BUILD_RESOURCE_DIR)
+vpath %.pumpkinspice $(EXAMPLE_SOURCE_DIR)
+vpath %.html $(PACKAGE_DIR)
+vpath %.java $(TOOLS_SOURCE_DIR) $(PUMPKINSPICE2HTML_SOURCE_DIR)
+vpath %.class $(PUMPKINSPICE2HTML_BUILD_DIR) $(TOOLS_BUILD_DIR)
+
+JAVA_BUILD_CLASSES := com/nicknassar/pumpkinspice/Builder.class
+JAVA_TOOLS_CLASSES := com/nicknassar/pumpkinspice/TemplateFiller.class
+
+OPTIMIZED_RESOURCES := pumpkinspice.optimized.js index.html.template
+DEBUG_RESOURCES := pumpkinspice.js index.html.template
+TEST_RESOURCES := run_tests.js index.html.template
+TEST_OUTPUT := run-tests.html
+
+JAVASCRIPT_SOURCES := pumpkinspice.js.template initialize.js audio.js logger.js display.js  machine.js  legacy.js global_utilities.js code_generator_pass.js type_generator_pass.js parser.js type_manager.js
+TEST_SOURCES := run_tests.js.template initialize_tests.js base_tester.js matching_tester.js parser_tests.js.template type_manager_tests.js.template testing_compiler_pass.js testing_display_and_audio.js testing_logger.js type_generator_pass_tests.js.template code_generator_pass_tests.js.template testing_type_manager.js simple_call_logger.js parser.js display.js legacy.js global_utilities.js parser.js type_manager.js type_generator_pass.js code_generator_pass.js
 
 .PHONY: all
-all: test.html test.debug.html $(OUTPUT_JAR)
+all: pumpkinspice2html examples
+
+.PHONY: package
+package: $(TARBALL) $(ZIPFILE)
+
+.PHONY: test
+test: $(TEST_OUTPUT)
+
+.PHONY: pumpkinspice2html
+pumpkinspice2html: $(PACKAGE_DIR)/pumpkinspice2html $(PACKAGE_DIR)/pumpkinspice2html.bat
+
+.PHONY: examples
+examples: examples/01-variables.html $(EXAMPLE_DIST_DIR)/01-variables.pumpkinspice examples/02-if-and-for.html  $(EXAMPLE_DIST_DIR)/02-if-and-for.pumpkinspice examples/03-while.html  $(EXAMPLE_DIST_DIR)/03-while.pumpkinspice examples/04-random.html $(EXAMPLE_DIST_DIR)/04-random.pumpkinspice examples/05-ask.html $(EXAMPLE_DIST_DIR)/05-ask.pumpkinspice examples/06-menu.html $(EXAMPLE_DIST_DIR)/06-menu.pumpkinspice examples/07-subroutine.html $(EXAMPLE_DIST_DIR)/07-subroutine.pumpkinspice examples/08-play.html $(EXAMPLE_DIST_DIR)/08-play.pumpkinspice examples/99-stress-test.html  $(EXAMPLE_DIST_DIR)/99-stress-test.pumpkinspice
 
 .PHONY: clean
 clean:
-	-rm -rf build
-	-rm test.html test.debug.html $(OUTPUT_JAR)
+	-rm -rf $(BUILD_DIR)
+	-rm -rf $(DIST_DIR)
+	-rm -f $(TARBALL) $(ZIPFILE)
 
-$(BUILD_OUTPUT_DIR):
+$(PUMPKINSPICE2HTML_BUILD_DIR):
+	-$(MKDIR) -p $@
+$(TOOLS_BUILD_DIR):
 	-$(MKDIR) -p $@
 $(BUILD_RESOURCE_DIR):
+	-$(MKDIR) -p $@
+$(DIST_DIR):
+	-$(MKDIR) -p $@
+$(PACKAGE_DIR):
+	-$(MKDIR) -p $@
+$(TEST_BUILD_DIR):
+	-$(MKDIR) -p $@
+$(EXAMPLE_DIST_DIR):
 	-$(MKDIR) -p $@
 
 .PHONY: closure_compiler
@@ -55,23 +119,69 @@ else
 closure_compiler: $(CLOSURE_COMPILER_JAR)
 endif
 
-%.class: %.java | $(BUILD_OUTPUT_DIR)
-	$(JAVAC) $(JFLAGS) $<
+$(PACKAGE_DIR)/pumpkinspice2html: $(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.sh $(OUTPUT_JAR)
+	cat "$(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.sh" "$(OUTPUT_JAR)" > "$@"
+	chmod 755 "$@"
 
-$(BUILD_RESOURCE_DIR)/compiler.js: $(SRC_DIR)/main/javascript/compiler.js | $(BUILD_RESOURCE_DIR)
-	cp $< $@
+$(PACKAGE_DIR)/pumpkinspice2html.bat: $(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.bat $(OUTPUT_JAR)
+	cat "$(PUMPKINSPICE2HTML_RESOURCE_DIR)/stub.bat" "$(OUTPUT_JAR)" > "$@"
 
-$(BUILD_RESOURCE_DIR)/compiler.optimized.js: $(SRC_DIR)/main/javascript/compiler.js | $(BUILD_RESOURCE_DIR) closure_compiler
-	$(JAVA) -jar $(CLOSURE_COMPILER_JAR) --compilation_level ADVANCED_OPTIMIZATIONS --js $< --js_output_file $@
+$(PACKAGE_DIR)/README.md: README.md
+	cp README.md $(PACKAGE_DIR)
+$(PACKAGE_DIR)/COPYING: COPYING
+	cp COPYING $(PACKAGE_DIR)
+$(PACKAGE_DIR)/LICENSE: LICENSE
+	cp LICENSE $(PACKAGE_DIR)
+$(EXAMPLE_DIST_DIR)/01-variables.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/01-variables.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/02-if-and-for.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/02-if-and-for.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/03-while.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/03-while.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/04-random.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/04-random.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/05-ask.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/05-ask.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/06-menu.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/06-menu.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/07-subroutine.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/07-subroutine.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/08-play.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/08-play.pumpkinspice
+	cp  $< $@
+$(EXAMPLE_DIST_DIR)/99-stress-test.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/99-stress-test.pumpkinspice
+	cp  $< $@
 
-$(BUILD_RESOURCE_DIR)/index.html.template: $(SRC_DIR)/resources/index.html.template | $(BUILD_RESOURCE_DIR)
-	cp $< $@
+run-tests.html: $(TEST_RESOURCES) $(JAVA_BUILD_CLASSES) | $(DIST_DIR)
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --title "Pumpkin Spice Tests" --javascript $(TEST_BUILD_DIR)/run_tests.js --nocode "$(PACKAGE_DIR)/run-tests.html"
 
-%.html: %.pumpkinspice $(JAVA_CLASSES) $(OPTIMIZED_RESOURCES)
-	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(BUILD_OUTPUT_DIR)" com.nicknassar.pumpkinspice.Builder $<
+run_tests.js: $(TEST_SOURCES) $(JAVA_TOOLS_CLASSES) | $(TEST_BUILD_DIR)
+	$(JAVA) -classpath "$(TOOLS_BUILD_DIR)" com.nicknassar.pumpkinspice.TemplateFiller --path "$(TEST_SOURCE_DIR)$(PATH_SEPARATOR)$(JAVASCRIPT_SOURCE_DIR)" $< "$(TEST_BUILD_DIR)/$@"
 
-%.debug.html: %.pumpkinspice $(JAVA_CLASSES) $(DEBUG_RESOURCES)
-	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(BUILD_OUTPUT_DIR)" com.nicknassar.pumpkinspice.Builder --debug $<
+com/nicknassar/pumpkinspice/Builder.class: com/nicknassar/pumpkinspice/Builder.java | $(PUMPKINSPICE2HTML_BUILD_DIR)
+	$(JAVAC) -d $(PUMPKINSPICE2HTML_BUILD_DIR) $<
+com/nicknassar/pumpkinspice/TemplateFiller.class: com/nicknassar/pumpkinspice/TemplateFiller.java | $(TOOLS_BUILD_DIR)
+	$(JAVAC) -d $(TOOLS_BUILD_DIR) $<
 
-$(OUTPUT_JAR): $(JAVA_CLASSES) $(DEBUG_RESOURCES) $(OPTIMIZED_RESOURCES)
-	$(JAR) cfe $@ com.nicknassar.pumpkinspice.Builder -C $(BUILD_OUTPUT_DIR) . -C $(BUILD_RESOURCE_DIR) .
+pumpkinspice.js: $(JAVASCRIPT_SOURCES) $(JAVA_TOOLS_CLASSES) | $(BUILD_RESOURCE_DIR)
+	$(JAVA) -classpath "$(TOOLS_BUILD_DIR)" com.nicknassar.pumpkinspice.TemplateFiller $< "$(BUILD_RESOURCE_DIR)/$@"
+
+pumpkinspice.optimized.js: pumpkinspice.js | $(BUILD_RESOURCE_DIR) closure_compiler
+	$(JAVA) -jar $(CLOSURE_COMPILER_JAR) --compilation_level ADVANCED_OPTIMIZATIONS --js "$(BUILD_RESOURCE_DIR)/$(notdir $<)" --js_output_file "$(BUILD_RESOURCE_DIR)/$@"
+
+%.html.template: $(RESOURCE_DIR)/%.html.template | $(BUILD_RESOURCE_DIR)
+	cp $< "$(BUILD_RESOURCE_DIR)/$@"
+
+%.html: %.pumpkinspice $(JAVA_BUILD_CLASSES) $(OPTIMIZED_RESOURCES) | $(EXAMPLE_DIST_DIR)
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder $< "$(PACKAGE_DIR)/$@"
+
+%.debug.html: %.pumpkinspice $(JAVA_BUILD_CLASSES) $(DEBUG_RESOURCES)
+	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --debug $< "$(PACKAGE_DIR)/$@"
+
+$(OUTPUT_JAR): $(DEBUG_RESOURCES) $(OPTIMIZED_RESOURCES) com/nicknassar/pumpkinspice/Builder.class | $(PACKAGE_DIR)
+	$(JAR) cfe $@ com.nicknassar.pumpkinspice.Builder -C $(PUMPKINSPICE2HTML_BUILD_DIR) . -C $(BUILD_RESOURCE_DIR) .
+
+$(TARBALL): pumpkinspice2html examples test $(TEXTFILES)
+	$(TAR) czf $@ -C $(DIST_DIR) $(PACKAGE_NAME)
+
+$(ZIPFILE): pumpkinspice2html examples test $(TEXTFILES)
+	cd $(DIST_DIR) && $(ZIP) -9 $@ -r $(PACKAGE_NAME)

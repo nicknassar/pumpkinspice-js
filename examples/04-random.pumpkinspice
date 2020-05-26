@@ -1,0 +1,97 @@
+' Pumpkin Spice example 4
+' RANDOM
+
+' In the last example, we introduced the
+' RANDOM(low, high) function for generating
+' random numbers. Sometimes you want to choose
+' an option randomly
+
+' This program is an infinite loop
+' It just keeps asking for a question
+WHILE 1 = 1 DO
+
+  ' Wait for the user to enter a question
+  ' Keep asking if the input is blank
+  QUESTION = ""
+  WHILE QUESTION = ""
+    PRINT "Ask the Magic 8-Ball a ""Yes or No"" question:"
+    INPUT QUESTION
+  END WHILE
+
+  PRINT "The Magic 8-Ball says";
+  SLEEP 400
+  PRINT ".";
+  SLEEP 400
+  PRINT ".";
+  SLEEP 400
+  PRINT "."
+
+  ' Each WITH CHANCE section has an equal chance of being run
+  BEGIN RANDOM
+  WITH CHANCE
+    PRINT "It is certain"
+  WITH CHANCE
+    PRINT "Without a doubt"
+  WITH CHANCE
+    PRINT "You may rely on it"
+  WITH CHANCE
+    PRINT "Yes definitely"
+  WITH CHANCE
+    PRINT "It is decidedly so"
+  WITH CHANCE
+    PRINT "As I see it, yes"
+  WITH CHANCE
+    PRINT "Most likely"
+  WITH CHANCE
+    PRINT "Yes"
+  WITH CHANCE
+    PRINT "Outlook good"
+  WITH CHANCE
+    PRINT "Signs point to yes"
+
+  WITH CHANCE
+    PRINT "Reply hazy try again"
+  WITH CHANCE
+    PRINT "Better not tell you now"
+  WITH CHANCE
+    PRINT "Ask again later"
+  WITH CHANCE
+    PRINT "Cannot predict now"
+  WITH CHANCE
+    PRINT "Concentrate and ask again"
+
+  WITH CHANCE
+    PRINT "Don’t count on it"
+  WITH CHANCE
+    PRINT "Outlook not so good"
+  WITH CHANCE
+    PRINT "My sources say no"
+  WITH CHANCE
+    PRINT "Very doubtful"
+  WITH CHANCE
+    PRINT "My reply is no"
+  END RANDOM
+
+  ' You may also specify the likelihood of each option
+  ' The numbers must total 100
+  BEGIN RANDOM
+  WITH CHANCE 99
+    ' Most of the time, nothing intesting happens
+    PRINT
+  WITH CHANCE 1
+    ' Rarely, something mysterious happens
+    SLEEP 400
+    PRINT "The text slowly changes from blue to red";
+    SLEEP 400
+    PRINT ".";
+    SLEEP 400
+    PRINT ".";
+    SLEEP 400
+    PRINT ".";
+    SLEEP 400
+    COLOR 4
+    PRINT " BEWARE!!!"
+    COLOR 7
+    PRINT
+  END RANDOM
+END WHILE
