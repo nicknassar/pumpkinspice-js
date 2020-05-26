@@ -1,7 +1,4 @@
-//   Pumpkin Spice - A simplistic language for interactive text applications
-//   Test build
-//   Copyright © 2020 Nicholas Nassar
-//   All Rights Reserved
+// Pumpkin Spice tests
 
 function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, inputFormElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam){
 
