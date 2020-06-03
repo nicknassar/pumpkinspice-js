@@ -97,6 +97,16 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "PRINT invalid expression",
+      code: "PRINT ON 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid statement"]
+      ]
+    },
+    {
       description: "REM Comment",
       code: "REM this is a comment\n",
       calls: [
@@ -352,6 +362,16 @@ function ParserTests(display) {
       ]
     },
     {
+      description: "COLOR statement with invalid expression",
+      code: "COLOR *\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid expression"]
+      ]
+    },
+    {
       description: "BGCOLOR statement",
       code: "BGCOLOR 7\n",
       calls: [
@@ -375,6 +395,16 @@ function ParserTests(display) {
       ]
     },
     {
+      description: "BGCOLOR statement with invalid expression",
+      code: "BGCOLOR /\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid expression"]
+      ]
+    },
+    {
       description: "CLEAR statement",
       code: "CLS\n",
       calls: [
@@ -384,6 +414,16 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "CLEAR statement with number",
+      code: "CLS 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "I am confused by: CLS 7"]
+      ]
+    },
+    {
       description: "INPUT statement",
       code: "INPUT Q\n",
       calls: [
@@ -391,6 +431,16 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors:[]
+    },
+    {
+      description: "INPUT statement with keyword param",
+      code: "INPUT CHOICE\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors:[
+        [1, "Invalid statement"]
+      ]
     },
     {
       description: "INPUT statement with string param",
@@ -413,6 +463,16 @@ function ParserTests(display) {
       errors:[]
     },
     {
+      description: "Invalid PLAY statement",
+      code: "PLAY FOR ASK\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors:[
+        [1, "Invalid statement"]
+      ]
+    },
+    {
       description: "SLEEP statement",
       code: "SLEEP 7\n",
       calls: [
@@ -421,6 +481,26 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors:[]
+    },
+    {
+      description: "Invalid SLEEP statement",
+      code: "SLEEP FOR 7 7 7\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors:[
+        [1, "Invalid expression"]
+      ]
+    },
+    {
+      description: "Chomsky",
+      code: "COLORLESS GREEN IDEAS SLEEP FURIOUSLY\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "I do not recognize COLORLESS"]
+      ]
     },
     {
       description: "Assignment from variable",
@@ -1086,6 +1166,20 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "Subroutine with invalid return",
+      code: "SUBROUTINE FOO\n" +
+        "RETURN TO END\n" +
+        "END SUBROUTINE\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "Invalid expression in return statement"]
+      ]
     },
     {
       description: "Subroutine with numeric expression return",
@@ -1818,6 +1912,19 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "Invalid expression in IF",
+      code:
+        "IF CHOICE = RANDOM\n" +
+        "END IF\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid expression in IF"],
+        [2, "END IF without IF"]
+      ]
+    },
+    {
       description: "Bool expressions with NOT, OR and AND",
       code:
         "IF NOT A=77 OR B=88 AND C=99\n" +
@@ -1924,6 +2031,35 @@ function ParserTests(display) {
       ]
     },
     {
+      description: "FOR statement with invalid start",
+      code: "FOR N = ASK to 101\n" +
+        "PRINT\n" +
+        "NEXT N",
+      calls: [
+        ["printString", "", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid expression in FOR"],
+        [3, "NEXT without FOR"]
+      ]
+    },
+    {
+      description: "FOR statement with invalid end",
+      code: "FOR N = 1 to END\n" +
+        "PRINT\n" +
+        "NEXT N",
+      calls: [
+        ["numericLiteralExpression", "1"],
+        ["printString", "", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid expression in FOR"],
+        [3, "NEXT without FOR"]
+      ]
+    },
+    {
       description: "NEXT without FOR",
       code: "NEXT N\n",
       calls: [
@@ -1980,18 +2116,28 @@ function ParserTests(display) {
     },
     {
       description: "FOR statement with CALL expressions",
-      code: "FOR N = CALL start to CALL end\n" +
+      code: "FOR N = CALL start to CALL finish\n" +
         "PRINT\n" +
         "NEXT N",
       calls: [
         ["callSubroutineExpression", "START", []],
-        ["callSubroutineExpression", "END", []],
+        ["callSubroutineExpression", "FINISH", []],
         ["forStatement", "N", 0, 1],
         ["printString", "", true, false],
         ["next", "N"],
         ["finalize"]
       ],
       errors: []
+    },
+    {
+      description: "Bad BEGIN",
+      code: "BEGIN ASK\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "I am confused by the statement: BEGIN ASK"]
+      ]
     },
     {
       description: "RANDOM statement",
@@ -2188,6 +2334,84 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "ASK again",
+      code: "ASK \"Will you?\"\n" +
+        "ASK \"???\"\n"+
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "Will you?"],
+        ["beginAsk", 0],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "No statements allowed after ASK and before ON YES/NO"]
+      ]
+    },
+    {
+      description: "ASK then END",
+      code: "ASK \"Will you?\"\n" +
+        "END IF\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "Will you?"],
+        ["beginAsk", 0],
+        ["onYes"],
+        ["printString", "yes", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "No statements allowed after ASK and before ON YES/NO"]
+      ]
+    },
+    {
+      description: "ASK without text",
+      code: "ASK\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      calls: [
+        ["printString", "no", true, false],
+        ["printString", "yes", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "ASK without question text"],
+        [2, "ON NO outside of ASK"],
+        [4, "ON YES outside of ASK"],
+        [6, "END ASK without matching BEGIN ASK"]
+      ]
+    },
+    {
+      description: "ASK invalid text expression",
+      code: "ASK TO PLAY\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "ON YES\n" +
+        "PRINT \"yes\"\n" +
+        "END ASK\n",
+      calls: [
+        ["printString", "no", true, false],
+        ["printString", "yes", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid ASK"],
+        [2, "ON NO outside of ASK"],
+        [4, "ON YES outside of ASK"],
+        [6, "END ASK without matching BEGIN ASK"]
+      ]
+    },
+    {
       description: "simple ASK without END",
       code: "ASK \"Will you?\"\n" +
         "ON NO\n" +
@@ -2206,6 +2430,43 @@ function ParserTests(display) {
       ],
       errors: [
         [1, "BEGIN ASK without matching END ASK"]
+      ]
+    },
+    {
+      description: "ASK without malformed DEFAULT",
+      code: "ASK \"Will you?\"\n" +
+        "DEFAULT FALSE\n" +
+        "ON NO\n" +
+        "PRINT \"no\"\n" +
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "Will you?"],
+        ["beginAsk", 0],
+        ["onNo"],
+        ["printString", "no", true, false],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "I am confused by the statement: DEFAULT FALSE"]
+      ]
+    },
+    {
+      description: "ASK without malformed ON",
+      code: "ASK \"Will you?\"\n" +
+        "ON NO WAY BUDDY\n" +
+        "PRINT \"no\"\n" +
+        "END ASK\n",
+      calls: [
+        ["stringLiteralExpression", "Will you?"],
+        ["beginAsk", 0],
+        ["endAsk"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "I am confused by the statement: ON NO WAY BUDDY"],
+        [3, "No statements allowed after ASK and before ON YES/NO"],
+        [4, "END ASK without either ON YES or ON NO"]
       ]
     },
     {
@@ -2364,6 +2625,26 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "MENU with invalid prompt text expression",
+      code: "BEGIN MENU TO ASK CHOICE\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["printString", "", true, false],
+        ["printString", "", true, false],
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Invalid expression"],
+        [2, "CHOICE outside of MENU"],
+        [4, "CHOICE outside of MENU"],
+        [6, "END MENU without matching BEGIN MENU"]
+      ]
+    },
+    {
       description: "CHOICE without BEGIN MENU",
       code: "CHOICE A \"First thing first\"\n",
       calls: [
@@ -2453,6 +2734,31 @@ function ParserTests(display) {
       ]
     },
     {
+      description: "basic MENU with invalid MENU settings",
+      code: "BEGIN MENU \"Prompt\"\n" +
+	"MENU SCHMENU\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+	[2, "Invalid statement"]
+      ]
+    },
+    {
       description: "MENU with all the options",
       code: "BEGIN MENU \"Prompt\"+A\n" +
 	"REM comment\n" +
@@ -2497,7 +2803,7 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "MENU with invalid HIDE IF",
+      description: "MENU with misplaced HIDE IF",
       code: "BEGIN MENU \"Prompt\"\n" +
         "CHOICE A \"First thing first\"\n" +
         "PRINT\n" +
@@ -2519,6 +2825,53 @@ function ParserTests(display) {
       ],
       errors: [
         [4, "HIDE IF should be immediately after CHOICE"]
+      ]
+    },
+    {
+      description: "MENU with invalid HIDE IF",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "HIDE IF MENU > 7\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+        [3, "HIDE IF with invalid expression"]
+      ]
+    },
+    {
+      description: "MENU with invalid CHOICE",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A ++\n" +
+        "PRINT\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "PRINT\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 2],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "Invalid expression in CHOICE"],
+        [3, "Statement before CHOICE in MENU"]
       ]
     },
     {
