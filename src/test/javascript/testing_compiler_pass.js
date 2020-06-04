@@ -60,7 +60,6 @@ function TestingCompilerPass() {
     rightzBuiltinExpression: loggerWithName("rightzBuiltinExpression"),
     valBuiltinExpression: loggerWithName("valBuiltinExpression"),
     lenBuiltinExpression: loggerWithName("lenBuiltinExpression"),
-    parenExpression: loggerWithName("parenExpression"),
     boolOrExpression: loggerWithName("boolOrExpression"),
     boolAndExpression: loggerWithName("boolAndExpression"),
     boolNotExpression: loggerWithName("boolNotExpression"),

@@ -234,10 +234,6 @@ function TypeGeneratorPass(typeManager, logger) {
         return newType;
       }
 
-      function passthroughExpression(exp) {
-        return exp;
-      }
-
       function notExpression(exp) {
         if (exp === null)
           return null;
@@ -385,7 +381,6 @@ function TypeGeneratorPass(typeManager, logger) {
     rightzBuiltinExpression: stringNumericToStringFunction,
     valBuiltinExpression: stringToNumericFunction,
     lenBuiltinExpression: stringToNumericFunction,
-    parenExpression: passthroughExpression,
     boolOrExpression: orExpression,
     boolAndExpression: andExpression,
     boolNotExpression: notExpression,

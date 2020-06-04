@@ -32,39 +32,6 @@ function TypeGeneratorPassTests(display) {
       errors: []
     },
     {
-      description: "PRINT paren expression",
-      run: function(onComplete) {
-        typeGeneratorPass.printExp(
-          typeGeneratorPass.parenExpression(
-            typeGeneratorPass.stringLiteralExpression("somestring")), true, false);
-        typeGeneratorPass.finalize();
-        onComplete();
-      },
-      calls: [
-        ["stringType"],
-        ["typeForStringExpression", 0],
-        ["validate"]
-      ],
-      errors: []
-    },
-    {
-      description: "PRINT double paren expression",
-      run: function(onComplete) {
-        typeGeneratorPass.printExp(
-          typeGeneratorPass.parenExpression(
-            typeGeneratorPass.parenExpression(
-              typeGeneratorPass.stringLiteralExpression("somestring"))), true, false);
-        typeGeneratorPass.finalize();
-        onComplete();
-      },
-      calls: [
-        ["stringType"],
-        ["typeForStringExpression", 0],
-        ["validate"]
-      ],
-      errors: []
-    },
-    {
       description: "PRINT string concatenation expression",
       run: function(onComplete) {
         typeGeneratorPass.printExp(
@@ -875,11 +842,10 @@ function TypeGeneratorPassTests(display) {
             typeGeneratorPass.boolNotEqualExpression(
               typeGeneratorPass.callSubroutineExpression(
                 "PLUSONE",
-                typeGeneratorPass.parenExpression(
                   typeGeneratorPass.callSubroutineExpression(
                     "PLUSONE",
                     typeGeneratorPass.numericLiteralExpression("1")
-                  ))),
+                  )),
               typeGeneratorPass.callSubroutineExpression(
                 "PLUSONE",
                 typeGeneratorPass.numericLiteralExpression(2)
