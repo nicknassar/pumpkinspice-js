@@ -54,7 +54,6 @@ function Parser(handlers,logger){
   // The enum for a RANDOM in the loopstack doubles as the enum for the RANDOM keyword
   // Minus a million points for style
   // var RANDOM={};
-  var CALL={};
   var WITH={};
   var CHANCE={};
   var CHOICE={};
@@ -202,8 +201,6 @@ function Parser(handlers,logger){
           tokens.push({type:VAL,value:i});
         } else if (i === "RANDOM") {
           tokens.push({type:RANDOM,value:i});
-        } else if (i === "CALL") {
-          tokens.push({type:CALL,value:i});
         } else if (i === "REM") {
           tokens.push({type:COMMENT,value:i});
         } else if (i === "WITH") {
@@ -500,17 +497,33 @@ function Parser(handlers,logger){
           return [handler.valBuiltinExpression(param), tokens.slice(i)];
         }
       }
-    } else if (tokens[0].type===CALL) {
-      if (tokens.length < 2 || tokens[1].type !== IDENTIFIER) {
-	logger.error("CALL expression expects the name of a subroutine to call");
-	return [null, []];
+    } else if (tokens[0].type===IDENTIFIER && tokens.length > 2 && tokens[1].type === OPENPAREN) {
+      var i=2;
+      var depth = 1;
+      for (i=2;i<tokens.length&&depth>0;i++) {
+        if (tokens[i].type===CLOSEPAREN)
+          depth--;
+        else if (tokens[i].type===OPENPAREN) {
+          depth++;
+        }
       }
-      var expressionList = parseExpressionList(tokens.slice(2));
+      // No closing paren
+      if (depth > 0) {
+        logger.error("No closing parenthesis for function "+tokens[0].value);
+        return [null, []];
+      }
+      // No closing paren
+      if (depth < 0) {
+        logger.error("Too many closing parentheses for function "+tokens[0].value);
+        return [null, []];
+      }
+
+      var expressionList = parseExpressionList(tokens.slice(2,i-1));
       var argExps = expressionList[0];
       if (argExps === null)
         return [null, []];
       var remaining = expressionList[1];
-      return [handler.callSubroutineExpression(tokens[1].value,argExps), remaining];
+      return [handler.callSubroutineExpression(tokens[0].value,argExps), tokens.slice(i)];
     } else if (tokens[0].type===IDENTIFIER) {
       return [handler.variableExpression(tokens[0].value), tokens.slice(1)];
     } else if (tokens[0].type===PLUS) {
@@ -617,6 +630,17 @@ function Parser(handlers,logger){
           return false;
         } else {
           return handler.letStatement(tokens[0].value, letExp);
+        }
+      } else if (tokens[0].type === IDENTIFIER && tokens.length > 2 && tokens[1].type === OPENPAREN && tokens[tokens.length-1].type === CLOSEPAREN) {
+        var expressionList = parseExpressionList(tokens.slice(2,tokens.length-1));
+        var argExps = expressionList[0];
+        if (argExps === null) {
+          return null;
+        } else if (expressionList[1].length > 0) {
+          logger.error("Extra junk at the end of this CALL statement");
+          return null;
+        } else {
+          return handler.callSubroutine(tokens[0].value,argExps);
         }
       } else if (tokens[0].type===ASK && tokens.length >= 2) {
         if (tokens.length === 3 &&
@@ -1185,17 +1209,6 @@ function Parser(handlers,logger){
 
           return handler.withEvenChance();
 
-      } else if (tokens[0].type === CALL && tokens.length >= 2 && tokens[1].type === IDENTIFIER) {
-        var expressionList = parseExpressionList(tokens.slice(2));
-        var argExps = expressionList[0];
-        if (argExps === null) {
-          return null;
-        } else if (expressionList[1].length > 0) {
-          logger.error("Extra junk at the end of this CALL statement");
-          return null;
-        } else {
-          return handler.callSubroutine(tokens[1].value,argExps);
-        }
       } else if (tokens[0].type===COMMENT) {
         if (tokens.length>1)
           return handler.comment(tokens[1].value);
