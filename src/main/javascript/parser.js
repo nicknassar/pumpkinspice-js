@@ -1203,6 +1203,7 @@ function Parser(handlers,logger){
           return handler.comment("");
       } else if (tokens.length>=3 && tokens[0].type === MINUS && tokens[1].type === MINUS && tokens[2].type === GREATER) {
         finished = true;
+        return true;
       } else {
         var s=tokens[0].value;
         for (var n=1;n<tokens.length;n++) {
@@ -1211,8 +1212,7 @@ function Parser(handlers,logger){
         logger.error("I am confused by the statement: "+s);
         return false;
       }
-      logger.error("Fell off the face of the earth");
-
+      //logger.error("Fell off the face of the earth");
     }
     return true;
   }
