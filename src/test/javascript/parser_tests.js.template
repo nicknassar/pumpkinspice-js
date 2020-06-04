@@ -165,8 +165,7 @@ function ParserTests(display) {
       code: "PRINT (\"parens\")\n",
       calls: [
         ["stringLiteralExpression", "parens"],
-        ["parenExpression", 0],
-        ["printExp", 1, true, false],
+        ["printExp", 0, true, false],
         ["finalize"]
       ],
       errors: []
@@ -176,8 +175,7 @@ function ParserTests(display) {
       code: "PRINT (\"parens\");\n",
       calls: [
         ["stringLiteralExpression", "parens"],
-        ["parenExpression", 0],
-        ["printExp", 1, false, false],
+        ["printExp", 0, false, false],
         ["finalize"]
       ],
       errors: []
@@ -187,8 +185,7 @@ function ParserTests(display) {
       code: "PAUSE (\"parens\")\n",
       calls: [
         ["stringLiteralExpression", "parens"],
-        ["parenExpression", 0],
-        ["printExp", 1, true, true],
+        ["printExp", 0, true, true],
         ["finalize"]
       ],
       errors: []
@@ -198,8 +195,7 @@ function ParserTests(display) {
       code: "PAUSE (\"parens\");\n",
       calls: [
         ["stringLiteralExpression", "parens"],
-        ["parenExpression", 0],
-        ["printExp", 1, false, true],
+        ["printExp", 0, false, true],
         ["finalize"]
       ],
       errors: []
@@ -271,9 +267,7 @@ function ParserTests(display) {
       code: "PRINT ((\"parens\"))\n",
       calls: [
         ["stringLiteralExpression", "parens"],
-        ["parenExpression", 0],
-        ["parenExpression", 1],
-        ["printExp", 2, true, false],
+        ["printExp", 0, true, false],
         ["finalize"]
       ],
       errors: []
@@ -285,8 +279,7 @@ function ParserTests(display) {
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
         ["additionExpression", 0, 1],
-        ["parenExpression", 2],
-        ["printExp", 3, true, false],
+        ["printExp", 2, true, false],
         ["finalize"]
       ],
       errors: []
@@ -318,8 +311,7 @@ function ParserTests(display) {
       code: "PRINT (variable)\n" ,
       calls: [
         ["variableExpression", "VARIABLE"],
-        ["parenExpression", 0],
-        ["printExp", 1, true, false],
+        ["printExp", 0, true, false],
         ["finalize"]
       ],
       errors: []
@@ -690,10 +682,9 @@ function ParserTests(display) {
       code: "A = (7)+1\n",
       calls: [
         ["numericLiteralExpression", "7"],
-        ["parenExpression", 0],
         ["numericLiteralExpression", "1"],
-        ["additionExpression", 1, 2],
-        ["letStatement", "A", 3],
+        ["additionExpression", 0, 1],
+        ["letStatement", "A", 2],
         ["finalize"]
       ],
       errors: []
@@ -751,10 +742,9 @@ function ParserTests(display) {
       code: "A = (100)-101\n",
       calls: [
         ["numericLiteralExpression", "100"],
-        ["parenExpression", 0],
         ["numericLiteralExpression", "101"],
-        ["subtractionExpression", 1, 2],
-        ["letStatement", "A", 3],
+        ["subtractionExpression", 0, 1],
+        ["letStatement", "A", 2],
         ["finalize"]
       ],
       errors: []
@@ -764,10 +754,9 @@ function ParserTests(display) {
       code: "A = (100)*101\n",
       calls: [
         ["numericLiteralExpression", "100"],
-        ["parenExpression", 0],
         ["numericLiteralExpression", "101"],
-        ["multiplicationExpression", 1, 2],
-        ["letStatement", "A", 3],
+        ["multiplicationExpression", 0, 1],
+        ["letStatement", "A", 2],
         ["finalize"]
       ],
       errors: []
@@ -777,10 +766,9 @@ function ParserTests(display) {
       code: "A = (100)/101\n",
       calls: [
         ["numericLiteralExpression", "100"],
-        ["parenExpression", 0],
         ["numericLiteralExpression", "101"],
-        ["divisionExpression", 1, 2],
-        ["letStatement", "A", 3],
+        ["divisionExpression", 0, 1],
+        ["letStatement", "A", 2],
         ["finalize"]
       ],
       errors: []
@@ -1307,11 +1295,10 @@ function ParserTests(display) {
       code: "A = foo((77)-88)\n",
       calls: [
 	["numericLiteralExpression", "77"],
-	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
-	["subtractionExpression", 1, 2],
-	["callSubroutineExpression", "FOO", [3]],
-        ["letStatement", "A", 4],
+	["subtractionExpression", 0, 1],
+	["callSubroutineExpression", "FOO", [2]],
+        ["letStatement", "A", 3],
 	["finalize"]
       ],
       errors: []
@@ -1321,12 +1308,11 @@ function ParserTests(display) {
       code: "A = foo((77)-88,bar)\n",
       calls: [
 	["numericLiteralExpression", "77"],
-	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
-	["subtractionExpression", 1, 2],
+	["subtractionExpression", 0, 1],
 	["variableExpression", "BAR"],
-	["callSubroutineExpression", "FOO", [3, 4]],
-	["letStatement", "A", 5],
+	["callSubroutineExpression", "FOO", [2, 3]],
+	["letStatement", "A", 4],
 	["finalize"]
       ],
       errors: []
@@ -1336,14 +1322,13 @@ function ParserTests(display) {
       code: "A = foo((77)-88,bar+99)\n",
       calls: [
 	["numericLiteralExpression", "77"],
-	["parenExpression", 0],
 	["numericLiteralExpression", "88"],
-	["subtractionExpression", 1, 2],
+	["subtractionExpression", 0, 1],
 	["variableExpression", "BAR"],
 	["numericLiteralExpression", "99"],
-	["additionExpression", 4, 5],
-	["callSubroutineExpression", "FOO", [3, 6]],
-	["letStatement", "A", 7],
+	["additionExpression", 3, 4],
+	["callSubroutineExpression", "FOO", [2, 5]],
+	["letStatement", "A", 6],
 	["finalize"]
       ],
       errors: []
@@ -1353,10 +1338,9 @@ function ParserTests(display) {
       code: "A = foo((\"biz\"),boz)\n",
       calls: [
 	["stringLiteralExpression", "biz"],
-	["parenExpression", 0],
 	["variableExpression", "BOZ"],
-	["callSubroutineExpression", "FOO", [1, 2]],
-	["letStatement", "A", 3],
+	["callSubroutineExpression", "FOO", [0, 1]],
+	["letStatement", "A", 2],
 	["finalize"]
       ],
       errors: []
@@ -1368,11 +1352,10 @@ function ParserTests(display) {
 	["variableExpression", "BAR"],
 	["stringLiteralExpression", "biz"],
 	["variableExpression", "BAZ"],
-	["parenExpression", 2],
 	["numericLiteralExpression", "2"],
-	["multiplicationExpression", 3, 4],
-	["callSubroutineExpression", "FOO", [0, 1, 5]],
-	["printExp", 6, true, false],
+	["multiplicationExpression", 2, 3],
+	["callSubroutineExpression", "FOO", [0, 1, 4]],
+	["printExp", 5, true, false],
 	["finalize"]
       ],
       errors: []
@@ -1860,9 +1843,8 @@ function ParserTests(display) {
         ["numericLiteralExpression", "88"],
         ["boolEqualExpression", 3, 4],
         ["boolOrExpression", 2, 5],
-        ["parenExpression", 6],
-        ["boolNotExpression", 7],
-        ["ifStatement", 8],
+        ["boolNotExpression", 6],
+        ["ifStatement", 7],
         ["endIf"],
         ["finalize"]
       ],
@@ -1877,13 +1859,12 @@ function ParserTests(display) {
         ["variableExpression", "A"],
         ["numericLiteralExpression", "77"],
         ["boolEqualExpression", 0, 1],
-        ["parenExpression", 2],
-        ["boolNotExpression", 3],
+        ["boolNotExpression", 2],
         ["variableExpression", "B"],
         ["numericLiteralExpression", "88"],
-        ["boolEqualExpression", 5, 6],
-        ["boolOrExpression", 4, 7],
-        ["ifStatement", 8],
+        ["boolEqualExpression", 4, 5],
+        ["boolOrExpression", 3, 6],
+        ["ifStatement", 7],
         ["endIf"],
         ["finalize"]
       ],

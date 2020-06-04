@@ -1119,9 +1119,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
         var f1 = p.value;
         return numericExpressionWithSubs(function(){return f1().length;},p.subs);
       }
-      function parenExpression(inner) {
-        return inner;
-      }
       function boolOrExpression(exp1,exp2) {
         return boolBinaryExpression('||',exp1,exp2);
       }
@@ -1284,7 +1281,6 @@ function CodeGeneratorPass(typeManager, machine, logger){
     rightzBuiltinExpression: rightzBuiltinExpression,
     valBuiltinExpression: valBuiltinExpression,
     lenBuiltinExpression: lenBuiltinExpression,
-    parenExpression: parenExpression,
     boolOrExpression: boolOrExpression,
     boolAndExpression: boolAndExpression,
     boolNotExpression: boolNotExpression,

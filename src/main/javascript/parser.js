@@ -560,7 +560,7 @@ function Parser(handlers,logger){
       if (parenExp === null) {
         return [null, []];
       }
-      return [handler.parenExpression(parenExp), tokens.slice(pos)];
+      return [parenExp, tokens.slice(pos)];
       // This is a + expression starting with an identifier
     } else {
       logger.error("Unexpected token "+tokens[0].value+" in expression");
