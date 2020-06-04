@@ -1199,7 +1199,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL statement 1",
-      code: "CALL Foo\n",
+      code: "Foo()\n",
       calls: [
         ["callSubroutine", "FOO", []],
         ["finalize"]
@@ -1208,7 +1208,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL statement 2",
-      code: "CALL BAR None\n",
+      code: "BAR(None)\n",
       calls: [
         ["variableExpression", "NONE"],
         ["callSubroutine", "BAR", [0]],
@@ -1218,7 +1218,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL statement 3",
-      code: "CALL boo 12, \"boo\"\n",
+      code: "boo(12, \"boo\")\n",
       calls: [
         ["numericLiteralExpression", "12"],
         ["stringLiteralExpression", "boo"],
@@ -1229,7 +1229,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL statement error",
-      code: "CALL Foo OR SOMETHING\n",
+      code: "Foo(OR) SOMETHING\n",
       calls: [
         ["finalize"]
       ],
@@ -1239,7 +1239,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL expression 1",
-      code: "A = CALL Foo\n",
+      code: "A = Foo()\n",
       calls: [
         ["callSubroutineExpression", "FOO", []],
         ["letStatement", "A", 0],
@@ -1249,7 +1249,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL expression 2",
-      code: "A = CALL bar None\n",
+      code: "A = bar(None)\n",
       calls: [
         ["variableExpression", "NONE"],
         ["callSubroutineExpression", "BAR", [0]],
@@ -1260,7 +1260,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL expression 3",
-      code: "A = CALL Boo 12, \"boo\"\n",
+      code: "A = Boo(12, \"boo\")\n",
       calls: [
         ["numericLiteralExpression", "12"],
         ["stringLiteralExpression", "boo"],
@@ -1272,7 +1272,7 @@ function ParserTests(display) {
     },
     {
       description: "PRINT CALL expression",
-      code: "PRINT CALL Foo\n",
+      code: "PRINT Foo()\n",
       calls: [
 	["callSubroutineExpression", "FOO", []],
 	["printExp", 0, true, false],
@@ -1282,7 +1282,7 @@ function ParserTests(display) {
     },
     {
       description: "Assign CALL with numeric arg",
-      code: "A = CALL FOO+77\n",
+      code: "A = FOO(+77)\n",
       calls: [
 	["numericLiteralExpression", "77"],
 	["callSubroutineExpression", "FOO", [0]],
@@ -1293,7 +1293,7 @@ function ParserTests(display) {
     },
     {
       description: "Assign CALL with negative arg",
-      code: "A = CALL foo-88\n",
+      code: "A = foo(-88)\n",
       calls: [
 	["numericLiteralExpression", "-88"],
 	["callSubroutineExpression", "FOO", [0]],
@@ -1304,7 +1304,7 @@ function ParserTests(display) {
     },
     {
       description: "Assign subtraction of CALL expression",
-      code: "A = CALL foo(77)-88\n",
+      code: "A = foo((77)-88)\n",
       calls: [
 	["numericLiteralExpression", "77"],
 	["parenExpression", 0],
@@ -1318,7 +1318,7 @@ function ParserTests(display) {
     },
     {
       description: "Assignment of subtraction of CALL expression, two args",
-      code: "A = CALL foo(77)-88,bar\n",
+      code: "A = foo((77)-88,bar)\n",
       calls: [
 	["numericLiteralExpression", "77"],
 	["parenExpression", 0],
@@ -1333,7 +1333,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL expressions with two complex args",
-      code: "A = CALL foo(77)-88,bar+99\n",
+      code: "A = foo((77)-88,bar+99)\n",
       calls: [
 	["numericLiteralExpression", "77"],
 	["parenExpression", 0],
@@ -1350,7 +1350,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL expression string param variable param",
-      code: "A = CALL foo(\"biz\"),boz\n",
+      code: "A = foo((\"biz\"),boz)\n",
       calls: [
 	["stringLiteralExpression", "biz"],
 	["parenExpression", 0],
@@ -1363,7 +1363,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL expression with three params",
-      code: "PRINT CALL FOO bar, \"biz\", (baz)*2\n",
+      code: "PRINT FOO(bar, \"biz\", (baz)*2)\n",
       calls: [
 	["variableExpression", "BAR"],
 	["stringLiteralExpression", "biz"],
@@ -1378,34 +1378,32 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "CALL expression in parens, followed by addition",
-      code: "PRINT (CALL FOO \"a\"+\"b\")+\"c\"\n",
+      description: "CALL expression, followed by addition",
+      code: "PRINT FOO(\"a\"+\"b\")+\"c\"\n",
       calls: [
 	["stringLiteralExpression", "a"],
 	["stringLiteralExpression", "b"],
 	["additionExpression", 0, 1],
 	["callSubroutineExpression", "FOO", [2]],
-	["parenExpression", 3],
 	["stringLiteralExpression", "c"],
-	["additionExpression", 4, 5],
-	["printExp", 6, true, false],
+	["additionExpression", 3, 4],
+	["printExp", 5, true, false],
 	["finalize"]
       ],
       errors: []
     },
     {
       description: "Nested CALL expressions",
-      code: "IF CALL PLUSONE (CALL PLUSONE 1) != CALL PLUSONE 2 THEN\n"+
+      code: "IF PLUSONE(PLUSONE(1)) != PLUSONE(2) THEN\n"+
         "END IF\n",
       calls: [
         ["numericLiteralExpression", "1"],
         ["callSubroutineExpression", "PLUSONE", [0]],
-        ["parenExpression", 1],
-        ["callSubroutineExpression", "PLUSONE", [2]],
+        ["callSubroutineExpression", "PLUSONE", [1]],
         ["numericLiteralExpression", "2"],
-        ["callSubroutineExpression", "PLUSONE", [4]],
-        ["boolNotEqualExpression", 3, 5],
-        ["ifStatement", 6],
+        ["callSubroutineExpression", "PLUSONE", [3]],
+        ["boolNotEqualExpression", 2, 4],
+        ["ifStatement", 5],
         ["endIf"],
 	["finalize"]
       ],
@@ -2116,7 +2114,7 @@ function ParserTests(display) {
     },
     {
       description: "FOR statement with CALL expressions",
-      code: "FOR N = CALL start to CALL finish\n" +
+      code: "FOR N = start() to finish()\n" +
         "PRINT\n" +
         "NEXT N",
       calls: [
