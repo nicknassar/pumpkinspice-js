@@ -3,21 +3,21 @@
 
 ' Subroutines are blocks of code that can be called
 ' over and over
-SUBROUTINE GREET NAME
-  PRINT "Hello "+NAME
-END SUBROUTINE
+SUB GREET NAME
+  SAY "Hello "+NAME
+END SUB
 
-SUBROUTINE INCREMENT value
+SUB INCREMENT value
   RETURN value + 1
-END SUBROUTINE
+END SUB
 
-PRINT "What is your name?"
-INPUT NAME
+SAY "What is your name?"
+LISTEN FOR NAME
 
-PRINT "How old are you?"
-INPUT AGE_TEXT
-AGE = VAL(AGE_TEXT)
+SAY "How old are you?"
+LISTEN FOR AGE_TEXT
+AGE = NUMBER(AGE_TEXT)
 OLDER = INCREMENT(AGE)
 
 GREET(NAME)
-PRINT "Next year you will be "+STR$(OLDER)
+SAY "Next year you will be "+TEXT(OLDER)

@@ -10,7 +10,7 @@
 ' a subset of ABC
 
 COLOR 11
-PRINT "Music!"
+SAY "Music!"
 
 BEGIN MENU "Choose a song"
 CHOICE C "(C)amptown races"
@@ -30,5 +30,5 @@ CHOICE J "(J)ingle Bells"
   PLAY "fff3/2f/2feee/2e/2ggfdc3"
 END MENU
 
-PRINT
-PRINT "Enjoy!"
+SAY
+SAY "Enjoy!"

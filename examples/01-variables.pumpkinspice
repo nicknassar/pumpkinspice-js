@@ -49,20 +49,20 @@ HALF = DOLLARS / 2
 ' This sets UNO to 1
 UNO = (1+0)*(3-2)
 
-' You can print to the screen with PRINT
-PRINT "HELLO World!"
+' You can SAY to the screen with PRINT
+SAY "HELLO World!"
 
 ' If you put a semicolon at the end of a PRINT
 ' it doesn't start a new line
-PRINT "This is my";
-PRINT " first program"
+SAY "This is my";
+SAY " first program"
 
-' You can use text expressions in a print statement
-PRINT NAME+" is my favorite"
+' You can use text expressions in a SAY statement
+SAY NAME+" is my favorite"
 
-' You can print numbers by making them text
+' You can SAY numbers by making them text
 ' with STR$()
-PRINT "I have "+ STR$(DOLLARS) +" dollars"
+SAY "I have "+ TEXT(DOLLARS) +" dollars"
 
 ' You can change colors with COLOR
 ' It takes a number from 0 to 15
@@ -71,11 +71,11 @@ COLOR 13
 ' There is also a background color
 BGCOLOR 1
 
-PRINT "WOW! This computer does color!"
+SAY "WOW! This computer does color!"
 
 COLOR 7
 BGCOLOR 0
-PRINT "BORING AGAIN"
+SAY "BORING AGAIN"
 
 
 ' You can wait for the user with PAUSE
@@ -84,28 +84,28 @@ PAUSE "Press ENTER to continue"
 ' CLS CLears the Screan
 CLS
 
-' INPUT puts whatever someone types into a variable
-PRINT
-PRINT "What is your name? ";
-INPUT NAME
+' LISTEN FOR puts whatever someone types into a variable
+SAY
+SAY "What is your name? ";
+LISTEN FOR NAME
 
-PRINT "HELLO "+NAME
+SAY "HELLO "+NAME
 
 ' You can also do numbers
-PRINT "What's the temperature today?";
-INPUT TEMPERATURE_TEXT
+SAY "What's the temperature today?";
+LISTEN FOR TEMPERATURE_TEXT
 
 ' Convert the text to a number
-TEMPERATURE = VAL(TEMPERATURE_TEXT)
+TEMPERATURE = NUMBER(TEMPERATURE_TEXT)
 
 ' Perform a numeric calculation
 TEMPERATURE_CELSIUS = (TEMPERATURE-32)/1.8
 ' Convert the result to text
-TEMPERATURE_CELSIUS_TEXT = STR$(TEMPERATURE_CELSIUS)
+TEMPERATURE_CELSIUS_TEXT = TEXT(TEMPERATURE_CELSIUS)
 
-' Print the reults
-PRINT TEMPERATURE_TEXT + "°F is "+TEMPERATURE_CELSIUS_TEXT+"°C"
+' SAY the reults
+SAY TEMPERATURE_TEXT + "°F is "+TEMPERATURE_CELSIUS_TEXT+"°C"
 
-PRINT
-PRINT "That's the first lesson"
-print "Reload this page to run it again"
+SAY
+SAY "That's the first lesson"
+SAY "Reload this page to run it again"

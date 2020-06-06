@@ -101,14 +101,12 @@ function Parser(handlers,logger){
     var maxcap='Z'.charCodeAt(0);
     var minnum='0'.charCodeAt(0);
     var maxnum='9'.charCodeAt(0);
-    var dolla='$'.charCodeAt(0);
     var unda='_'.charCodeAt(0);
     var dot='.'.charCodeAt(0);
     var validIdChar = function (p) {
       p = p.charCodeAt(0);
       return ((maxlow >= p && p>=minlow) ||
               (maxcap >= p && p>=mincap) ||
-              (p === dolla) ||
               (p === unda));
     };
     var validDigit = function (p) {
@@ -189,15 +187,15 @@ function Parser(handlers,logger){
           tokens.push({type:FIX,value:i});
         } else if (i === "INT") {
           tokens.push({type:INT,value:i});
-        } else if (i === "LEFT$") {
+        } else if (i === "LEFT") {
           tokens.push({type:LEFTZ,value:i});
         } else if (i === "LEN") {
           tokens.push({type:LEN,value:i});
-        } else if (i === "RIGHT$") {
+        } else if (i === "RIGHT") {
           tokens.push({type:RIGHTZ,value:i});
-        } else if (i === "STR$") {
+        } else if (i === "TEXT") {
           tokens.push({type:STRZ,value:i});
-        } else if (i === "VAL") {
+        } else if (i === "NUMBER") {
           tokens.push({type:VAL,value:i});
         } else if (i === "RANDOM") {
           tokens.push({type:RANDOM,value:i});
@@ -247,7 +245,7 @@ function Parser(handlers,logger){
           tokens.push({type:THEN,value:i});
         } else if (i === "ELSE") {
           tokens.push({type:ELSE,value:i});
-        } else if (i === "SUBROUTINE") {
+        } else if (i === "SUBROUTINE" || i === "SUB") {
           tokens.push({type:SUBROUTINE,value:i});
         } else if (i === "RETURN") {
           tokens.push({type:RETURN,value:i});
@@ -257,7 +255,7 @@ function Parser(handlers,logger){
           tokens.push({type:WAIT,value:i});
         } else if (i === "MUSIC") {
           tokens.push({type:MUSIC,value:i});
-        } else if (i === "PRINT") {
+        } else if (i === "SAY") {
           tokens.push({type:PRINT,value:i});
         } else if (i === "PAUSE") {
           tokens.push({type:PAUSE,value:i});
@@ -269,7 +267,7 @@ function Parser(handlers,logger){
           tokens.push({type:BGCOLOR,value:i});
         } else if (i === "SLEEP") {
           tokens.push({type:SLEEP,value:i});
-        } else if (i === "INPUT") {
+        } else if (i === "LISTEN") {
           tokens.push({type:INPUT,value:i});
         } else {
           tokens.push({type:IDENTIFIER,value:i});
@@ -861,8 +859,9 @@ function Parser(handlers,logger){
           return false;
         else
           return handler.sleep(exp);
-      } else if (tokens[0].type===INPUT && tokens.length === 2 && tokens[1].type === IDENTIFIER) {
-        return handler.input(tokens[1].value);
+      } else if (tokens[0].type===INPUT &&
+                 tokens.length === 3 && tokens[1].type === FOR && tokens[2].type === IDENTIFIER) {
+        return handler.input(tokens[tokens.length-1].value);
       } else if (tokens[0].type===PLAY) {
         var exp = expression(tokens.slice(1,tokens.length));
         if (exp === null)

@@ -4,7 +4,7 @@
 ' Sometimes you want to ask a Yes/No question
 
 COLOR 2
-PRINT "Greeting Profressor Falken."
+SAY "Greeting Profressor Falken."
 
 ASK "Would you like to play Global Thermonuclear War?"
 ' Specify colors here
@@ -17,12 +17,12 @@ ASK PROMPT COLOR 2
 ' DEFAULT NO
 ON YES
   ' This runs when the users picks Yes
-  PRINT "A strange game."
+  SAY "A strange game."
   SLEEP 400
-  PRINT "The only winning move is not to play."
+  SAY "The only winning move is not to play."
   SLEEP 400
-  PRINT "You lose"
+  SAY "You lose"
 ON NO
   ' This runs when the users picks No
-  PRINT "You're no fun."
+  SAY "You're no fun."
 END ASK

@@ -18,27 +18,27 @@ WHILE PLAYING = "Y"
   MY_NUMBER = RANDOM(1,10)
   GUESS = ""
 
-  PRINT "I'm thinking of a number 1 to 10"
-  PRINT "What is it?"
+  SAY "I'm thinking of a number 1 to 10"
+  SAY "What is it?"
 
   ' The user keeps guessing until they get it right
-  WHILE VAL(GUESS) != MY_NUMBER
+  WHILE NUMBER(GUESS) != MY_NUMBER
     ATTEMPT = ATTEMPT + 1
-    INPUT GUESS
+    LISTEN FOR GUESS
 
-    IF VAL(GUESS) < MY_NUMBER
-      PRINT "Higher"
+    IF NUMBER(GUESS) < MY_NUMBER
+      SAY "Higher"
     END IF
-    IF VAL(GUESS) > MY_NUMBER
-      PRINT "Lower"
+    IF NUMBER(GUESS) > MY_NUMBER
+      SAY "Lower"
     END IF
   END WHILE
 
-  PRINT "You got it!"
-  PRINT "It only took you "+STR$(ATTEMPT)+" tries"
-  PRINT
-  PRINT "Type ""Y"" to play again";
-  INPUT PLAYING
+  SAY "You got it!"
+  SAY "It only took you "+TEXT(ATTEMPT)+" tries"
+  SAY
+  SAY "Type ""Y"" to play again";
+  LISTEN FOR PLAYING
 END WHILE
 
-PRINT "Reload the page to play again"
+SAY "Reload the page to play again"
