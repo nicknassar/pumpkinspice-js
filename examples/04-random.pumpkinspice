@@ -14,62 +14,62 @@ WHILE 1 = 1 DO
   ' Keep asking if the input is blank
   QUESTION = ""
   WHILE QUESTION = ""
-    PRINT "Ask the Magic 8-Ball a ""Yes or No"" question:"
-    INPUT QUESTION
+    SAY "Ask the Magic 8-Ball a ""Yes or No"" question:"
+    LISTEN FOR QUESTION
   END WHILE
 
-  PRINT "The Magic 8-Ball says";
+  SAY "The Magic 8-Ball says";
   SLEEP 400
-  PRINT ".";
+  SAY ".";
   SLEEP 400
-  PRINT ".";
+  SAY ".";
   SLEEP 400
-  PRINT "."
+  SAY "."
 
   ' Each WITH CHANCE section has an equal chance of being run
   BEGIN RANDOM
   WITH CHANCE
-    PRINT "It is certain"
+    SAY "It is certain"
   WITH CHANCE
-    PRINT "Without a doubt"
+    SAY "Without a doubt"
   WITH CHANCE
-    PRINT "You may rely on it"
+    SAY "You may rely on it"
   WITH CHANCE
-    PRINT "Yes definitely"
+    SAY "Yes definitely"
   WITH CHANCE
-    PRINT "It is decidedly so"
+    SAY "It is decidedly so"
   WITH CHANCE
-    PRINT "As I see it, yes"
+    SAY "As I see it, yes"
   WITH CHANCE
-    PRINT "Most likely"
+    SAY "Most likely"
   WITH CHANCE
-    PRINT "Yes"
+    SAY "Yes"
   WITH CHANCE
-    PRINT "Outlook good"
+    SAY "Outlook good"
   WITH CHANCE
-    PRINT "Signs point to yes"
+    SAY "Signs point to yes"
 
   WITH CHANCE
-    PRINT "Reply hazy try again"
+    SAY "Reply hazy try again"
   WITH CHANCE
-    PRINT "Better not tell you now"
+    SAY "Better not tell you now"
   WITH CHANCE
-    PRINT "Ask again later"
+    SAY "Ask again later"
   WITH CHANCE
-    PRINT "Cannot predict now"
+    SAY "Cannot predict now"
   WITH CHANCE
-    PRINT "Concentrate and ask again"
+    SAY "Concentrate and ask again"
 
   WITH CHANCE
-    PRINT "Don’t count on it"
+    SAY "Don’t count on it"
   WITH CHANCE
-    PRINT "Outlook not so good"
+    SAY "Outlook not so good"
   WITH CHANCE
-    PRINT "My sources say no"
+    SAY "My sources say no"
   WITH CHANCE
-    PRINT "Very doubtful"
+    SAY "Very doubtful"
   WITH CHANCE
-    PRINT "My reply is no"
+    SAY "My reply is no"
   END RANDOM
 
   ' You may also specify the likelihood of each option
@@ -77,21 +77,21 @@ WHILE 1 = 1 DO
   BEGIN RANDOM
   WITH CHANCE 99
     ' Most of the time, nothing intesting happens
-    PRINT
+    SAY
   WITH CHANCE 1
     ' Rarely, something mysterious happens
     SLEEP 400
-    PRINT "The text slowly changes from blue to red";
+    SAY "The text slowly changes from blue to red";
     SLEEP 400
-    PRINT ".";
+    SAY ".";
     SLEEP 400
-    PRINT ".";
+    SAY ".";
     SLEEP 400
-    PRINT ".";
+    SAY ".";
     SLEEP 400
     COLOR 4
-    PRINT " BEWARE!!!"
+    SAY " BEWARE!!!"
     COLOR 7
-    PRINT
+    SAY
   END RANDOM
 END WHILE

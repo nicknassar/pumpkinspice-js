@@ -15,9 +15,9 @@ USER_EAST = RANDOM(1,5)
 MOVES = 0
 
 COLOR 13
-PRINT "Find the Treasure"
+SAY "Find the Treasure"
 COLOR 7
-PRINT
+SAY
 
 ' Keep asking for a direction until the user and treasure are in the
 ' same place
@@ -33,43 +33,43 @@ WHILE TREASURE_NORTH != USER_NORTH OR TREASURE_EAST != USER_EAST DO
   MENU PROMPT COLOR 11
   CHOICE N "(N)orth"
     IF USER_NORTH < 5
-      PRINT "You move one step north"
+      SAY "You move one step north"
       USER_NORTH = USER_NORTH + 1
     ELSE
-      PRINT "You hit a wall"
+      SAY "You hit a wall"
     END IF
   CHOICE S "(S)outh"
     IF USER_NORTH > 1
-      PRINT "You move one step south"
+      SAY "You move one step south"
       USER_NORTH = USER_NORTH - 1
     ELSE
-      PRINT "You hit a wall"
+      SAY "You hit a wall"
     END IF
   CHOICE E "(E)ast"
     IF USER_EAST < 5
-      PRINT "You move one step east"
+      SAY "You move one step east"
       USER_EAST = USER_EAST + 1
     ELSE
-      PRINT "You hit a wall"
+      SAY "You hit a wall"
     END IF
   CHOICE W "(W)est"
     IF USER_EAST > 1
-      PRINT "You move one step west"
+      SAY "You move one step west"
       USER_EAST = USER_EAST - 1
     ELSE
-      PRINT "You hit a wall"
+      SAY "You hit a wall"
     END IF
   END MENU
-  PRINT
+  SAY
 END WHILE
 
 COLOR 9
 IF MOVES = 0
-  PRINT "You got lucky! You started on the treasure!"
+  SAY "You got lucky! You started on the treasure!"
 ELSE
   IF MOVES = 1
-    PRINT "You found the treasure in 1 MOVE!"
+    SAY "You found the treasure in 1 MOVE!"
   ELSE
-    PRINT "You found the treasure in "+STR$(MOVES)+" MOVES!"
+    SAY "You found the treasure in "+TEXT(MOVES)+" MOVES!"
   END IF
 END IF

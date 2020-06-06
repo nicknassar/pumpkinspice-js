@@ -1,10 +1,10 @@
 REM BEGIN Tests for the pumpkin spice language
 
 ERROR_COUNT = 0
-SUBROUTINE ERROR TEXT
+SUBROUTINE ERROR WORDS
   ERROR_COUNT = ERROR_COUNT + 1
   COLOR 4
-  PRINT TEXT
+  SAY WORDS
 END SUBROUTINE
 
 REM This is woefully incomplete
@@ -83,35 +83,35 @@ TESTR8 = 0
 TESTRLOW = 0
 TESTRHIGH = 0
 FOR N = 1 TO 1024
-  TESTVAL = RANDOM(1,8)
-  IF TESTVAL == 1 THEN
+  TESTNUMBER = RANDOM(1,8)
+  IF TESTNUMBER == 1 THEN
     TESTR1 = TESTR1 + 1
   END IF
-  IF TESTVAL == 2 THEN
+  IF TESTNUMBER == 2 THEN
     TESTR2 = TESTR2 + 1
   END IF
-  IF TESTVAL == 3 THEN
+  IF TESTNUMBER == 3 THEN
     TESTR3 = TESTR3 + 1
   END IF
-  IF TESTVAL == 4 THEN
+  IF TESTNUMBER == 4 THEN
     TESTR4 = TESTR4 + 1
   END IF
-  IF TESTVAL == 5 THEN
+  IF TESTNUMBER == 5 THEN
     TESTR5 = TESTR5 + 1
   END IF
-  IF TESTVAL == 6 THEN
+  IF TESTNUMBER == 6 THEN
     TESTR6 = TESTR6 + 1
   END IF
-  IF TESTVAL == 7 THEN
+  IF TESTNUMBER == 7 THEN
     TESTR7 = TESTR7 + 1
   END IF
-  IF TESTVAL == 8 THEN
+  IF TESTNUMBER == 8 THEN
     TESTR8 = TESTR8 + 1
   END IF
-  IF TESTVAL < 1 THEN
+  IF TESTNUMBER < 1 THEN
     TESTRLOW = TESTRLOW + 1
   END IF
-  IF TESTVAL > 8 THEN
+  IF TESTNUMBER > 8 THEN
     TESTRHIGH = TESTRHIGH + 1
   END IF
 NEXT N
@@ -127,35 +127,35 @@ END IF
 IF TESTR1+TESTR2+TESTR3+TESTR4+TESTR5+TESTR6+TESTR7+TESTR8+TESTRLOW+TESTRHIGH != 1024 THEN
   ERROR("RANDOM is broken: non-integer values")
 END IF
-IF "42" <> STR$(042) THEN
-  ERROR("STR$() is broken")
+IF "42" <> TEXT(042) THEN
+  ERROR("TEXT() is broken")
 END IF
-IF "42" <> STR$(42) THEN
-  ERROR("STR$() is broken!")
+IF "42" <> TEXT(42) THEN
+  ERROR("TEXT() is broken!")
 END IF
-IF "-42" <> STR$(-042) THEN
-  ERROR("STR$() is broken!!")
+IF "-42" <> TEXT(-042) THEN
+  ERROR("TEXT() is broken!!")
 END IF
-IF "-42" <> STR$(-42) THEN
-  ERROR("STR$() is broken!!!")
+IF "-42" <> TEXT(-42) THEN
+  ERROR("TEXT() is broken!!!")
 END IF
-IF VAL("42") <> 42
-  ERROR("VAL() is broken")
+IF NUMBER("42") <> 42
+  ERROR("NUMBER() is broken")
 END IF
-IF VAL(" 42 ") <> 42
-  ERROR("VAL() is broken!")
+IF NUMBER(" 42 ") <> 42
+  ERROR("NUMBER() is broken!")
 END IF
-IF VAL(" 042 ") <> 42
-  ERROR("VAL() is broken!!")
+IF NUMBER(" 042 ") <> 42
+  ERROR("NUMBER() is broken!!")
 END IF
-IF VAL("-42") <> -42
-  ERROR("VAL() is broken!!!")
+IF NUMBER("-42") <> -42
+  ERROR("NUMBER() is broken!!!")
 END IF
-IF VAL("-042") <> -42
-  ERROR("VAL() is broken!!!!")
+IF NUMBER("-042") <> -42
+  ERROR("NUMBER() is broken!!!!")
 END IF
-IF VAL(" -042 ") <> -42
-  ERROR("VAL() is broken!!!!!")
+IF NUMBER(" -042 ") <> -42
+  ERROR("NUMBER() is broken!!!!!")
 END IF
 IF LEN("") <> 0
   ERROR("LEN IS broken")
@@ -166,17 +166,17 @@ END IF
 IF LEN("abc") <> 3
   ERROR("LEN IS broken!!")
 END IF
-IF LEFT$("ABCD",3) <> "ABC"
-  ERROR("LEFT$ broke")
+IF LEFT("ABCD",3) <> "ABC"
+  ERROR("LEFT broke")
 END IF
-IF LEFT$("ABC",4) <> "ABC"
-  ERROR("LEFT$ broke!")
+IF LEFT("ABC",4) <> "ABC"
+  ERROR("LEFT broke!")
 END IF
-IF RIGHT$("ABCD",3) <> "BCD"
-  ERROR("RIGHT$ broke")
+IF RIGHT("ABCD",3) <> "BCD"
+  ERROR("RIGHT broke")
 END IF
-IF RIGHT$("ABC",4) <> "ABC"
-  ERROR("RIGHT$ broke!")
+IF RIGHT("ABC",4) <> "ABC"
+  ERROR("RIGHT broke!")
 END IF
 SUMTOXXX(5,7)
 IF XXX != 12 THEN
@@ -354,7 +354,7 @@ IF TEST_SUM_TO(10)+TEST_SUM_TO(10) != 110
   ERROR("ERROR WITH RECURSION!")
 END IF
 
-IF STR$(5)+"-"+STR$(6) != "5-6"
+IF TEXT(5)+"-"+TEXT(6) != "5-6"
   ERROR("ERROR WITH BINARY STRING EXPRESSIONS")
 END IF
 
@@ -443,8 +443,8 @@ REM END Tests for the pumpkin spice language
 
 IF ERROR_COUNT = 0
   COLOR 2
-  PRINT "NO ERRORS FOUND! 🎉🎈"
+  SAY "NO ERRORS FOUND! 🎉🎈"
 ELSE
   COLOR 1
-  PRINT STR$(ERROR_COUNT)+" ERRORS!"
+  SAY TEXT(ERROR_COUNT)+" ERRORS!"
 END IF

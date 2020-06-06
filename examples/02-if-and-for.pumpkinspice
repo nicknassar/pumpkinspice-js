@@ -4,61 +4,61 @@
 ' IF lets you do different things, depending on the situation
 ' FOR lets you repeat things
 
-PRINT "What is your name? ";
-INPUT NAME
+SAY "What is your name? ";
+LISTEN FOR NAME
 
-PRINT NAME + ", we love you!"
-PRINT "How many cheers should we give you?";
-INPUT NUM_TEXT
+SAY NAME + ", we love you!"
+SAY "How many cheers should we give you?";
+LISTEN FOR NUM_TEXT
 
 ' Convert the text to a number
-NUM = VAL(NUM_TEXT)
+NUM = NUMBER(NUM_TEXT)
 
 ' This code only runs if NUM is set to somethings less than 1
 IF NUM < 1 THEN
-  PRINT "Come on! Everyone deserves at least one cheer!"
+  SAY "Come on! Everyone deserves at least one cheer!"
   NUM = 1
 END IF
 
 ' This code only runs if NUM is set to something greater than 10
 IF NUM > 10 THEN
-  PRINT "We can't handle that. We will pretend you asked for 10 cheers"
+  SAY "We can't handle that. We will pretend you asked for 10 cheers"
   NUM = 10
 END IF
 
 ' You can use ELSE with an IF statment to do something
 ' if the condition is false
 IF NUM = 1
-  PRINT STR$(NUM)+ " cheer!"
+  SAY TEXT(NUM)+ " cheer!"
 ELSE
-  PRINT STR$(NUM) + " cheers!"
+  SAY TEXT(NUM) + " cheers!"
 END IF
-PRINT
+SAY
 
 FOR N = 1 TO NUM
-  PRINT "Hip!";
+  SAY "Hip!";
 
   ' The sleep statement causes the program to block and do nothing for
   ' so many milliseconds
   ' SLEEP 1000 paises for 1 second
   SLEEP 400
-  PRINT " Hip!";
+  SAY " Hip!";
   SLEEP 400
-  PRINT " Hooray! ";
+  SAY " Hooray! ";
   SLEEP 400
 
   ' IF Statements can be inside FOR blocks and vice-versa
   ' You can use ELSE with an IF statment to do something
   ' if the condition is false
   IF N = 1
-    PRINT STR$(N)+ " cheer for "+NAME+"!"
+    SAY TEXT(N)+ " cheer for "+NAME+"!"
   ELSE
-    PRINT STR$(N) + " cheers for "+NAME+"!"
+    SAY TEXT(N) + " cheers for "+NAME+"!"
   END IF
 
   SLEEP 1000
 NEXT N
 
-PRINT
-PRINT "That's it for lesson 2"
-PRINT "Reload to re-run"
+SAY
+SAY "That's it for lesson 2"
+SAY "Reload to re-run"

@@ -21,7 +21,7 @@ function ParserTests(display) {
   var expectations = [
     {
       description: "Hello World",
-      code: "PRINT \"Hello World!\"\n",
+      code: "SAY \"Hello World!\"\n",
       calls: [
         ["printString", "Hello World!", true, false],
         ["finalize"]
@@ -30,7 +30,7 @@ function ParserTests(display) {
     },
     {
       description: "Bare PRINT",
-      code: "PRINT\n",
+      code: "SAY\n",
       calls: [
         ["printString", "", true, false],
         ["finalize"]
@@ -38,8 +38,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT No newline",
-      code: "PRINT \"No newline\";\n",
+      description: "SAY No newline",
+      code: "SAY \"No newline\";\n",
       calls: [
         ["printString", "No newline", false, false],
         ["finalize"]
@@ -48,8 +48,8 @@ function ParserTests(display) {
     },
     {
       // Test simple print statements
-      description: "PRINT No Op",
-      code: "PRINT;\n",
+      description: "SAY No Op",
+      code: "SAY;\n",
       calls: [
         ["printString", "", false, false],
         ["finalize"]
@@ -97,8 +97,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT invalid expression",
-      code: "PRINT ON 7\n",
+      description: "SAY invalid expression",
+      code: "SAY ON 7\n",
       calls: [
         ["finalize"]
       ],
@@ -144,11 +144,11 @@ function ParserTests(display) {
     },
     {
       description: "Tokenizer Errors",
-      code: "PRINT\n" +
-            "PRINT \"\n" +
-            "PRINT \"\"\"\n" +
+      code: "SAY\n" +
+            "SAY \"\n" +
+            "SAY \"\"\"\n" +
             "% invalid line\n" +
-            "PRINT \"good\"",
+            "SAY \"good\"",
       calls: [
         ["printString", "", true, false],
         ["printString", "good", true, false],
@@ -161,8 +161,8 @@ function ParserTests(display) {
       ]
     },
     {
-      description: "PRINT paren expression 1",
-      code: "PRINT (\"parens\")\n",
+      description: "SAY paren expression 1",
+      code: "SAY (\"parens\")\n",
       calls: [
         ["stringLiteralExpression", "parens"],
         ["printExp", 0, true, false],
@@ -171,8 +171,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT paren expression 2",
-      code: "PRINT (\"parens\");\n",
+      description: "SAY paren expression 2",
+      code: "SAY (\"parens\");\n",
       calls: [
         ["stringLiteralExpression", "parens"],
         ["printExp", 0, false, false],
@@ -201,8 +201,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string concatenation expression 1",
-      code: "PRINT \"string\" + \"concatenation\"\n",
+      description: "SAY string concatenation expression 1",
+      code: "SAY \"string\" + \"concatenation\"\n",
       calls: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
@@ -213,8 +213,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string concatenation expression 2",
-      code: "PRINT \"string\"+\"concatenation\";\n",
+      description: "SAY string concatenation expression 2",
+      code: "SAY \"string\"+\"concatenation\";\n",
       calls: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
@@ -249,8 +249,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string multi concatenation expression",
-      code: "PRINT \"multi\" + \"string\" + \"concatenation\"\n" ,
+      description: "SAY string multi concatenation expression",
+      code: "SAY \"multi\" + \"string\" + \"concatenation\"\n" ,
       calls: [
         ["stringLiteralExpression", "multi"],
         ["stringLiteralExpression", "string"],
@@ -263,8 +263,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string multi parents expression",
-      code: "PRINT ((\"parens\"))\n",
+      description: "SAY string multi parents expression",
+      code: "SAY ((\"parens\"))\n",
       calls: [
         ["stringLiteralExpression", "parens"],
         ["printExp", 0, true, false],
@@ -273,8 +273,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string parens concatenation expression",
-      code: "PRINT (\"string\" + \"concatenation\")\n" ,
+      description: "SAY string parens concatenation expression",
+      code: "SAY (\"string\" + \"concatenation\")\n" ,
       calls: [
         ["stringLiteralExpression", "string"],
         ["stringLiteralExpression", "concatenation"],
@@ -285,8 +285,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string variable expression",
-      code: "PRINT variable\n" ,
+      description: "SAY string variable expression",
+      code: "SAY variable\n" ,
       calls: [
         ["variableExpression", "VARIABLE"],
         ["printExp", 0, true, false],
@@ -295,8 +295,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string variable expression concatenation",
-      code: "PRINT variable+\"literal\"\n" ,
+      description: "SAY string variable expression concatenation",
+      code: "SAY variable+\"literal\"\n" ,
       calls: [
         ["variableExpression", "VARIABLE"],
         ["stringLiteralExpression", "literal"],
@@ -307,8 +307,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string parens variable expression",
-      code: "PRINT (variable)\n" ,
+      description: "SAY string parens variable expression",
+      code: "SAY (variable)\n" ,
       calls: [
         ["variableExpression", "VARIABLE"],
         ["printExp", 0, true, false],
@@ -317,10 +317,10 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT string expression errors",
-      code: "PRINT >\n" +
-        "PRINT (>)\n" +
-        "PRINT (\"mismatch\"",
+      description: "SAY string expression errors",
+      code: "SAY >\n" +
+        "SAY (>)\n" +
+        "SAY (\"mismatch\"",
       calls: [
         ["finalize"]
       ],
@@ -416,8 +416,8 @@ function ParserTests(display) {
       ]
     },
     {
-      description: "INPUT statement",
-      code: "INPUT Q\n",
+      description: "LISTEN statement",
+      code: "LISTEN FOR Q\n",
       calls: [
         ["input", "Q"],
         ["finalize"]
@@ -818,8 +818,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "Assignment of LEFT$",
-      code: "A = LEFT$(\"string\", 100)\n",
+      description: "Assignment of LEFT",
+      code: "A = LEFT(\"string\", 100)\n",
       calls: [
         ["stringLiteralExpression", "string"],
         ["numericLiteralExpression", "100"],
@@ -831,7 +831,7 @@ function ParserTests(display) {
     },
     {
       description: "Assignment of RIGHT$",
-      code: "A = RIGHT$(\"string\", 100)\n",
+      code: "A = RIGHT(\"string\", 100)\n",
       calls: [
         ["stringLiteralExpression", "string"],
         ["numericLiteralExpression", "100"],
@@ -853,8 +853,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "Assignment of STR$",
-      code: "A = STR$(100)\n",
+      description: "Assignment of TEXT",
+      code: "A = TEXT(100)\n",
       calls: [
         ["numericLiteralExpression", "100"],
         ["strzBuiltinExpression", 0],
@@ -864,8 +864,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "Assignment of VAL",
-      code: "A = VAL(\"100\")\n",
+      description: "Assignment of NUMBER",
+      code: "A = NUMBER(\"100\")\n",
       calls: [
         ["stringLiteralExpression", "100"],
         ["valBuiltinExpression", 0],
@@ -952,8 +952,8 @@ function ParserTests(display) {
     },
     {
       description: "Subroutine 1",
-      code: "SUBROUTINE foo\n" +
-        "END SUBROUTINE\n",
+      code: "SUB foo\n" +
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "FOO", []],
         ["endSubroutine"],
@@ -964,8 +964,8 @@ function ParserTests(display) {
     {
       description: "Subroutine Inside IF",
       code: "IF A = B\n" +
-        "SUBROUTINE foo\n" +
-        "END SUBROUTINE\n" +
+        "SUB foo\n" +
+        "END SUB\n" +
         "END IF\n",
       calls: [
         ["variableExpression", "A"],
@@ -976,15 +976,15 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: [
-        [2, "SUBROUTINE cannot be defined inside of another block"],
-        [3, "END SUBROUTINE without matching SUBROUTINE"]
+        [2, "SUB cannot be defined inside of another block"],
+        [3, "END SUB without matching SUB"]
       ]
     },
     {
       description: "END Subroutine Inside IF",
-      code: "SUBROUTINE foo\n" +
+      code: "SUB foo\n" +
         "IF A = B\n" +
-        "END SUBROUTINE\n" +
+        "END SUB\n" +
         "END IF\n",
       calls: [
         ["beginSubroutine", "FOO", []],
@@ -997,46 +997,46 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: [
-        [3, "END SUBROUTINE inside a block"],
-        [1, "SUBROUTINE without matching end subroutine"]
+        [3, "END SUB inside a block"],
+        [1, "SUB without matching end subroutine"]
       ]
     },
     {
       description: "Subroutine without end",
-      code: "SUBROUTINE foo\n",
+      code: "SUB foo\n",
       calls: [
         ["beginSubroutine", "FOO", []],
         ["endSubroutine"],
         ["finalize"]
       ],
       errors: [
-        [1, "SUBROUTINE without END"]
+        [1, "SUB without END"]
       ]
     },
     {
       description: "Lonely END subroutine",
-      code: "END SUBROUTINE\n",
+      code: "END SUB\n",
       calls: [
         ["finalize"]
       ],
       errors: [
-        [1, "END SUBROUTINE with no matching error"]
+        [1, "END SUB with no matching error"]
       ]
     },
     {
-      description: "RETURN OUTSIDE OF SUBROUTINE",
+      description: "RETURN OUTSIDE OF SUB",
       code: "RETURN\n"+
         "RETURN 7\n",
       calls: [
         ["finalize"]
       ],
       errors: [
-        [1, "RETURN outside of SUBROUTINE"],
-        [2, "RETURN outside of SUBROUTINE"]
+        [1, "RETURN outside of SUB"],
+        [2, "RETURN outside of SUB"]
       ]
     },
     {
-      description: "RETURN OUTSIDE OF SUBROUTINE IN IF",
+      description: "RETURN OUTSIDE OF SUB IN IF",
       code: "IF A = B\n" +
         "RETURN\n"+
         "RETURN 7\n" +
@@ -1050,38 +1050,38 @@ function ParserTests(display) {
         ["finalize"]
       ],
       errors: [
-        [2, "RETURN outside of SUBROUTINE"],
-        [3, "RETURN outside of SUBROUTINE"],
+        [2, "RETURN outside of SUB"],
+        [3, "RETURN outside of SUB"],
       ]
     },
     {
       description: "Subroutine bad args",
-      code: "SUBROUTINE Bar ,,\n" +
-        "END SUBROUTINE\n",
+      code: "SUB Bar ,,\n" +
+        "END SUB\n",
       calls: [
         ["finalize"]
       ],
       errors: [
         [1, "EXPECTED identifier for argument name. Got: ,"],
-        [2, "END SUBROUTINE without matching SUBROUTINE"]
+        [2, "END SUB without matching SUB"]
       ]
     },
     {
       description: "Subroutine bad args 2",
-      code: "SUBROUTINE Bar BAR BIZ\n" +
-        "END SUBROUTINE\n",
+      code: "SUB Bar BAR BIZ\n" +
+        "END SUB\n",
       calls: [
         ["finalize"]
       ],
       errors: [
         [1, "EXPECTED comma separating arguments. Got: BIZ"],
-        [2, "END SUBROUTINE without matching SUBROUTINE"]
+        [2, "END SUB without matching SUB"]
       ]
     },
     {
       description: "Subroutine 2",
-      code: "SUBROUTINE Bar Biz\n" +
-        "END SUBROUTINE\n",
+      code: "SUB Bar Biz\n" +
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "BAR", ["BIZ"]],
         ["endSubroutine"],
@@ -1091,8 +1091,8 @@ function ParserTests(display) {
     },
     {
       description: "Subroutine 3",
-      code: "SUBROUTINE BOO BAA, bee\n" +
-        "END SUBROUTINE\n",
+      code: "SUB BOO BAA, bee\n" +
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "BOO", ["BAA", "BEE"]],
         ["endSubroutine"],
@@ -1102,9 +1102,9 @@ function ParserTests(display) {
     },
     {
       description: "Subroutine with empty return",
-      code: "SUBROUTINE BOO BAA, bee\n" +
+      code: "SUB BOO BAA, bee\n" +
         "RETURN\n" +
-        "END SUBROUTINE\n",
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "BOO", ["BAA", "BEE"]],
         ["voidReturnStatement"],
@@ -1115,9 +1115,9 @@ function ParserTests(display) {
     },
     {
       description: "Subroutine with variable return",
-      code: "SUBROUTINE FOO\n" +
+      code: "SUB FOO\n" +
         "RETURN BAR\n" +
-        "END SUBROUTINE\n",
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "FOO", []],
         ["variableExpression", "BAR"],
@@ -1129,9 +1129,9 @@ function ParserTests(display) {
     },
     {
       description: "Subroutine with string return",
-      code: "SUBROUTINE FOO\n" +
+      code: "SUB FOO\n" +
         "RETURN \"BAR\"\n" +
-        "END SUBROUTINE\n",
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "FOO", []],
         ["stringLiteralExpression", "BAR"],
@@ -1143,9 +1143,9 @@ function ParserTests(display) {
     },
     {
       description: "Subroutine with numeric return",
-      code: "SUBROUTINE BOO BAA, bee\n" +
+      code: "SUB BOO BAA, bee\n" +
         "RETURN 7\n" +
-        "END SUBROUTINE\n",
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "BOO", ["BAA", "BEE"]],
         ["numericLiteralExpression","7"],
@@ -1157,9 +1157,9 @@ function ParserTests(display) {
     },
     {
       description: "Subroutine with invalid return",
-      code: "SUBROUTINE FOO\n" +
+      code: "SUB FOO\n" +
         "RETURN TO END\n" +
-        "END SUBROUTINE\n",
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "FOO", []],
         ["endSubroutine"],
@@ -1171,9 +1171,9 @@ function ParserTests(display) {
     },
     {
       description: "Subroutine with numeric expression return",
-      code: "SUBROUTINE BOO BAA, bee\n" +
+      code: "SUB BOO BAA, bee\n" +
         "RETURN 7+BAR\n" +
-        "END SUBROUTINE\n",
+        "END SUB\n",
       calls: [
         ["beginSubroutine", "BOO", ["BAA", "BEE"]],
         ["numericLiteralExpression","7"],
@@ -1259,8 +1259,8 @@ function ParserTests(display) {
       errors: []
     },
     {
-      description: "PRINT CALL expression",
-      code: "PRINT Foo()\n",
+      description: "SAY CALL expression",
+      code: "SAY Foo()\n",
       calls: [
 	["callSubroutineExpression", "FOO", []],
 	["printExp", 0, true, false],
@@ -1347,7 +1347,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL expression with three params",
-      code: "PRINT FOO(bar, \"biz\", (baz)*2)\n",
+      code: "SAY FOO(bar, \"biz\", (baz)*2)\n",
       calls: [
 	["variableExpression", "BAR"],
 	["stringLiteralExpression", "biz"],
@@ -1362,7 +1362,7 @@ function ParserTests(display) {
     },
     {
       description: "CALL expression, followed by addition",
-      code: "PRINT FOO(\"a\"+\"b\")+\"c\"\n",
+      code: "SAY FOO(\"a\"+\"b\")+\"c\"\n",
       calls: [
 	["stringLiteralExpression", "a"],
 	["stringLiteralExpression", "b"],
@@ -1459,7 +1459,7 @@ function ParserTests(display) {
     {
       description: "Simple numeric IF statement",
       code: "IF 77 = 88\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END IF\n",
       calls: [
         ["numericLiteralExpression", "77"],
@@ -1475,7 +1475,7 @@ function ParserTests(display) {
     {
       description: "Simple string IF statement",
       code: "IF \"a\" == Seven\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END IF\n",
       calls: [
         ["stringLiteralExpression", "a"],
@@ -1545,7 +1545,7 @@ function ParserTests(display) {
     {
       description: "IF statement - greater than",
       code: "IF Q > 88 THEN\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END IF\n",
       calls: [
         ["variableExpression", "Q"],
@@ -1561,7 +1561,7 @@ function ParserTests(display) {
     {
       description: "IF statement less than",
       code: "IF 77 < Z\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END IF\n",
       calls: [
         ["numericLiteralExpression", "77"],
@@ -1577,7 +1577,7 @@ function ParserTests(display) {
     {
       description: "IF statement greater or equal",
       code: "IF 77 >= 88\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END IF\n",
       calls: [
         ["numericLiteralExpression", "77"],
@@ -1593,9 +1593,9 @@ function ParserTests(display) {
     {
       description: "IF statement less or equal",
       code: "IF 77 <= 88\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "ELSE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END IF\n",
       calls: [
         ["numericLiteralExpression", "77"],
@@ -1613,9 +1613,9 @@ function ParserTests(display) {
     {
       description: "IF statement not equal",
       code: "IF 77 <> 88\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "ELSE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END IF\n",
       calls: [
         ["numericLiteralExpression", "77"],
@@ -1983,7 +1983,7 @@ function ParserTests(display) {
     {
       description: "FOR statement",
       code: "FOR N = 100 to 101\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "NEXT N",
       calls: [
         ["numericLiteralExpression", "100"],
@@ -2012,7 +2012,7 @@ function ParserTests(display) {
     {
       description: "FOR statement with invalid start",
       code: "FOR N = ASK to 101\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "NEXT N",
       calls: [
         ["printString", "", true, false],
@@ -2026,7 +2026,7 @@ function ParserTests(display) {
     {
       description: "FOR statement with invalid end",
       code: "FOR N = 1 to END\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "NEXT N",
       calls: [
         ["numericLiteralExpression", "1"],
@@ -2052,7 +2052,7 @@ function ParserTests(display) {
       description: "Nested FOR statement",
       code: "FOR N = 100 to 101\n" +
         "FOR M = 102 to 103\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "NEXT M\n" +
         "NEXT N\n",
       calls: [
@@ -2073,7 +2073,7 @@ function ParserTests(display) {
       description: "Incorrectly nested FOR statement",
       code: "FOR N = 100 to 101\n" +
         "FOR M = 102 to 103\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "NEXT N\n" +
         "NEXT M\n",
       calls: [
@@ -2096,7 +2096,7 @@ function ParserTests(display) {
     {
       description: "FOR statement with CALL expressions",
       code: "FOR N = start() to finish()\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "NEXT N",
       calls: [
         ["callSubroutineExpression", "START", []],
@@ -2122,9 +2122,9 @@ function ParserTests(display) {
       description: "RANDOM statement",
       code: "BEGIN RANDOM\n" +
         "WITH CHANCE 33.3\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "WITH CHANCE 66.7\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END RANDOM\n",
       calls: [
         ["beginRandom"],
@@ -2141,9 +2141,9 @@ function ParserTests(display) {
       description: "RANDOM statement without END RANDOM",
       code: "BEGIN RANDOM\n" +
         "WITH CHANCE 33.3\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "WITH CHANCE 66.7\n" +
-        "PRINT\n",
+        "SAY\n",
       calls: [
         ["beginRandom"],
         ["withChance", "33.3"],
@@ -2170,7 +2170,7 @@ function ParserTests(display) {
     {
       description: "WITH CHANCE outside of RANDOM",
       code: "WITH CHANCE 33.3\n" +
-        "PRINT\n",
+        "SAY\n",
       calls: [
         ["printString", "", true, false],
         ["finalize"]
@@ -2183,9 +2183,9 @@ function ParserTests(display) {
       description: "RANDOM statement with mixed types of chances",
       code: "BEGIN RANDOM\n" +
         "WITH CHANCE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "WITH CHANCE 66.7\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END RANDOM\n",
       calls: [
         ["beginRandom"],
@@ -2204,9 +2204,9 @@ function ParserTests(display) {
       description: "RANDOM statement with mixed types of chances",
       code: "BEGIN RANDOM\n" +
         "WITH CHANCE 30\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "WITH CHANCE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END RANDOM\n",
       calls: [
         ["beginRandom"],
@@ -2225,9 +2225,9 @@ function ParserTests(display) {
       description: "RANDOM statement with even chance",
       code: "BEGIN RANDOM\n" +
         "WITH CHANCE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "WITH CHANCE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END RANDOM\n",
       calls: [
         ["beginRandom"],
@@ -2245,9 +2245,9 @@ function ParserTests(display) {
       code: "BEGIN RANDOM\n" +
         "REM Even chances\n" +
         "WITH CHANCE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "WITH CHANCE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END RANDOM\n",
       calls: [
         ["beginRandom"],
@@ -2264,11 +2264,11 @@ function ParserTests(display) {
     {
       description: "RANDOM statement with code before chance",
       code: "BEGIN RANDOM\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "WITH CHANCE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "WITH CHANCE\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END RANDOM\n",
       calls: [
         ["beginRandom"],
@@ -2296,9 +2296,9 @@ function ParserTests(display) {
       description: "simple ASK",
       code: "ASK \"Will you?\"\n" +
         "ON NO\n" +
-        "PRINT \"no\"\n" +
+        "SAY \"no\"\n" +
         "ON YES\n" +
-        "PRINT \"yes\"\n" +
+        "SAY \"yes\"\n" +
         "END ASK\n",
       calls: [
         ["stringLiteralExpression", "Will you?"],
@@ -2317,7 +2317,7 @@ function ParserTests(display) {
       code: "ASK \"Will you?\"\n" +
         "ASK \"???\"\n"+
         "ON YES\n" +
-        "PRINT \"yes\"\n" +
+        "SAY \"yes\"\n" +
         "END ASK\n",
       calls: [
         ["stringLiteralExpression", "Will you?"],
@@ -2336,7 +2336,7 @@ function ParserTests(display) {
       code: "ASK \"Will you?\"\n" +
         "END IF\n" +
         "ON YES\n" +
-        "PRINT \"yes\"\n" +
+        "SAY \"yes\"\n" +
         "END ASK\n",
       calls: [
         ["stringLiteralExpression", "Will you?"],
@@ -2354,9 +2354,9 @@ function ParserTests(display) {
       description: "ASK without text",
       code: "ASK\n" +
         "ON NO\n" +
-        "PRINT \"no\"\n" +
+        "SAY \"no\"\n" +
         "ON YES\n" +
-        "PRINT \"yes\"\n" +
+        "SAY \"yes\"\n" +
         "END ASK\n",
       calls: [
         ["printString", "no", true, false],
@@ -2374,9 +2374,9 @@ function ParserTests(display) {
       description: "ASK invalid text expression",
       code: "ASK TO PLAY\n" +
         "ON NO\n" +
-        "PRINT \"no\"\n" +
+        "SAY \"no\"\n" +
         "ON YES\n" +
-        "PRINT \"yes\"\n" +
+        "SAY \"yes\"\n" +
         "END ASK\n",
       calls: [
         ["printString", "no", true, false],
@@ -2394,9 +2394,9 @@ function ParserTests(display) {
       description: "simple ASK without END",
       code: "ASK \"Will you?\"\n" +
         "ON NO\n" +
-        "PRINT \"no\"\n" +
+        "SAY \"no\"\n" +
         "ON YES\n" +
-        "PRINT \"yes\"\n",
+        "SAY \"yes\"\n",
       calls: [
         ["stringLiteralExpression", "Will you?"],
         ["beginAsk", 0],
@@ -2416,7 +2416,7 @@ function ParserTests(display) {
       code: "ASK \"Will you?\"\n" +
         "DEFAULT FALSE\n" +
         "ON NO\n" +
-        "PRINT \"no\"\n" +
+        "SAY \"no\"\n" +
         "END ASK\n",
       calls: [
         ["stringLiteralExpression", "Will you?"],
@@ -2434,7 +2434,7 @@ function ParserTests(display) {
       description: "ASK without malformed ON",
       code: "ASK \"Will you?\"\n" +
         "ON NO WAY BUDDY\n" +
-        "PRINT \"no\"\n" +
+        "SAY \"no\"\n" +
         "END ASK\n",
       calls: [
         ["stringLiteralExpression", "Will you?"],
@@ -2527,9 +2527,9 @@ function ParserTests(display) {
       code: "ASK \"Are you \"+ NAME +\"?\"\n" +
         "DEFAULT YES\n" +
         "ON NO\n" +
-        "PRINT \"no\"\n" +
+        "SAY \"no\"\n" +
         "ON YES\n" +
-        "PRINT \"yes\"\n" +
+        "SAY \"yes\"\n" +
         "END ASK\n",
       calls: [
         ["stringLiteralExpression", "Are you "],
@@ -2556,9 +2556,9 @@ function ParserTests(display) {
         "ASK BGCOLOR 0\n" +
         "ASK PROMPT COLOR 4\n" +
         "ON NO\n" +
-        "PRINT \"no\"\n" +
+        "SAY \"no\"\n" +
         "ON YES\n" +
-        "PRINT \"yes\"\n" +
+        "SAY \"yes\"\n" +
         "END ASK\n",
       calls: [
         ["stringLiteralExpression", "Won't you?"],
@@ -2580,11 +2580,11 @@ function ParserTests(display) {
       description: "basic MENU",
       code: "BEGIN MENU \"Prompt\"\n" +
         "CHOICE A \"First thing first\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE A \"Last thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2607,9 +2607,9 @@ function ParserTests(display) {
       description: "MENU with invalid prompt text expression",
       code: "BEGIN MENU TO ASK CHOICE\n" +
         "CHOICE A \"First thing first\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["printString", "", true, false],
@@ -2663,11 +2663,11 @@ function ParserTests(display) {
       description: "MENU without END MENU",
       code: "BEGIN MENU \"Prompt\"\n" +
         "CHOICE A \"First thing first\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE A \"Last thing\"\n" +
-        "PRINT\n",
+        "SAY\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
         ["beginMenu", 0],
@@ -2690,11 +2690,11 @@ function ParserTests(display) {
     {
       description: "basic MENU with code before CHOICE",
       code: "BEGIN MENU \"Prompt\"\n" +
-	"PRINT\n" +
+	"SAY\n" +
         "CHOICE A \"First thing first\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2717,9 +2717,9 @@ function ParserTests(display) {
       code: "BEGIN MENU \"Prompt\"\n" +
 	"MENU SCHMENU\n" +
         "CHOICE A \"First thing first\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2747,11 +2747,11 @@ function ParserTests(display) {
         "MENU PROMPT COLOR 7\n" +
         "CHOICE A \"First thing first\"\n" +
         "HIDE IF X == 2\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE A \"Last thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2785,10 +2785,10 @@ function ParserTests(display) {
       description: "MENU with misplaced HIDE IF",
       code: "BEGIN MENU \"Prompt\"\n" +
         "CHOICE A \"First thing first\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "HIDE IF X == 2\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2811,9 +2811,9 @@ function ParserTests(display) {
       code: "BEGIN MENU \"Prompt\"\n" +
         "CHOICE A \"First thing first\"\n" +
         "HIDE IF MENU > 7\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2835,9 +2835,9 @@ function ParserTests(display) {
       description: "MENU with invalid CHOICE",
       code: "BEGIN MENU \"Prompt\"\n" +
         "CHOICE A ++\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2862,11 +2862,11 @@ function ParserTests(display) {
         "MENU BGCOLOR 0\n" +
         "MENU CHOICE COLOR 7\n" +
         "MENU PROMPT COLOR 7\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE B \"Next thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "CHOICE A \"Last thing\"\n" +
-        "PRINT\n" +
+        "SAY\n" +
         "END MENU\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
