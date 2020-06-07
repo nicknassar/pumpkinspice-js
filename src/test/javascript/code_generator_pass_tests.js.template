@@ -1012,6 +1012,51 @@ function CodeGeneratorPassTests(display) {
       errors: []
     },
     {
+      description: "RANDOM with chances that don't add to 100%",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(codeGeneratorPass.beginRandom(),"begin random");
+        logger.setLineNumber(2);
+        assert(codeGeneratorPass.withChance("1"),
+               "random chance 1");
+        logger.setLineNumber(3);
+        assert(
+          codeGeneratorPass.letStatement(
+            "TESTR1",
+            codeGeneratorPass.numericLiteralExpression("1")
+          ),
+          "set value");
+        logger.setLineNumber(4);
+        assert(codeGeneratorPass.withChance("1"),
+               "random chance 2");
+        logger.setLineNumber(5);
+        assert(
+          codeGeneratorPass.letStatement(
+            "TESTR2",
+            codeGeneratorPass.numericLiteralExpression("1")
+          ),
+          "set value");
+        logger.setLineNumber(6);
+        assert(
+          !codeGeneratorPass.endRandom(),
+          "end random should fail"
+        );
+        logger.setLineNumber(7);
+        assert(
+          codeGeneratorPass.printString("success", false, false),
+          "print"
+        );
+        assert(!codeGeneratorPass.finalize(),
+               "finalize should fail");
+        // Machine never runs in this test - it will likely crash
+        onComplete();
+      },
+      calls: [],
+      errors: [
+        [6, "Chances of a RANDOM block must add up to 100%"]
+      ]
+    },
+    {
       description: "call subroutine with single arg",
       run: function(onComplete) {
         assert(codeGeneratorPass.beginSubroutine("FOO", []),
@@ -1034,6 +1079,23 @@ function CodeGeneratorPassTests(display) {
         ["sendUpdates"]
       ],
       errors: []
+    },
+    {
+      description: "call missing subroutine",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(codeGeneratorPass.callSubroutine("FOO", []),
+               "call sub");
+
+        assert(!codeGeneratorPass.finalize(), "Should not validate");
+
+        // Machine is not run
+        onComplete();
+      },
+      calls: [],
+      errors: [
+        [1, "Subroutine without definition"]
+      ]
     },
     {
       description: "call subroutine with two args",
@@ -1238,6 +1300,50 @@ function CodeGeneratorPassTests(display) {
         ["sendUpdates"]
       ],
       errors: []
+    },
+    {
+      description: "call undefined subroutine expression",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(
+          !codeGeneratorPass.printExp(
+            codeGeneratorPass.callSubroutineExpression(
+              "FOO",[]
+            ),
+            false,
+            false
+          ),
+          "Calling undefined sub expression"
+        );
+        assert(!codeGeneratorPass.finalize(), "Does not validate");
+
+        // machine.go();
+        onComplete();
+      },
+      calls: [],
+      errors: [
+        [1, "Subroutine FOO not defined"]
+      ]
+    },
+    {
+      description: "call undefined subroutine",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(
+          codeGeneratorPass.callSubroutine(
+            "FOO",[]
+          ),
+          "Calling undefined sub"
+        );
+        assert(!codeGeneratorPass.finalize(), "Does not validate");
+
+        // machine.go();
+        onComplete();
+      },
+      calls: [],
+      errors: [
+        [1, "Subroutine FOO not defined"]
+      ]
     },
     {
       description: "recursive call subroutine expression errors - too deep",

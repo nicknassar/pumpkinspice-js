@@ -2262,6 +2262,19 @@ function ParserTests(display) {
       errors: [],
     },
     {
+      description: "RANDOM statement without WITH CHANCE",
+      code: "BEGIN RANDOM\n" +
+        "END RANDOM\n",
+      calls: [
+        ["beginRandom"],
+        ["endRandom"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "RANDOM block missing WITH CHANCE"]
+      ],
+    },
+    {
       description: "RANDOM statement with code before chance",
       code: "BEGIN RANDOM\n" +
         "SAY\n" +
@@ -2832,6 +2845,36 @@ function ParserTests(display) {
       ]
     },
     {
+      description: "MENU with two HIDE IFs",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE A \"First thing first\"\n" +
+        "HIDE IF ANSWER > 7\n" +
+        "HIDE IF ANSWER < 0\n" +
+        "SAY\n" +
+        "CHOICE B \"Next thing\"\n" +
+        "SAY\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["variableExpression", "ANSWER"],
+        ["numericLiteralExpression", "7"],
+        ["boolGreaterExpression", 4, 5],
+        ["menuHideIf", 6],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 9],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+        [4, "HIDE IF already seen"]
+      ]
+    },
+    {
       description: "MENU with invalid CHOICE",
       code: "BEGIN MENU \"Prompt\"\n" +
         "CHOICE A ++\n" +
@@ -2894,6 +2937,20 @@ function ParserTests(display) {
 	[5, "MENU BGCOLOR should be immediately after BEGIN MENU"],
 	[6, "MENU CHOICE COLOR should be immediately after BEGIN MENU"],
 	[7, "MENU PROMPT COLOR should be immediately after BEGIN MENU"]
+      ]
+    },
+    {
+      description: "MENU with all the options after the first choice",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: [
+        [2, "MENU without CHOICEs"]
       ]
     }
   ];
