@@ -580,7 +580,8 @@ function Parser(handlers,logger){
           loopStack[loopStack.length-1].type === RANDOM &&
           loopStack[loopStack.length-1].evenChance === undefined) {
         if (!((tokens[0].type === COMMENT) ||
-	      (tokens[0].type === WITH))) {
+	      (tokens[0].type === WITH) ||
+              (tokens[0].type === END && tokens.length === 2 && tokens[1].type === RANDOM))) {
 	  logger.error("No statements allowed after BEGIN RANDOM and before WITH CHANCE");
 	  return null;
         }
@@ -609,7 +610,8 @@ function Parser(handlers,logger){
         if (loopStack[loopStack.length-1].seenChoice === undefined) {
           if (!((tokens[0].type === COMMENT) ||
 		(tokens[0].type === CHOICE ||
-                 tokens[0].type === MENU))) {
+                 tokens[0].type === MENU) ||
+                (tokens[0].type === END && tokens.length === 2 && tokens[1].type === MENU))) {
 	    logger.error("No statements allowed after BEGIN MENU and before CHOICE");
 	    return null;
           }
@@ -1042,6 +1044,12 @@ function Parser(handlers,logger){
             logger.error("END MENU without matching BEIGN MENU");
             return false;
           }
+          if (!obj.seenChoice) {
+            loopStack.pop();
+            handler.endMenu();
+            logger.error("MENU without CHOICE");
+            return false;
+          }
           loopStack.pop();
           return handler.endMenu();
         } else if (tokens[1].type===IF) {
@@ -1064,6 +1072,12 @@ function Parser(handlers,logger){
           var obj = loopStack[loopStack.length-1];
           if (obj.type !== RANDOM) {
             logger.error("END RANDOM without matching BEGIN");
+            return false;
+          }
+          if (obj.evenChance === undefined) {
+            logger.error("RANDOM block without WITH CHANCE");
+            loopStack.pop();
+            handler.endRandom();
             return false;
           }
           loopStack.pop();
@@ -1138,7 +1152,11 @@ function Parser(handlers,logger){
 	  logger.error("HIDE IF should be after CHOICE");
 	  return false
 	}
-
+        if (loopStack[loopStack.length-1].seenHideIf) {
+          logger.error("Multiple HIDE IFs");
+          return false;
+        }
+        loopStack[loopStack.length-1].seenHideIf = true;
         var boolExp = expression(tokens.slice(2,tokens.length));
         if (boolExp === null) {
           return false;
@@ -1166,6 +1184,7 @@ function Parser(handlers,logger){
         else {
           obj.seenChoice = true;
           obj.lastWasChoice = true;
+          obj.seenHideIf = false;
 
           return handler.menuChoice(key, exp);
         }

@@ -42,9 +42,11 @@ function initPumpkinSpice(programTextParam, inputTextElementParam, inputSubmitEl
 
   if (!compiler.compile(programTextParam)) {
     // Compilation failed
+    globalDisplay.print("Errors found. Program halted.\n");
+    globalDisplay.sendUpdates();
+  } else {
+    globalMachine.go();
   }
-
-  globalMachine.go();
 }
 
 
