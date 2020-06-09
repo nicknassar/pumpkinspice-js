@@ -970,15 +970,43 @@ function CodeGeneratorPass(typeManager, machine, logger){
         return boolBinaryExpression('===',exp1,exp2);
       }
       function boolLessExpression(exp1,exp2) {
+        if (exp1.resultType === STRING_TYPE) { // && exp2.resultType === STRING_TYPE
+          var f1 = exp1.value;
+          var f2 = exp2.value;
+
+          exp1.value = function() {return f1().toUpperCase();};
+          exp2.value = function() {return f2().toUpperCase();};
+        }
         return boolBinaryExpression('<',exp1,exp2);
       }
       function boolGreaterExpression(exp1,exp2) {
+        if (exp1.resultType === STRING_TYPE) { // && exp2.resultType === STRING_TYPE
+          var f1 = exp1.value;
+          var f2 = exp2.value;
+
+          exp1.value = function() {return f1().toUpperCase();};
+          exp2.value = function() {return f2().toUpperCase();};
+        }
         return boolBinaryExpression('>',exp1,exp2);
       }
       function boolLessOrEqualExpression(exp1,exp2) {
+        if (exp1.resultType === STRING_TYPE) { // && exp2.resultType === STRING_TYPE
+          var f1 = exp1.value;
+          var f2 = exp2.value;
+
+          exp1.value = function() {return f1().toUpperCase();};
+          exp2.value = function() {return f2().toUpperCase();};
+        }
         return boolBinaryExpression('<=',exp1,exp2);
       }
       function boolGreaterOrEqualExpression(exp1,exp2) {
+        if (exp1.resultType === STRING_TYPE) { // && exp2.resultType === STRING_TYPE
+          var f1 = exp1.value;
+          var f2 = exp2.value;
+
+          exp1.value = function() {return f1().toUpperCase();};
+          exp2.value = function() {return f2().toUpperCase();};
+        }
         return boolBinaryExpression('>=',exp1,exp2);
       }
       function boolNotEqualExpression(exp1,exp2) {
