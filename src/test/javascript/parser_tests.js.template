@@ -1711,6 +1711,30 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "bool string comparition",
+      code: "IF \"a\" > \"A\" OR \"a\" > \"A\" OR \"a\" <> \"A\"\n"+
+        "SAY \"This should not be\"\n" +
+        "END IF",
+      calls: [
+        ["stringLiteralExpression", "a"],
+        ["stringLiteralExpression", "A"],
+        ["boolGreaterExpression", 0, 1],
+        ["stringLiteralExpression", "a"],
+        ["stringLiteralExpression", "A"],
+        ["boolGreaterExpression", 3, 4],
+        ["boolOrExpression", 2, 5],
+        ["stringLiteralExpression", "a"],
+        ["stringLiteralExpression", "A"],
+        ["boolNotEqualExpression", 7, 8],
+        ["boolOrExpression", 6, 9],
+        ["ifStatement", 10],
+        ["printString", "This should not be", true, false],
+        ["endIf"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
       description: "Boolean OR operator",
       code: "If 66 > 77 OR 88 > 99 THEN\n" +
         "END IF\n",

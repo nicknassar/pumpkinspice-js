@@ -270,6 +270,162 @@ function CodeGeneratorPassTests(display) {
       errors: []
     },
     {
+      description: "string comparition #1",
+      run: function(onComplete) {
+        assert(
+          codeGeneratorPass.ifStatement(
+            codeGeneratorPass.boolOrExpression(
+              codeGeneratorPass.boolOrExpression(
+                codeGeneratorPass.boolGreaterExpression(
+                  codeGeneratorPass.stringLiteralExpression("a"),
+                  codeGeneratorPass.stringLiteralExpression("A")
+                ),
+                codeGeneratorPass.boolLessExpression(
+                  codeGeneratorPass.stringLiteralExpression("a"),
+                  codeGeneratorPass.stringLiteralExpression("A")
+                )
+              ),
+              codeGeneratorPass.boolNotEqualExpression(
+                codeGeneratorPass.stringLiteralExpression("a"),
+                codeGeneratorPass.stringLiteralExpression("A")
+              )
+            )
+          ),
+          "if");
+        assert(
+          codeGeneratorPass.printString(
+            "something bad",
+            false,
+            false
+          ),
+          "print that should never run"
+        );
+        assert(codeGeneratorPass.endIf(), "end if");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        onComplete();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "string comparition #2",
+      run: function(onComplete) {
+        assert(
+          codeGeneratorPass.ifStatement(
+            codeGeneratorPass.boolAndExpression(
+              codeGeneratorPass.boolGreaterOrEqualExpression(
+                codeGeneratorPass.stringLiteralExpression("a"),
+                codeGeneratorPass.stringLiteralExpression("A")
+              ),
+              codeGeneratorPass.boolLessOrEqualExpression(
+                codeGeneratorPass.stringLiteralExpression("a"),
+                  codeGeneratorPass.stringLiteralExpression("A")
+              )
+            )
+          ),
+          "if");
+        assert(
+          codeGeneratorPass.printString(
+            "ok",
+            false,
+            false
+          ),
+          "print that should never run"
+        );
+        assert(codeGeneratorPass.endIf(), "end if");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        onComplete();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "ok"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "string comparition - different lengths #1",
+      run: function(onComplete) {
+        assert(
+          codeGeneratorPass.ifStatement(
+            codeGeneratorPass.boolOrExpression(
+              codeGeneratorPass.boolGreaterExpression(
+                codeGeneratorPass.stringLiteralExpression("a"),
+                codeGeneratorPass.stringLiteralExpression("aa")
+              ),
+              codeGeneratorPass.boolEqualExpression(
+                  codeGeneratorPass.stringLiteralExpression("a"),
+                  codeGeneratorPass.stringLiteralExpression("aa")
+              )
+            )
+          ),
+          "if");
+        assert(
+          codeGeneratorPass.printString(
+            "something bad",
+            false,
+            false
+          ),
+          "print that should never run"
+        );
+        assert(codeGeneratorPass.endIf(), "end if");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        onComplete();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "string comparition - different lengths #2",
+      run: function(onComplete) {
+        assert(
+          codeGeneratorPass.ifStatement(
+            codeGeneratorPass.boolAndExpression(
+              codeGeneratorPass.boolGreaterExpression(
+                codeGeneratorPass.stringLiteralExpression("ab"),
+                codeGeneratorPass.stringLiteralExpression("aa")
+              ),
+              codeGeneratorPass.boolGreaterExpression(
+                  codeGeneratorPass.stringLiteralExpression("ab"),
+                  codeGeneratorPass.stringLiteralExpression("aaa")
+              )
+            )
+          ),
+          "if");
+        assert(
+          codeGeneratorPass.printString(
+            "ok",
+            false,
+            false
+          ),
+          "print that should always run"
+        );
+        assert(codeGeneratorPass.endIf(), "end if");
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        onComplete();
+      },
+      calls: [
+        ["sendUpdates"],
+        ["print", "ok"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
       description: "CINT positive",
       run: function(onComplete) {
         assert(
