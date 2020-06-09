@@ -2592,11 +2592,11 @@ function ParserTests(display) {
     {
       description: "basic MENU",
       code: "BEGIN MENU \"Prompt\"\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
-        "CHOICE A \"Last thing\"\n" +
+        "CHOICE \"A\" \"Last thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2619,9 +2619,9 @@ function ParserTests(display) {
     {
       description: "MENU with invalid prompt text expression",
       code: "BEGIN MENU TO ASK CHOICE\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2637,8 +2637,8 @@ function ParserTests(display) {
       ]
     },
     {
-      description: "CHOICE without BEGIN MENU",
-      code: "CHOICE A \"First thing first\"\n",
+      description: "CHOICE \"without BEGIN MENU",
+      code: "CHOICE \"A\" \"First thing first\"\n",
       calls: [
         ["finalize"]
       ],
@@ -2675,11 +2675,11 @@ function ParserTests(display) {
     {
       description: "MENU without END MENU",
       code: "BEGIN MENU \"Prompt\"\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
-        "CHOICE A \"Last thing\"\n" +
+        "CHOICE \"A\" \"Last thing\"\n" +
         "SAY\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2704,9 +2704,9 @@ function ParserTests(display) {
       description: "basic MENU with code before CHOICE",
       code: "BEGIN MENU \"Prompt\"\n" +
 	"SAY\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2729,9 +2729,9 @@ function ParserTests(display) {
       description: "basic MENU with invalid MENU settings",
       code: "BEGIN MENU \"Prompt\"\n" +
 	"MENU SCHMENU\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2758,12 +2758,12 @@ function ParserTests(display) {
         "MENU BGCOLOR 0\n" +
         "MENU CHOICE COLOR 7\n" +
         "MENU PROMPT COLOR 7\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "HIDE IF X == 2\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
-        "CHOICE A \"Last thing\"\n" +
+        "CHOICE \"A\" \"Last thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2797,10 +2797,10 @@ function ParserTests(display) {
     {
       description: "MENU with misplaced HIDE IF",
       code: "BEGIN MENU \"Prompt\"\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "SAY\n" +
         "HIDE IF X == 2\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2822,10 +2822,10 @@ function ParserTests(display) {
     {
       description: "MENU with invalid HIDE IF",
       code: "BEGIN MENU \"Prompt\"\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "HIDE IF MENU > 7\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2847,11 +2847,11 @@ function ParserTests(display) {
     {
       description: "MENU with two HIDE IFs",
       code: "BEGIN MENU \"Prompt\"\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "HIDE IF ANSWER > 7\n" +
         "HIDE IF ANSWER < 0\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2877,9 +2877,9 @@ function ParserTests(display) {
     {
       description: "MENU with invalid CHOICE",
       code: "BEGIN MENU \"Prompt\"\n" +
-        "CHOICE A ++\n" +
+        "CHOICE \"A\" ++\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2899,16 +2899,16 @@ function ParserTests(display) {
     {
       description: "MENU with all the options after the first choice",
       code: "BEGIN MENU \"Prompt\"+A\n" +
-        "CHOICE A \"First thing first\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
         "HIDE IF X == 2\n" +
 	"MENU COLOR 7\n" +
         "MENU BGCOLOR 0\n" +
         "MENU CHOICE COLOR 7\n" +
         "MENU PROMPT COLOR 7\n" +
         "SAY\n" +
-        "CHOICE B \"Next thing\"\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
-        "CHOICE A \"Last thing\"\n" +
+        "CHOICE \"A\" \"Last thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
