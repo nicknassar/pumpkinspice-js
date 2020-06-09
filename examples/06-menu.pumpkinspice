@@ -31,28 +31,28 @@ WHILE TREASURE_NORTH != USER_NORTH OR TREASURE_EAST != USER_EAST DO
   MENU BGCOLOR 0
   MENU CHOICE COLOR 10
   MENU PROMPT COLOR 11
-  CHOICE N "(N)orth"
+  CHOICE "N" "(N)orth"
     IF USER_NORTH < 5
       SAY "You move one step north"
       USER_NORTH = USER_NORTH + 1
     ELSE
       SAY "You hit a wall"
     END IF
-  CHOICE S "(S)outh"
+  CHOICE "S" "(S)outh"
     IF USER_NORTH > 1
       SAY "You move one step south"
       USER_NORTH = USER_NORTH - 1
     ELSE
       SAY "You hit a wall"
     END IF
-  CHOICE E "(E)ast"
+  CHOICE "E" "(E)ast"
     IF USER_EAST < 5
       SAY "You move one step east"
       USER_EAST = USER_EAST + 1
     ELSE
       SAY "You hit a wall"
     END IF
-  CHOICE W "(W)est"
+  CHOICE "W" "(W)est"
     IF USER_EAST > 1
       SAY "You move one step west"
       USER_EAST = USER_EAST - 1

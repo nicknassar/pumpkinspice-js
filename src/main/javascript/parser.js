@@ -1163,8 +1163,7 @@ function Parser(handlers,logger){
         }
         return handler.menuHideIf(boolExp);
       } else if (tokens[0].type===CHOICE && tokens.length > 2 &&
-                 [IDENTIFIER, NUMERIC].indexOf(tokens[1].type) != -1) {
-        if (tokens[1].type === IDENTIFIER)
+                 tokens[1].type===STRING) {
 	if (loopStack.length < 1) {
           logger.error("CHOICE outside of MENU");
           return false;
