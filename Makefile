@@ -151,7 +151,7 @@ $(EXAMPLE_DIST_DIR)/08-play.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/08-play.pumpkins
 $(EXAMPLE_DIST_DIR)/99-stress-test.pumpkinspice: $(EXAMPLE_SOURCE_DIR)/99-stress-test.pumpkinspice
 	cp  $< $@
 
-run-tests.html: $(TEST_RESOURCES) $(JAVA_BUILD_CLASSES) | $(DIST_DIR)
+run-tests.html: $(TEST_RESOURCES) $(JAVA_BUILD_CLASSES) | $(PACKAGE_DIR)
 	$(JAVA) -classpath "$(BUILD_RESOURCE_DIR)$(PATH_SEPARATOR)$(PUMPKINSPICE2HTML_BUILD_DIR)" com.nicknassar.pumpkinspice.Builder --title "Pumpkin Spice Tests" --javascript $(TEST_BUILD_DIR)/run_tests.js --nocode "$(PACKAGE_DIR)/run-tests.html"
 
 run_tests.js: $(TEST_SOURCES) $(JAVA_TOOLS_CLASSES) | $(TEST_BUILD_DIR)
