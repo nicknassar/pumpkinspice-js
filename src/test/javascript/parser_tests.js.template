@@ -2620,6 +2620,33 @@ function ParserTests(display) {
         "SAY\n" +
         "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
+        "CHOICE \"C\" \"Last thing\"\n" +
+        "SAY\n" +
+        "END MENU\n",
+      calls: [
+        ["stringLiteralExpression", "Prompt"],
+        ["beginMenu", 0],
+        ["stringLiteralExpression", "First thing first"],
+        ["menuChoice", "A", 2],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Next thing"],
+        ["menuChoice", "B", 5],
+        ["printString", "", true, false],
+        ["stringLiteralExpression", "Last thing"],
+        ["menuChoice", "C", 8],
+        ["printString", "", true, false],
+        ["endMenu"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "basic MENU - repeated choice",
+      code: "BEGIN MENU \"Prompt\"\n" +
+        "CHOICE \"A\" \"First thing first\"\n" +
+        "SAY\n" +
+        "CHOICE \"B\" \"Next thing\"\n" +
+        "SAY\n" +
         "CHOICE \"A\" \"Last thing\"\n" +
         "SAY\n" +
         "END MENU\n",
@@ -2638,7 +2665,9 @@ function ParserTests(display) {
         ["endMenu"],
         ["finalize"]
       ],
-      errors: []
+      errors: [
+        [6, "CHOICE A appears twice in the menu"]
+      ]
     },
     {
       description: "MENU with invalid prompt text expression",
@@ -2703,7 +2732,7 @@ function ParserTests(display) {
         "SAY\n" +
         "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
-        "CHOICE \"A\" \"Last thing\"\n" +
+        "CHOICE \"C\" \"Last thing\"\n" +
         "SAY\n",
       calls: [
         ["stringLiteralExpression", "Prompt"],
@@ -2715,7 +2744,7 @@ function ParserTests(display) {
         ["menuChoice", "B", 5],
         ["printString", "", true, false],
         ["stringLiteralExpression", "Last thing"],
-        ["menuChoice", "A", 8],
+        ["menuChoice", "C", 8],
         ["printString", "", true, false],
         ["endMenu"],
         ["finalize"]
@@ -2787,7 +2816,7 @@ function ParserTests(display) {
         "SAY\n" +
         "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
-        "CHOICE \"A\" \"Last thing\"\n" +
+        "CHOICE \"C\" \"Last thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2811,7 +2840,7 @@ function ParserTests(display) {
         ["menuChoice", "B", 16],
         ["printString", "", true, false],
         ["stringLiteralExpression", "Last thing"],
-        ["menuChoice", "A", 19],
+        ["menuChoice", "C", 19],
         ["printString", "", true, false],
         ["endMenu"],
         ["finalize"]
@@ -2932,7 +2961,7 @@ function ParserTests(display) {
         "SAY\n" +
         "CHOICE \"B\" \"Next thing\"\n" +
         "SAY\n" +
-        "CHOICE \"A\" \"Last thing\"\n" +
+        "CHOICE \"C\" \"Last thing\"\n" +
         "SAY\n" +
         "END MENU\n",
       calls: [
@@ -2951,7 +2980,7 @@ function ParserTests(display) {
         ["menuChoice", "B", 11],
         ["printString", "", true, false],
         ["stringLiteralExpression", "Last thing"],
-        ["menuChoice", "A", 14],
+        ["menuChoice", "C", 14],
         ["printString", "", true, false],
         ["endMenu"],
         ["finalize"]

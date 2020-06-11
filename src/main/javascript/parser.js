@@ -821,7 +821,7 @@ function Parser(handlers,logger){
         }
       } else if (tokens[0].type===CLS && tokens.length === 1) {
         return handler.clear();
-      } else if (tokens[0].type===BEGIN && // BEGIN STATEMENT
+     } else if (tokens[0].type===BEGIN && // BEGIN STATEMENT
                  ((tokens.length === 2 && tokens[1].type === RANDOM) ||
                   (tokens.length > 2 && tokens[1].type === MENU))) {
         if (tokens[1].type === RANDOM) {
@@ -837,6 +837,7 @@ function Parser(handlers,logger){
           else {
             loopStack.push({
 	      type: MENU,
+              keys: [], // list of keystrokes
               line: num
             });
             return handler.beginMenu(exp);
@@ -1184,7 +1185,13 @@ function Parser(handlers,logger){
           obj.seenChoice = true;
           obj.lastWasChoice = true;
           obj.seenHideIf = false;
-
+          for (var n=0;n<obj.keys.length;n++) {
+            if (key === obj.keys[n]) {
+              logger.error("MENU CHOICE \""+key+"\" already used");
+              return handler.menuChoice(key, exp);
+            }
+          }
+          obj.keys.push(key);
           return handler.menuChoice(key, exp);
         }
       } else if (tokens[0].type===WITH && tokens.length === 3 && tokens[1].type === CHANCE && tokens[2].type === NUMERIC) {
