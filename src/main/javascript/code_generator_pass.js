@@ -371,12 +371,13 @@ function CodeGeneratorPass(typeManager, machine, logger){
       prompt = expressionToFunction(prompt);
       loopStack.push({type:ASK,
                       prompt:prompt,
-                      color:[255,255,85],
-                      promptColor:[85,255,255],
-                      bgColor:[0,0,0],
+                      color: 14,
+                      promptColor: 11,
+                      bgColor: 0,
                       noloc:null,
                       defaultValue:null,
                       top:top,
+		      yes_first: null,
                       loc:nextInstruction()});
       pushInstruction(null); // Save space for prompt
       pushInstruction(null);
@@ -384,46 +385,57 @@ function CodeGeneratorPass(typeManager, machine, logger){
     }
 
     function askColor(color) {
-      var c = intToColor(color);
-      if (c === null) {
+      color = Number(color);
+      if (color !== Math.floor(color) || color < 0 || color > 15) {
         logger.error("INVALID ASK COLOR");
         valid = false;
         return false;
       }
-      loopStack[loopStack.length-1].color = c;
+      loopStack[loopStack.length-1].color = color;
       return true;
     }
 
     function askBGColor(color) {
-      var c = intToColor(color);
-      if (c === null) {
+      color = Number(color);
+      if (color !== Math.floor(color) || color < 0 || color > 7) {
         logger.error("INVALID ASK BGCOLOR");
         valid = false;
         return false;
       }
-      loopStack[loopStack.length-1].bgColor = c;
+      loopStack[loopStack.length-1].bgColor = color;
       return true;
     }
 
     function askPromptColor(color) {
-      var c = intToColor(color);
-      if (c === null) {
+      color = Number(color);
+      if (color !== Math.floor(color) || color < 0 || color > 15) {
         logger.error("INVALID ASK PROMPT COLOR");
         valid = false;
         return false;
       }
-      loopStack[loopStack.length-1].promptColor = c;
+      loopStack[loopStack.length-1].promptColor = color;
       return true;
     }
 
     function onNo() {
       var ask = loopStack[loopStack.length-1];
-      ask.noLoc = nextInstruction();
-      pushInstruction(null);
+      if (ask.yes_first === null) {
+	ask.yes_first = false;
+      } else {
+	ask.noLoc = nextInstruction();
+	pushInstruction(null);
+      }
       return true;
     }
 
     function onYes() {
+      var ask = loopStack[loopStack.length-1];
+      if (ask.yes_first === null) {
+	ask.yes_first = true;
+      } else {
+	ask.noLoc = nextInstruction();
+	pushInstruction(null);
+      }
       return true;
     }
 
@@ -445,7 +457,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       var prompt = ask.prompt;
       var top = ask.top;
       addInstructionAt(ask.loc, function(){
-        machine.printAsk(prompt,ask.defaultValue,ask.color,ask.bgColor,ask.promptColor);
+        machine.printAsk(prompt(),ask.defaultValue,ask.color,ask.bgColor,ask.promptColor);
         machine.setInterruptDelay(0);
         machine.setInputVariable("!"); // Invalid as an identifier
         machine.advance();
@@ -454,18 +466,22 @@ function CodeGeneratorPass(typeManager, machine, logger){
         if (machine.getGlobal("!")!==null) {
           if (machine.getGlobal("!").length>0) {
             var key=machine.getGlobal("!").toUpperCase()[0];
-            if (key === "Y") {
+            if ((key === "Y" && ask.yes_first) ||
+		(key === "N" && !ask.yes_first)) {
               machine.advance();
               return;
-            } else if (key === "N") {
+            } else if ((key === "N" && ask.yes_first) ||
+		       (key === "Y" && !ask.yes_first)) {
               machine.setLoc(noLoc);
               return;
             }
           } else {
-            if (ask.defaultValue === true) {
+            if ((ask.defaultValue === true && ask.yes_first) ||
+		(ask.defaultValue === false && !ask.yes_first)) {
               machine.advance();
               return;
-            } else if (ask.defaultValue === false) {
+            } else if ((ask.defaultValue === false && ask.yes_first) ||
+		       (ask.defaultValue === true && !ask.yes_first)) {
               machine.setLoc(noLoc);
               return;
             }
