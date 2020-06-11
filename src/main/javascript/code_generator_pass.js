@@ -92,7 +92,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       }
       if (pause) {
         pushInstruction(function() {
-          machine.printMenu([function(){return text;}],[""],
+          machine.printMenu([text],[""],
                             undefined,undefined,undefined,undefined,undefined);
 
           machine.setInterruptDelay(0);
@@ -123,7 +123,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
       }
       if (pause) {
         pushInstruction(function() {
-          machine.printMenu([text],[""],
+          machine.printMenu([text()],[""],
                             undefined,undefined,undefined,undefined,undefined);
           machine.setInterruptDelay(0);
           machine.setInputVariable("!"); // Internal name
@@ -597,7 +597,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
         var filteredKeys = [];
         for (var n=0;n<hideConditions.length;n++) {
           if (!hideConditions[n]()) {
-            filteredText.push(choiceText[n]);
+            filteredText.push(choiceText[n]());
             filteredKeys.push(choiceKeys[n]);
             }
         }

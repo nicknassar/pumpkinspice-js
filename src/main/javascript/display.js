@@ -281,7 +281,7 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
       //     instances in the same browser
       choiceSpan.setAttribute("id","menuitem"+n);
       choiceSpan.setAttribute("class","menuitem");
-      var parts = choiceText[n]().split("("+choiceKeys[n]+")");
+      var parts = choiceText[n].split("("+choiceKeys[n]+")");
       for (var i=0;i<parts.length;i++){
         if (i>0) {
           var keySpan=document.createElement("span");
@@ -296,8 +296,11 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
       addEventListener(choiceSpan,"click",onclickFuncs[n]);
       menuListeners.push(onclickFuncs[n]);
       menuSpan.appendChild(choiceSpan);
-      var newLine = document.createElement("br");
-      menuSpan.appendChild(newLine);
+      // Don't make a new line at the end if there's no prompt
+      if (n<choiceText.length-1 || prompt!==undefined) {
+	var newLine = document.createElement("br");
+	menuSpan.appendChild(newLine);
+      }
     }
     queueUpdate(menuSpan);
     if (prompt!==undefined) {
