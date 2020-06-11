@@ -494,10 +494,10 @@ function CodeGeneratorPass(typeManager, machine, logger){
 
     function beginMenu(prompt) {
       loopStack.push({type:MENU,
-                      color:[255,255,85],
-                      choiceColor:[255,255,255],
-                      promptColor:[85,255,255],
-                      bgColor:[0,0,0],
+                      color: 14,
+                      choiceColor: 15,
+                      promptColor: 11,
+                      bgColor: 0,
                       choices:[],
                       prompt:prompt,
                       loc:nextInstruction()});
@@ -508,46 +508,46 @@ function CodeGeneratorPass(typeManager, machine, logger){
     }
 
     function menuColor(color) {
-      var c = intToColor(color);
-      if (c === null) {
+      color = Number(color);
+      if (color !== Math.floor(color) || color < 0 || color > 15) {
         logger.error("INVALID MENU COLOR");
         valid = false;
         return false;
       }
-      loopStack[loopStack.length-1].color = c;
+      loopStack[loopStack.length-1].color = color;
       return true;
     }
 
     function menuBGColor(color) {
-      var c = intToColor(color);
-      if (c === null) {
+      color = Number(color);
+      if (color !== Math.floor(color) || color < 0 || color > 7) {
         logger.error("INVALID MENU BGCOLOR");
         valid = false;
         return false;
       }
-      loopStack[loopStack.length-1].bgColor = c;
+      loopStack[loopStack.length-1].bgColor = color;
       return true;
     }
 
     function menuChoiceColor(color) {
-      var c = intToColor(color);
-      if (c === null) {
+      color = Number(color);
+      if (color !== Math.floor(color) || color < 0 || color > 15) {
         logger.error("INVALID MENU CHOICE COLOR");
         valid = false;
         return false;
       }
-      loopStack[loopStack.length-1].choiceColor = c;
+      loopStack[loopStack.length-1].choiceColor = color;
       return true;
     }
 
     function menuPromptColor(color) {
-      var c = intToColor(color);
-      if (c === null) {
+      color = Number(color);
+      if (color !== Math.floor(color) || color < 0 || color > 15) {
         logger.error("INVALID MENU PROMPT COLOR");
         valid = false;
         return false;
       }
-      loopStack[loopStack.length-1].promptColor = c;
+      loopStack[loopStack.length-1].promptColor = color;
       return true;
     }
 
@@ -601,7 +601,7 @@ function CodeGeneratorPass(typeManager, machine, logger){
             filteredKeys.push(choiceKeys[n]);
             }
         }
-        machine.printMenu(filteredText,filteredKeys,prompt,menu.color,menu.bgColor,menu.promptColor,menu.choiceColor);
+        machine.printMenu(filteredText,filteredKeys,prompt(),menu.color,menu.bgColor,menu.promptColor,menu.choiceColor);
         machine.setInterruptDelay(0);
         machine.setInputVariable("!"); // Invalid as an identifier
         machine.advance();

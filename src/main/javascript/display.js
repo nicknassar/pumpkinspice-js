@@ -11,6 +11,56 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
 
   var handleInputEvent = function(e){};
 
+  // Optimize these calls by wrapping them in a function
+  function addEventListener(obj,on,fn) {
+    obj.addEventListener(on,fn);
+  }
+  function removeEventListener(obj,on,fn) {
+    obj.removeEventListener(on,fn);
+  }
+
+  // Utility function to convert a color number to an RGB triplet
+  function intToColor(c) {
+    if (c == 0) { // Black
+      return [0,0,0];
+    } else if (c == 1) { // Blue
+      return [0,0,170];
+    } else if (c == 2) { // Green
+      return [0,170,0];
+    } else if (c == 3) { // Cyan
+      return [0,170,170];
+    } else if (c == 4) { // Red
+      return [170,0,0];
+    } else if (c == 5) { // Magenta
+      return [170,0,170];
+    } else if (c == 6) { // Brown
+      return [170,85,0];
+    } else if (c == 7) { // White
+      return [170,170,170];
+    } else if (c == 8) { // Gray
+      return [85,85,85];
+    } else if (c == 9) { // Light Blue
+      return [85, 85, 255];
+    } else if (c == 10) { // Light Green
+      return [85, 255, 85];
+    } else if (c == 11) { // Light Cyan
+      return [85, 255, 255];
+    } else if (c == 12) { // Light Red
+      return [255, 85, 85];
+    } else if (c == 13) { // Light Magenta
+      return [255, 85, 255];
+    } else if (c == 14) { // Yellow
+      return [255, 255, 85];
+    } else if (c == 15) { // Optic White
+      return [255, 255, 255];
+    } else {
+      // Invalid color
+
+      // Any function calling intToColor should check for null return values
+      return null;
+    }
+  }
+  
   function queueUpdate(node) {
     pendingUpdates.push(node);
   };
@@ -198,22 +248,31 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
           choose(key);
         }}());
     }
+    var menuColorRGB, menuBGColorRGB, menuPromptColorRGB, menuChoiceColorRGB;
     if (menuColor===undefined) {
-      menuColor = color;
+      menuColorRGB = color;
+    } else {
+      menuColorRGB = intToColor(menuColor);
     }
     if (menuBGColor===undefined) {
-      menuBGColor = bgColor;
+      menuBGColorRGB = bgColor;
+    } else {
+      menuBGColorRGB = intToColor(menuBGColor);
     }
     if (menuPromptColor===undefined) {
-      menuPromptColor = color;
+      menuPromptColorRGB = color;
+    } else {
+      menuPromptColorRGB = intToColor(menuPromptColor);
     }
     if (menuChoiceColor===undefined) {
-      menuChoiceColor = color;
+      menuChoiceColorRGB = color;
+    } else {
+      menuChoiceColorRGB = intToColor(menuChoiceColor);
     }
 
     // Create the top level span element
     var menuSpan=document.createElement("span");
-    menuSpan.setAttribute("style","color:rgb("+menuColor[0]+","+menuColor[1]+","+menuColor[2]+");background-color:rgb("+menuBGColor[0]+","+menuBGColor[1]+","+menuBGColor[2]+")");
+    menuSpan.setAttribute("style","color:rgb("+menuColorRGB[0]+","+menuColorRGB[1]+","+menuColorRGB[2]+");background-color:rgb("+menuBGColorRGB[0]+","+menuBGColorRGB[1]+","+menuBGColorRGB[2]+")");
 
     // create the choices
     for (var n=0;n<choiceText.length;n++){
@@ -226,7 +285,7 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
       for (var i=0;i<parts.length;i++){
         if (i>0) {
           var keySpan=document.createElement("span");
-          keySpan.setAttribute("style","color:rgb("+menuChoiceColor[0]+","+menuChoiceColor[1]+","+menuChoiceColor[2]+")");
+          keySpan.setAttribute("style","color:rgb("+menuChoiceColorRGB[0]+","+menuChoiceColorRGB[1]+","+menuChoiceColorRGB[2]+")");
           var keyText = document.createTextNode("("+choiceKeys[n]+")");
           keySpan.appendChild(keyText);
           choiceSpan.appendChild(keySpan);
@@ -243,8 +302,8 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
     queueUpdate(menuSpan);
     if (prompt!==undefined) {
       var promptSpan=document.createElement("span");
-      promptSpan.setAttribute("style","color:rgb("+menuPromptColor[0]+","+menuPromptColor[1]+","+menuPromptColor[2]+")");
-      var promptText=document.createTextNode(prompt());
+      promptSpan.setAttribute("style","color:rgb("+menuPromptColorRGB[0]+","+menuPromptColorRGB[1]+","+menuPromptColorRGB[2]+")");
+      var promptText=document.createTextNode(prompt);
       promptSpan.appendChild(promptText);
       queueUpdate(promptSpan);
     }
