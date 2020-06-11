@@ -3,7 +3,6 @@
 function runPumpkinSpiceTests(inputTextElementParam, inputSubmitElementParam, inputFormElementParam, cursorElementParam, quietBlockElementParam, historyBlockElementParam, latestBlockElementParam, displayBlockElementParam){
 
 {{legacy.js}}
-{{global_utilities.js}}
 {{display.js}}
 {{type_manager.js}}
 {{base_tester.js}}
