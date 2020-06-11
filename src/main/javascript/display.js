@@ -164,13 +164,20 @@ function Display(inputFormElement, inputTextElement, inputSubmitElement, cursorE
     } else if (defaultValue === false) {
       prompt = '[No ]';
     }
+    var colorRGB = intToColor(color);
+    var bgColorRGB = intToColor(bgColor);
+    var promptColorRGB = intToColor(promptColor);
     var textSpanNode=document.createElement("span");
-    textSpanNode.setAttribute("style","color:rgb("+color[0]+","+color[1]+","+color[2]+");background-color:rgb("+bgColor[0]+","+bgColor[1]+","+bgColor[2]+")");
-    var textNode = document.createTextNode(text());
+    if (colorRGB !== null && bgColorRGB !== null) {
+      textSpanNode.setAttribute("style","color:rgb("+colorRGB[0]+","+colorRGB[1]+","+colorRGB[2]+");background-color:rgb("+bgColorRGB[0]+","+bgColorRGB[1]+","+bgColorRGB[2]+")");
+    }
+    var textNode = document.createTextNode(text);
     textSpanNode.appendChild(textNode);
 
     var promptSpanNode=document.createElement("span");
-    promptSpanNode.setAttribute("style","color:rgb("+promptColor[0]+","+promptColor[1]+","+promptColor[2]+");background-color:rgb("+bgColor[0]+","+bgColor[1]+","+bgColor[2]+")");
+    if (promptColorRGB !== null && bgColorRGB !== null) {
+      promptSpanNode.setAttribute("style","color:rgb("+promptColorRGB[0]+","+promptColorRGB[1]+","+promptColorRGB[2]+");background-color:rgb("+bgColorRGB[0]+","+bgColorRGB[1]+","+bgColorRGB[2]+")");
+    }
     var promptNode = document.createTextNode(prompt);
     promptSpanNode.appendChild(promptNode);
 

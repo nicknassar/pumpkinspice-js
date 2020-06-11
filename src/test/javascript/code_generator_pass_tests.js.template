@@ -17,10 +17,10 @@ function CodeGeneratorPassTests(display) {
       description: "single global string",
       run: function(onComplete) {
         assert(codeGeneratorPass.printString("Hello World!", true, false),
-	       "prints Hello World!");
+               "prints Hello World!");
         assert(codeGeneratorPass.finalize(), "validates");
 
-	machine.go();
+        machine.go();
         onComplete();
       },
       calls: [
@@ -55,7 +55,7 @@ function CodeGeneratorPassTests(display) {
             "TOTAL",
             codeGeneratorPass.numericLiteralExpression("0")
           ),
-	  "set total to zero"
+          "set total to zero"
         );
         assert(
           codeGeneratorPass.forStatement(
@@ -93,7 +93,7 @@ function CodeGeneratorPassTests(display) {
         );
         assert(codeGeneratorPass.finalize(), "validates");
 
-	machine.go();
+        machine.go();
         onComplete();
       },
       calls: [
@@ -139,14 +139,14 @@ function CodeGeneratorPassTests(display) {
             "TOTAL",
             codeGeneratorPass.numericLiteralExpression("55")
           ),
-	  "set total to fifty-five"
+          "set total to fifty-five"
         );
         assert(
           codeGeneratorPass.letStatement(
             "STOTAL",
             codeGeneratorPass.stringLiteralExpression("!")
           ),
-	  "set stotal to band"
+          "set stotal to band"
         );
         assert(
           codeGeneratorPass.whileStatement(
@@ -197,7 +197,7 @@ function CodeGeneratorPassTests(display) {
         );
         assert(codeGeneratorPass.finalize(), "validates");
 
-	machine.go();
+        machine.go();
         onComplete();
       },
       calls: [
@@ -259,7 +259,7 @@ function CodeGeneratorPassTests(display) {
         assert(codeGeneratorPass.endIf());
         assert(codeGeneratorPass.finalize(), "validates");
 
-	machine.go();
+        machine.go();
         onComplete();
       },
       calls: [
@@ -1674,6 +1674,198 @@ function CodeGeneratorPassTests(display) {
         ["clearMenu"],
         ["scroll"],
         ["print", "Testing 123"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK - yes first, yes",
+      run: function(onComplete) {
+        assert(
+          codeGeneratorPass.beginAsk(
+            codeGeneratorPass.stringLiteralExpression("Will you?")),
+          "begin ask"
+        );
+        assert(
+          codeGeneratorPass.onYes(),
+          "ON YES"
+        );
+        assert(
+          codeGeneratorPass.printString("yes", true, false),
+          "print yes"
+        );
+        assert(
+          codeGeneratorPass.onNo(),
+          "ON NO"
+        );
+        assert(
+          codeGeneratorPass.printString("no", true, false),
+          "print no"
+        );
+        assert(
+          codeGeneratorPass.endAsk(),
+          "end ask"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        display._setInputAndRunHandler("Y", onComplete);
+      },
+      calls: [
+        ["sendUpdates"],
+        ["printAsk", "Will you?", null, 14, 0, 11],
+        ["sendUpdates"],
+        ["go"],
+        ["getInputValue"],
+        ["print", "Y"],
+        ["print", "\n"],
+        ["clearMenu"],
+        ["scroll"],
+        ["print", "yes\n"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK - no first, yes",
+      run: function(onComplete) {
+        assert(
+          codeGeneratorPass.beginAsk(
+            codeGeneratorPass.stringLiteralExpression("Will you?")),
+          "begin ask"
+        );
+        assert(
+          codeGeneratorPass.onNo(),
+          "ON NO"
+        );
+        assert(
+          codeGeneratorPass.printString("no", true, false),
+          "print no"
+        );
+        assert(
+          codeGeneratorPass.onYes(),
+          "ON YES"
+        );
+        assert(
+          codeGeneratorPass.printString("yes", true, false),
+          "print yes"
+        );
+        assert(
+          codeGeneratorPass.endAsk(),
+          "end ask"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        display._setInputAndRunHandler("Y", onComplete);
+      },
+      calls: [
+        ["sendUpdates"],
+        ["printAsk", "Will you?", null, 14, 0, 11],
+        ["sendUpdates"],
+        ["go"],
+        ["getInputValue"],
+        ["print", "Y"],
+        ["print", "\n"],
+        ["clearMenu"],
+        ["scroll"],
+        ["print", "yes\n"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK - yes first, no",
+      run: function(onComplete) {
+        assert(
+          codeGeneratorPass.beginAsk(
+            codeGeneratorPass.stringLiteralExpression("Will you?")),
+          "begin ask"
+        );
+        assert(
+          codeGeneratorPass.onYes(),
+          "ON YES"
+        );
+        assert(
+          codeGeneratorPass.printString("yes", true, false),
+          "print yes"
+        );
+        assert(
+          codeGeneratorPass.onNo(),
+          "ON NO"
+        );
+        assert(
+          codeGeneratorPass.printString("no", true, false),
+          "print no"
+        );
+        assert(
+          codeGeneratorPass.endAsk(),
+          "end ask"
+        );
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        display._setInputAndRunHandler("n", onComplete);
+      },
+      calls: [
+	["sendUpdates"],
+	["printAsk", "Will you?", null, 14, 0, 11],
+	["sendUpdates"],
+	["go"],
+	["getInputValue"],
+	["print", "n"],
+	["print", "\n"],
+        ["clearMenu"],
+        ["scroll"],
+	["print", "no\n"],
+        ["sendUpdates"]
+      ],
+      errors: []
+    },
+    {
+      description: "ASK - no first, no",
+      run: function(onComplete) {
+        assert(
+          codeGeneratorPass.beginAsk(
+	    codeGeneratorPass.stringLiteralExpression("Will you?")),
+          "begin ask"
+        );
+	assert(
+	  codeGeneratorPass.onNo(),
+	  "ON NO"
+	);
+        assert(
+          codeGeneratorPass.printString("no", true, false),
+          "print no"
+        );
+	assert(
+	  codeGeneratorPass.onYes(),
+	  "ON YES"
+	);
+        assert(
+          codeGeneratorPass.printString("yes", true, false),
+          "print yes"
+        );
+	assert(
+	  codeGeneratorPass.endAsk(),
+	  "end ask"
+	);
+        assert(codeGeneratorPass.finalize(), "validates");
+
+        machine.go();
+        display._setInputAndRunHandler("N", onComplete);
+      },
+      calls: [
+        ["sendUpdates"],
+        ["printAsk", "Will you?", null, 14, 0, 11],
+        ["sendUpdates"],
+        ["go"],
+        ["getInputValue"],
+        ["print", "N"],
+        ["print", "\n"],
+        ["clearMenu"],
+        ["scroll"],
+        ["print", "no\n"],
         ["sendUpdates"]
       ],
       errors: []
