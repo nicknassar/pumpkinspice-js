@@ -60,7 +60,8 @@ body{
     line-height:normal;
     text-align:left;
     font-family:monospace;
-    font-size:12pt
+    font-size:12pt;
+    white-space: pre-wrap
 }
 #dblock{
     width:100%;
@@ -131,10 +132,7 @@ body{
   <body>
     <div id="container">
       <div id="dblock">
-        <div id="display" role="main">
-	  <div id="downer"></div>
-	    <span id="history" aria-live="off"></span><span id="latest" aria-live="assertive" aria-atomic="true" aria-relevant="additions"><span style="display:block;position:absolute;left:-10000px;top:-10000px">Loading...</span></span><span id="quiet" aria-live="off" aria-hidden="true"></span><span id="cursor" aria-live="off" aria-hidden="true">_</span>
-        </div>
+        <div id="display" role="main"><div id="downer"></div><span id="history" aria-live="off"></span><span id="latest" aria-live="assertive" aria-atomic="true" aria-relevant="additions"></span><span id="quiet" aria-live="off" aria-hidden="true"></span><span id="cursor" aria-live="off" aria-hidden="true">_</span></div>
         <form id="inpadform" autocomplete="off">
 	  <div id="sblock" aria-live="off">
 	    <div id="sblockpad">
