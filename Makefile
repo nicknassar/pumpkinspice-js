@@ -1,7 +1,7 @@
 SHELL = /bin/sh
 .SUFFIXES:
 .SUFFIXES: .pumpkinspice .html .debug.html .java .class .js .optimized.js .js.template .html.template
-BUILD_VERSION := 0.0.2pre
+BUILD_VERSION := 0.0.2
 BUILD_DIR := build
 SRC_DIR := src
 DIST_DIR := dist
