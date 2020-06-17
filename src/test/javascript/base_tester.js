@@ -1,6 +1,7 @@
 function BaseTester(display, setup, tests) {
   var successCount = 0;
   var errorCount = 0;
+  var lastCompletedTest = -1;
   var onComplete;
 
   // Failures for the CURRENT test
@@ -48,13 +49,7 @@ function BaseTester(display, setup, tests) {
     } else {
       successCount++;
     }
-    if (tests.length > i+1) {
-      setup();
-      check(i+1);
-    } else {
-      display.sendUpdates();
-      onComplete();
-    }
+    lastCompletedTest = i;
   }
 
   function check(i) {
@@ -68,15 +63,36 @@ function BaseTester(display, setup, tests) {
     );
   }
 
+  function restartFrom(n) {
+    if (lastCompletedTest != n) {
+      window.setTimeout(
+	(function() {
+	  restartFrom(n);
+	}),0);
+    } else {
+      go(n+1);
+    }
+  }
+
+  function go(start) {
+    for (var n=start;n<tests.length;n++) {
+      setup();
+      check(n);
+      if (lastCompletedTest != n) {
+	window.setTimeout(
+	  (function() {
+	    restartFrom(n);
+	  }),0);
+	return;
+      }
+    }
+    display.sendUpdates();
+    onComplete();
+  }
+  
   function run(onCompleteFunc) {
     onComplete = onCompleteFunc;
-    if (tests.length > 0) {
-      setup();
-      check(0);
-    } else {
-      display.sendUpdates();
-      onComplete();
-    }
+    go(0);
   }
 
   return {
