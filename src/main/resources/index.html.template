@@ -124,7 +124,7 @@ body{
 #cursor{
   color:#aaa;
   font-weight:bolder;
-  font-weight:1000
+  font-weight:950
 }
   </style>
 

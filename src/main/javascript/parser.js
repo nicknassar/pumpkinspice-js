@@ -82,6 +82,7 @@ function Parser(handlers,logger){
   var ELSE={};
   // Another re-used enum value
   // var SUBROUTINE={};
+  var MY={};
   var RETURN={};
   var PLAY={};
   var WAIT={};
@@ -249,6 +250,8 @@ function Parser(handlers,logger){
           tokens.push({type:SUBROUTINE,value:i});
         } else if (i === "RETURN") {
           tokens.push({type:RETURN,value:i});
+        } else if (i === "MY") {
+          tokens.push({type:MY,value:i});
         } else if (i === "PLAY") {
           tokens.push({type:PLAY,value:i});
         } else if (i === "WAIT") {
@@ -624,6 +627,14 @@ function Parser(handlers,logger){
         }
       }
 
+      if (loopStack.length > 0 &&
+          loopStack[loopStack.length-1].type === SUBROUTINE &&
+	  !loopStack[loopStack.length-1].seenStatement &&
+	  !(tokens[0].type === COMMENT ||
+	    tokens[0].type === MY)) {
+	loopStack[loopStack.length-1].seenStatement = true;
+      }
+      
       if (tokens[0].type===IDENTIFIER && tokens.length>=3 && tokens[1].type===EQUALS && tokens[1].value==='=') {
         var letExp = expression(tokens.slice(2,tokens.length));
         if (letExp === null) {
@@ -986,10 +997,34 @@ function Parser(handlers,logger){
           }
           loopStack.push({
             type:SUBROUTINE,
+	    seenStatement: false,
             line: num
           });
           return handler.beginSubroutine(tokens[1].value,args);
-
+      } else if (tokens[0].type===MY && tokens.length > 1 && tokens[1].type===IDENTIFIER) {
+        if (loopStack.length < 1) {
+          logger.error("RETURN outside of subroutine");
+          return false;
+        }
+        var obj = loopStack[0];
+        if (obj.type !== SUBROUTINE) {
+          logger.error("RETURN outside of SUBROUTINE");
+          return false;
+        }
+        if (obj.seenStatement) {
+          logger.error("MY should be at the top of a subroutine");
+          return false;
+        }
+	var varlist=[tokens[1].value];
+	
+	for (var pos=2;pos < tokens.length-1;pos+=2) {
+	  if (tokens[pos].type!==COMMA || tokens[pos+1].type!==IDENTIFIER) {
+	    logger.error("Invalid local variable list for MY");
+	    return false;
+	  }
+	  varlist.push(tokens[pos+1].value);
+	}
+        return handler.declareLocals(varlist);	
       } else if (tokens[0].type===RETURN && tokens.length === 1) {
         if (loopStack.length < 1) {
           logger.error("RETURN outside of subroutine");

@@ -962,6 +962,60 @@ function ParserTests(display) {
       errors: []
     },
     {
+      description: "Subroutine with local",
+      code: "SUB foo\n" +
+        "MY BAR\n" +
+        "END SUB\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["declareLocals", ["BAR"]],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with locals",
+      code: "SUB foo\n" +
+        "MY BAR, BAZ\n" +
+        "SAY\n" +
+        "END SUB\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["declareLocals", ["BAR", "BAZ"]],
+        ["printString", "", true, false],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine with local after statement",
+      code: "SUB foo\n" +
+        "SAY\n" +
+        "MY BAR\n" +
+        "END SUB\n",
+      calls: [
+        ["beginSubroutine", "FOO", []],
+        ["printString", "", true, false],
+        ["endSubroutine"],
+        ["finalize"]
+      ],
+      errors: [
+        [3, "Locals should be declared at the beginning of a subroutine"]
+      ]
+    },
+    {
+      description: "Local outside of sub",
+      code: "MY BAR\n",
+      calls: [
+        ["finalize"]
+      ],
+      errors: [
+        [1, "Local variable BAR declared outside of sub"]
+      ]
+    },
+    {
       description: "Subroutine Inside IF",
       code: "IF A = B\n" +
         "SUB foo\n" +

@@ -13,6 +13,7 @@ function TestingCompilerPass() {
     beginRandom: loggerWithName("beginRandom"),
     waitForMusic: loggerWithName("waitForMusic"),
     beginSubroutine: loggerWithName("beginSubroutine"),
+    declareLocals: loggerWithName("declareLocals"),
     callSubroutine: loggerWithName("callSubroutine"),
     endSubroutine: loggerWithName("endSubroutine"),
     returnStatement: loggerWithName("returnStatement"),
