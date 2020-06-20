@@ -653,6 +653,50 @@ function TypeGeneratorPassTests(display) {
       errors: []
     },
     {
+      description: "Subroutine declaration with locals",
+      run: function(onComplete) {
+        typeGeneratorPass.beginSubroutine("FOO", []);
+        typeGeneratorPass.declareLocals(["A","B"]);
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", []],
+        ["registerLocals", "FOO", ["A", "B"]],
+        ["typeForVoidReturnStatement", "FOO"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
+      description: "Subroutine declaration with locals assigned",
+      run: function(onComplete) {
+        typeGeneratorPass.beginSubroutine("FOO", []);
+        typeGeneratorPass.declareLocals(["A","B"]);
+        typeGeneratorPass.letStatement("A",typeGeneratorPass.numericLiteralExpression("7"));
+        typeGeneratorPass.letStatement("B",typeGeneratorPass.stringLiteralExpression("7"));
+        typeGeneratorPass.endSubroutine();
+        typeGeneratorPass.finalize();
+        onComplete();
+      },
+      calls: [
+        ["registerSubroutineDefinition", "FOO", []],
+        ["registerLocals", "FOO", ["A", "B"]],
+        ["numericType"],
+        ["localVariableDefined", "FOO", "A"],
+        ["typeForLocal", "FOO", "A"],
+        ["typeForPair", 2, 4],
+        ["stringType"],
+        ["localVariableDefined", "FOO", "B"],
+        ["typeForLocal", "FOO", "B"],
+        ["typeForPair", 6, 8],
+        ["typeForVoidReturnStatement", "FOO"],
+        ["validate"]
+      ],
+      errors: []
+    },
+    {
       description: "Subroutine declaration with void return",
       run: function(onComplete) {
         typeGeneratorPass.beginSubroutine("FOO", []);

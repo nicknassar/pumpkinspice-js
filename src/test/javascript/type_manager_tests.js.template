@@ -585,6 +585,51 @@ function TypeManagerTests(display) {
       }
     },
     {
+      description: "subroutine with local",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.registerSubroutineDefinition("A",[]),
+               "register subroutine");
+        logger.setLineNumber(2);
+        assert(typeManager.registerLocals("A",["B"]),
+              "register local");
+        logger.setLineNumber(3);
+        assert(typeManager.typeForPair(typeManager.typeForLocal("A","B"),
+                                       typeManager.stringType()) !== null,
+               "local type ok");
+        logger.setLineNumber(4);
+        assert(typeManager.validate(),
+               "validation ok");
+        assert(logger.getLog().length === 0,
+               "did not log error");
+
+        onComplete();
+      }
+    },
+    {
+      description: "subroutine with local conflict",
+      run: function(onComplete) {
+        logger.setLineNumber(1);
+        assert(typeManager.registerSubroutineDefinition("A",[]),
+               "register subroutine");
+        logger.setLineNumber(2);
+        assert(typeManager.typeForPair(typeManager.typeForLocal("A","B"),
+                                       typeManager.stringType()) !== null,
+               "register local ok");
+        logger.setLineNumber(3);
+        assert(!typeManager.typeForPair(typeManager.typeForLocal("A","B"),
+                                       typeManager.numericType()) !== null,
+               "register local different bad");
+        assert(!typeManager.validate(),
+               "validation failed");
+        assert(logger.getLog().length === 1 &&
+               logger.getLog()[0][0] === 3,
+               "logged error");
+
+        onComplete();
+      }
+    },
+    {
       description: "subroutine with same name as global",
       run: function(onComplete) {
         logger.setLineNumber(1);

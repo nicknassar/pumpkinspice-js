@@ -27,6 +27,7 @@
     var VOID_TYPE = {};
 
     var subArgNames = {};      // Map of subroutine to list of param names
+    var subLocalNames = {};    // Map of subroutine to local variable names
 
     var subArgCount = {}; // Map of subroutine to integer param count
                           // Used when subs are called before declaration
@@ -45,13 +46,13 @@
 
     function localVarName(sub, name) {
       if (sub !== undefined) {
-        var pos = 0;
-        while (pos < subArgNames[sub].length){
+        for(var pos = 0;pos < subArgNames[sub].length;pos++){
           if (subArgNames[sub][pos] === name) {
             return argNameByArity(sub,pos);
           }
-          pos++;
         }
+	if (subLocalNames[sub].indexOf(name) !== -1)
+	  return sub+"!!"+name;
       }
       return name;
     };
@@ -299,6 +300,14 @@
         return false;
       }
       subArgNames[name] = args;
+      subLocalNames[name] = [];
+      return true;
+    }
+
+    function registerLocals(name, locals) {
+      for (var i=0;i<locals.length;i++) {
+	subLocalNames[name].push(locals[i]);
+      }
       return true;
     }
 
@@ -388,6 +397,7 @@
       typeForReturnStatement: typeForReturnStatement,
       typeForVoidReturnStatement: typeForVoidReturnStatement,
       registerSubroutineDefinition: registerSubroutineDefinition,
+      registerLocals: registerLocals,
       numericType: numericType,
       stringType: stringType,
       boolType: boolType,

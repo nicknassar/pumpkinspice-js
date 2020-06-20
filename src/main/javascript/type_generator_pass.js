@@ -57,13 +57,20 @@ function TypeGeneratorPass(typeManager, logger) {
 
   function beginSubroutine(name, args) {
     sawReturnStatement = false;
-      if (typeManager.registerSubroutineDefinition(name, args) !== null) {
+    if (typeManager.registerSubroutineDefinition(name, args)) {
         currentSub = name;
         return true;
       } else {
         return false;
       }
     }
+
+  function declareLocals(locals) {
+    if (currentSub === undefined)
+      return false;
+    else
+      return typeManager.registerLocals(currentSub, locals);
+  }
 
     function callSubroutine(name, argExps) {
       return typeManager.typeForCallSubroutine(name, argExps) !== null;
@@ -179,7 +186,7 @@ function TypeGeneratorPass(typeManager, logger) {
         return false;
       }
       if (currentSub !== undefined && typeManager.localVariableDefined(currentSub, varExp)) {
-        logger.error("Local variable assignment not supported, yet!");
+	return !!typeManager.typeForPair(valueExp, typeManager.typeForLocal(currentSub, varExp));
         return false;
       }
       return !!typeManager.typeForPair(valueExp, typeManager.typeForGlobal(varExp));
@@ -332,6 +339,7 @@ function TypeGeneratorPass(typeManager, logger) {
     beginRandom: trueFunc,
     waitForMusic: trueFunc,
     beginSubroutine: beginSubroutine,
+    declareLocals: declareLocals,
     callSubroutine: callSubroutine,
     endSubroutine: endSubroutine,
     returnStatement: returnStatement,
