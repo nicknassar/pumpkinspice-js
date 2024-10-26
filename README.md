@@ -47,6 +47,7 @@ the code for line 10 with the code `PRINT "HELLO"`.
 QBASIC for MS-DOS could be a bit larger and allowed for functions
 rather than line numbers. Pumpkin Spice could be considered a
 descendant of these later versions of BASIC.
+rather than line numbers. Pumpkin Spice is a
 
 This approach doesn't scale.  Software sucked in the late 90s and
 early 2000s. It was typical for Windows 95 to crash with a "Blue
